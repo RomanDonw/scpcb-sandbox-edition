@@ -2312,7 +2312,7 @@ Function ExecConsole(cin$, silent% = False)
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
 			
-			MoveEntity sc\obj, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			PositionEntity sc\obj, EntityX(sc\obj, True) + Float(StrTemp), EntityY(sc\obj, True) + Float(StrTemp2), EntityZ(sc\obj, True) + Float(StrTemp3), True
 
 			CreateConsoleMsg("Nearest camera moved on offset (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
