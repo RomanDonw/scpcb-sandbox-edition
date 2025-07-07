@@ -11,3 +11,5 @@
 Для запуска модифицированной версии используйте файл Main.exe. Для запуска оригинальной версии используете SCP - Containment Breach.exe, предварительно сохранив (создав бэкап) оригинальный конфиг.
 
 [Discord-сервер разработчика (канал scp-containment-breach).](https://discord.gg/ApKpvDuN3S)
+
+[Ссылка на веб-сайт разработчика.](https://evolationstudios.ru/)
