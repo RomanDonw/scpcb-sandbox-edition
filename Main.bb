@@ -1664,7 +1664,7 @@ Function ExecConsole(cin$, silent% = False)
 			ConsoleR = 0 : ConsoleG = 255 : ConsoleB = 255
 
 			CreateConsoleMsg(" ")
-			CreateConsoleMsg(" Console & Main control commands:", 255, 127, 0)
+			CreateConsoleMsg("- Console & Main control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("chelp - returns help list of custom commands.")
@@ -1672,7 +1672,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("execfile <relative filepath> - executes commands in Console from file <relative filepath> (comments (starts by #) and empty lines ignores).")
 
 			CreateConsoleMsg(" ")
-			CreateConsoleMsg(" Console binds system control commands:", 255, 127, 0)
+			CreateConsoleMsg("- Console binds system control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("bind <command> - binds command to key.")
@@ -1680,7 +1680,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("unbind <scancode> - unbinds command from key.")
 
 			CreateConsoleMsg(" ")
-			CreateConsoleMsg(" No specified commands:", 255, 127, 0)
+			CreateConsoleMsg("- No specified commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("noblinking [on/true/1 off/false/0] - toggles no blinking mode (or sets if special parameter set).")
@@ -1695,7 +1695,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("props.create <propname:cabinet.a/cabinet.b/keyboard> [scale=1] - spawns prop <propname> with scale <scale> at current player position.")
 
 			CreateConsoleMsg(" ")
-			CreateConsoleMsg(" Controllable NPC control commands:", 255, 127, 0)
+			CreateConsoleMsg("- Controllable NPC control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("cnpc.spawn <npctype:janitor/classd.1/classd.2/classd.3/corpse/gonzales/035victim/106victim/scientist.1/scientist.2/clerk> - spawns controllable NPC <npctype> at current player position.")
@@ -1712,7 +1712,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("cnpc.follow.followpoint.reset - resets position of follow point.")
 
 			CreateConsoleMsg(" ")
-			CreateConsoleMsg(" Security cameras & monitors control commands:", 255, 127, 0)
+			CreateConsoleMsg("- Security cameras & monitors control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("sc.create [allowsaving:allow/yes/true/1 deny/no/false/0 = false]- spawns security camera and its monitor (allow saving <allowsaving>, default to deny) at current player position.")
@@ -1727,13 +1727,24 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("sc.monitor.nearest.rotation.turn <x/roll> <y/yaw> <z/pitch> - turns rotation nearest to player monitor on <x/roll>, <y/yaw> and <z/pitch> angles.")
 
 			CreateConsoleMsg(" ")
-			CreateConsoleMsg(" SCP-079 instances control commands:", 255, 127, 0)
+			CreateConsoleMsg("- SCP-079 instances control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("scp079.screen.image.set.fromdefault <face/0 cross/x/1> - sets screen image from default images for all SCP-079 instances.")
 			CreateConsoleMsg("scp079.screen.image.set.fromfile <relative filepath> - sets screen image from file for all SCP-079 instances.")
 			CreateConsoleMsg("scp079.screen.image.clear - clears screen image for all SCP-079 instances.")
 			CreateConsoleMsg("scp079.sound.play.fromfile <relative filepath> - plays sound from file at all SCP-079 instances.")
+
+			CreateConsoleMsg(" ")
+			CreateConsoleMsg("- Current SCP-173 control commands:", 255, 127, 0)
+			CreateConsoleMsg(" ")
+
+			CreateConsoleMsg("scp173.movement.lock - locks current SCP-173 moving.")
+			CreateConsoleMsg("scp173.movement.unlock - unlocks current SCP-173 moving.")
+			CreateConsoleMsg("scp173.position.move <x> <y> <z> - moves current SCP-173 position on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("scp173.position.set <x> <y> <z> - sets current SCP-173 position on <x>, <y> and <z>.")
+			CreateConsoleMsg("scp173.rotation.turn <roll/x> <yaw/y> <pitch/z> - turnes (rotates) current SCP-173 on <roll/x>, <yaw/y> and <pitch/z>.")
+			CreateConsoleMsg("scp173.rotation.set <roll/x> <yaw/y> <pitch/z> - sets current SCP-173 position on <roll/x>, <yaw/y> and <pitch/z>.")
 
 			ConsoleR = oldcr : ConsoleG = oldcg : ConsoleB = oldcb
 
@@ -2469,7 +2480,61 @@ Function ExecConsole(cin$, silent% = False)
 			;	End If
 			;Next
 
-		
+		; === SCP-173 COMMANDS ===
+
+		Case "scp173.movement.lock"
+			Curr173\Idle = True
+			CreateConsoleMsg("Current SCP-173 movement locked.", 0, 255, 0)
+
+		Case "scp173.movement.unlock"
+			Curr173\Idle = False
+			CreateConsoleMsg("Current SCP-173 movement unlocked.", 0, 255, 0)
+
+		Case "scp173.position.move"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			MoveEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Curr173\Collider
+
+			CreateConsoleMsg("Current SCP-173 position moved on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " offset.", 0, 255, 0)
+
+		Case "scp173.position.set"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			PositionEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Curr173\Collider
+
+			CreateConsoleMsg("Current SCP-173 position set on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+
+		Case "scp173.rotation.turn"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			TurnEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Curr173\Collider
+
+			CreateConsoleMsg("Current SCP-173 rotation turned (rotated) on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+
+		Case "scp173.rotation.set"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			RotateEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Curr173\Collider
+
+			CreateConsoleMsg("Current SCP-173 rotation set on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+
+
 
 		Default
 			;[Block]
