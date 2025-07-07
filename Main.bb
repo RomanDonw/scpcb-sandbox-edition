@@ -98,11 +98,15 @@ Global PresetDebugHUD% = GetINIInt(OptionFile, "player", "preset debughud")
 Global PresetNoBlinking% = GetINIInt(OptionFile, "player", "preset noblinking")
 
 Global CustomIntro% = GetINIInt(OptionFile, "custom intro", "enabled")
+Global CustomIntroDuration# = GetINIFloat(OptionFile, "custom intro", "duration")
 Global CustomIntroClsColorR% = GetINIInt(OptionFile, "custom intro", "cls color r")
 Global CustomIntroClsColorG% = GetINIInt(OptionFile, "custom intro", "cls color g")
 Global CustomIntroClsColorB% = GetINIInt(OptionFile, "custom intro", "cls color b")
 Global CustomIntroImagePath$ = GetINIString(OptionFile, "custom intro", "image")
-Global CustomIntroAudioPath$ = GetINIString(OptionFile, "custom intro", "audio")
+Global CustomIntroSoundPath$ = GetINIString(OptionFile, "custom intro", "sound")
+Global CustomIntroSoundVolume# = GetINIFloat(OptionFile, "custom intro", "sound volume")
+Global CustomIntroSoundFedingStart# = GetINIFloat(OptionFile, "custom intro", "sound feding start")
+Global CustomIntroSoundFedingEnd# = GetINIFloat(OptionFile, "custom intro", "sound feding end")
 
 Global EnableDecals% = GetINIInt(OptionFile, "decals", "enable")
 Dim EnabledDecalTextures%(20)
@@ -293,11 +297,23 @@ If CustomIntro Then
 
 	;CreateConsoleMsg(CustomIntroAudioPath, 255, 0, 0)
 
-	temp_IntroCHN = StreamSound_Strict(CustomIntroAudioPath, 0.5, False)
+	temp_IntroCHN = StreamSound_Strict(CustomIntroSoundPath, CustomIntroSoundVolume, False)
 
 	FlushKeys
+
+	timer_% = MilliSecs()
 	While IsStreamPlaying_Strict(temp_IntroCHN)
-		If GetKey() Or GetMouse() Then Exit
+		play_time# = (MilliSecs() - timer_) / 1000
+
+		If play_time >= CustomIntroSoundFedingStart And play_time <= CustomIntroSoundFedingEnd Then
+			precent# = play_time / CustomIntroSoundFedingEnd
+
+			;CreateConsoleMsg("inv prec: " + (1 - precent), 255, 0, 255)
+
+			SetStreamVolume_Strict(temp_IntroCHN, (1 - precent))
+		End If
+
+		If GetKey() Or GetMouse() Or play_time >= CustomIntroDuration Then Exit
 	Wend
 
 	StopStream_Strict(temp_IntroCHN)
