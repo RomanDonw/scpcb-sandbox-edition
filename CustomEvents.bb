@@ -34,6 +34,14 @@ End Function
 
 ; ===========================================================================================================================================================
 
+
+;Global debug_axises_center = 0
+;Global debug_axis_x = 0, debug_axis_y = 0, debug_axis_z = 0
+
+;cube = CreateCube(Camera)
+;MoveEntity cube, 0, 1, 0
+;EntityColor cube, 255, 0, 255
+
 Function UpdateCustomEvents()
     ;If CurrMountedEntity <> 0 Then
     ;    PositionEntity CurrMountedEntity, PlayerRoom\x - EntityX(Camera), EntityY(Camera), EntityZ(Camera)
@@ -41,6 +49,43 @@ Function UpdateCustomEvents()
     ;    ;RotateEntity CurrMountedEntity, EntityRoll(Collider), EntityYaw(Collider), EntityPitch(Collider)
     ;    ;ResetEntity CurrMountedEntity
     ;End If
+
+    ;If debug_axises_center = 0 Then
+    ;    debug_axises_center = CreatePivot(Collider)
+    ;    MoveEntity axises_center, 0, 0, 1
+    ;
+    ;
+    ;    debug_axis_x = CreateCube(debug_axises_center)
+    ;    MoveEntity debug_axis_x, 1, 0, 0
+    ;    ScaleEntity debug_axis_x, 0.1, 0.1, 0.1
+    ;    EntityColor debug_axis_x, 255, 0, 0
+    ;
+    ;    debug_axis_y = CreateCube(debug_axises_center)
+    ;    MoveEntity debug_axis_y, 0, 1, 0
+    ;    ScaleEntity debug_axis_y, 0.1, 0.1, 0.1
+    ;    EntityColor debug_axis_y, 0, 255, 0
+    ;
+    ;    debug_axis_z = CreateCube(axises_center)
+    ;    MoveEntity debug_axis_z, 0, 0, 1
+    ;    ScaleEntity debug_axis_z, 0.1, 0.1, 0.1
+    ;    EntityColor debug_axis_z, 0, 0, 255
+    ;End If
+
+    ;If DebugHUD And debug_axis_x <> 0 And debug_axis_y <> 0 And debug_axis_z <> 0 Then
+    ;    ShowEntity debug_axis_x
+    ;    ShowEntity debug_axis_y
+    ;    ShowEntity debug_axis_z
+    ;
+    ;    RotateEntity debug_axis_x, 0, 0, 0, True
+    ;    RotateEntity debug_axis_y, 0, 0, 0, True
+    ;    RotateEntity debug_axis_z, 0, 0, 0, True
+    ;Else
+    ;    HideEntity debug_axis_x
+    ;    HideEntity debug_axis_y
+    ;    HideEntity debug_axis_z
+    ;End If
+
+    ;CatchErrors("DebugHUD")
 
     If Not CheatGameControlEnabled Return
 
