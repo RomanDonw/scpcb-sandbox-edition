@@ -314,6 +314,47 @@ Function InitItemTemplates()
 	it = CreateItemTemplate("Research Sector-02 Scheme", "paper", "GFX\items\paper.x", "GFX\items\INVpaper.jpg", "GFX\items\docmap.jpg", 0.003) : it\sound = 0
 	
 	it = CreateItemTemplate("Document SCP-427", "paper", "GFX\items\paper.x", "GFX\items\INVpaper.jpg", "GFX\items\doc427.jpg", 0.003) : it\sound = 0
+
+	items_count% = GetINIInt(OptionFile, "items", "count")
+	register_file_path$ = GetINIString(OptionFile, "items", "register file path")
+	If items_count > 0 Then
+		For i% = 0 To items_count - 1
+			name_$ = GetINIString(register_file_path, i, "caption")
+			tempname_$ = GetINIString(register_file_path, i, "id")
+			objpath_$ = GetINIString(register_file_path, i, "model path")
+			invimgpath_$ = GetINIString(register_file_path, i, "inventory image path")
+			;imgpath_$ = GetINIString(register_file_path, i, "image path")
+			scale_# = GetINIFloat(register_file_path, i, "scale")
+
+			If IsINIParameterExist(register_file_path, i, "image path") Then
+				imgpath_$ = GetINIString(register_file_path, i, "image path")
+			Else
+				imgpath_$ = ""
+			End If
+
+			If IsINIParameterExist(register_file_path, i, "texture path") Then
+				texturepath_$ = GetINIString(register_file_path, i, "texture path")
+			Else
+				texturepath_$ = ""
+			End If
+
+			If IsINIParameterExist(register_file_path, i, "inventory image 2 path") Then
+				invimgpath2_$ = GetINIString(register_file_path, i, "inventory image 2 path")
+			Else
+				invimgpath2_$ = ""
+			End If
+
+
+			it = CreateItemTemplate(name_, tempname_, objpath_, invimgpath_, imgpath_, scale_, texturepath_, invimgpath2_)
+
+
+			If IsINIParameterExist(register_file_path, i, "sound") Then it\sound = GetINIInt(register_file_path, i, "sound")
+
+			If IsINIParameterExist(register_file_path, i, "color r") And IsINIParameterExist(register_file_path, i, "color g") And IsINIParameterExist(register_file_path, i, "color b") Then
+				EntityColor it\obj, GetINIInt(register_file_path, i, "color r"), GetINIInt(register_file_path, i, "color g"), GetINIInt(register_file_path, i, "color b")
+			End If
+		Next
+	End If
 	
 	For it = Each ItemTemplates
 		If (it\tex<>0) Then

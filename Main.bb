@@ -1670,6 +1670,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("chelp - returns help list of custom commands.")
 			CreateConsoleMsg("cls - clears console.")
 			CreateConsoleMsg("execfile <relative filepath> - executes commands in Console from file <relative filepath> (comments (starts by #) and empty lines ignores).")
+			CreateConsoleMsg("execwithdelay <delay> <command> - executes <command> with <delay> in seconds.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Console binds system control commands:", 255, 127, 0)
@@ -1680,19 +1681,31 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("unbind <scancode> - unbinds command from key.")
 
 			CreateConsoleMsg(" ")
-			CreateConsoleMsg("- No specified commands:", 255, 127, 0)
+			CreateConsoleMsg("- Uncategorized commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("noblinking [on/true/1 off/false/0] - toggles no blinking mode (or sets if special parameter set).")
 			CreateConsoleMsg("spawndoor <doortype> - spawns door with type <type> at player position & rotation.")
 			CreateConsoleMsg("spawnroom <roomname> - spawns room with using room template <roomname> at current player position.")
 			CreateConsoleMsg("setcurrentroom <roomname> - sets current player room to <roomname>.")
-			CreateConsoleMsg("rotate <x/roll> <y/yaw> <z/pitch> - sets player rotation to <x/roll>, <y/yaw> and <z/pitch>.")
 			CreateConsoleMsg("enablefog/disablefog - toggles display fog entity.")
 			CreateConsoleMsg("teleport173to <x> <y> <z> - teleports current instance of SCP-173 to <x>, <y> and <z> position.")
 			CreateConsoleMsg("addlight <r:0-255> <g:0-255> <b:0-255> - spawns light at current player position width RGB-color <r> <g> <b>.")
 			CreateConsoleMsg("secondarylight [on/true/1 off/false/0] - toggles (or sets) state of secondary light.")
 			CreateConsoleMsg("props.create <propname:cabinet.a/cabinet.b/keyboard> [scale=1] - spawns prop <propname> with scale <scale> at current player position.")
+			CreateConsoleMsg("camera.range <near> <far> - sets camera range to near <near> and far <far>.")
+			CreateConsoleMsg("item.nearest.remove - removes nearest item to player.")
+			CreateConsoleMsg("sound.play <relative filepath> [volume=SFX volume] - plays strict sound from file <relative filepath> with volume [volume] or you SFX volume if [volume] not set.")
+
+			CreateConsoleMsg(" ")
+			CreateConsoleMsg("- Player control commands:", 255, 127, 0)
+			CreateConsoleMsg(" ")
+
+			CreateConsoleMsg("player.position.move <x> <y> <z> - moves player position on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("player.position.translate <x> <y> <z> - translates player position on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("player.position.set <x> <y> <z> - sets player position on <x>, <y> and <z>.")
+			CreateConsoleMsg("player.rotation.turn <roll/x> <yaw/y> <pitch/z> - moves player rotation on <roll/x>, <yaw/y> and <pitch/z> offset.")
+			CreateConsoleMsg("player.rotation.set <roll/x> <yaw/y> <pitch/z> - sets player rotation on <roll/x>, <yaw/y> and <pitch/z>.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Controllable NPC control commands:", 255, 127, 0)
@@ -1707,9 +1720,9 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("cnpc.follow.followpoint.hide - hides follow point (debug function).")
 			CreateConsoleMsg("cnpc.follow.followpoint.position.move <x> <y> <z> - moves follow point on <x>, <y> and <z>.")
 			CreateConsoleMsg("cnpc.follow.followpoint.position.set <x> <y> <z> - sets follow point position on <x>, <y> and <z>.")
-			;CreateConsoleMsg("cnpc.follow.followpoint.rotation.turn <roll/x> <yaw/y> <pitch/z> - turns (rotates) follow point on <roll/x>, <yaw/y> and <pitch/z>.")
-			;CreateConsoleMsg("cnpc.follow.followpoint.rotation.set <roll/x> <yaw/y> <pitch/z> - sets follow point rotation on <roll/x>, <yaw/y> and <pitch/z>.")
 			CreateConsoleMsg("cnpc.follow.followpoint.reset - resets position of follow point.")
+			CreateConsoleMsg("cnpc.interaction.accesslevel.get - gets access level of controllable NPC.")
+			CreateConsoleMsg("cnpc.interaction.accesslevel.set <access level> - sets access level of controllable NPC.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Security cameras & monitors control commands:", 255, 127, 0)
@@ -1733,15 +1746,14 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("scp079.screen.image.set.fromdefault <face/0 cross/x/1> - sets screen image from default images for all SCP-079 instances.")
 			CreateConsoleMsg("scp079.screen.image.set.fromfile <relative filepath> - sets screen image from file for all SCP-079 instances.")
 			CreateConsoleMsg("scp079.screen.image.clear - clears screen image for all SCP-079 instances.")
-			CreateConsoleMsg("scp079.sound.play.fromfile <relative filepath> - plays sound from file at all SCP-079 instances.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Current SCP-173 control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
-			CreateConsoleMsg("scp173.movement.lock - locks current SCP-173 moving.")
-			CreateConsoleMsg("scp173.movement.unlock - unlocks current SCP-173 moving.")
+			CreateConsoleMsg("scp173.idle [enable/on/true/1 disable/off/false/0] - toggles (or sets) idle state of current SCP-173.")
 			CreateConsoleMsg("scp173.position.move <x> <y> <z> - moves current SCP-173 position on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("scp173.position.translate <x> <y> <z> - translates current SCP-173 position on <x>, <y> and <z> offset.")
 			CreateConsoleMsg("scp173.position.set <x> <y> <z> - sets current SCP-173 position on <x>, <y> and <z>.")
 			CreateConsoleMsg("scp173.rotation.turn <roll/x> <yaw/y> <pitch/z> - turnes (rotates) current SCP-173 on <roll/x>, <yaw/y> and <pitch/z>.")
 			CreateConsoleMsg("scp173.rotation.set <roll/x> <yaw/y> <pitch/z> - sets current SCP-173 position on <roll/x>, <yaw/y> and <pitch/z>.")
@@ -1764,14 +1776,21 @@ Function ExecConsole(cin$, silent% = False)
 			ExecConsoleFile(StrTemp)
 			CreateConsoleMsg("Executing file " + Chr(34) + StrTemp + Chr(34) + ". Done.", 255, 127, 0)
 
+		Case "execwithdelay"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			;StrTemp2$ = Piece$(args$,2," ")
+			StrTemp2$ = Right(args, Len(args) - Instr(args, " ", Instr(args, " ")))
+
+			CreateDelayedCommand(MilliSecs() / 1000 + Float(StrTemp), StrTemp2)
+
+			CreateConsoleMsg("Execution of command " + Chr(34) + StrTemp2 + Chr(34) + " delayed by " + Float(StrTemp) + " seconds.", 0, 255, 0)
+
 		; === BINDS SYSTEM ===
 
 		Local bnd.ConsoleBind = Null
 		Case "bind"
 			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-
-			bnd = New ConsoleBind
-			bnd\Command = StrTemp
 
 			;CreateConsoleMsg("Press key: ", 0, 255, 255)
 			;UpdateConsole(False)
@@ -1782,10 +1801,19 @@ Function ExecConsole(cin$, silent% = False)
 			AASetFont ConsoleVeryLargeFont
 			Local txt_$ = "[ PRESS KEY ]"
 			AAText GraphicsWidth() / 2 - AAStringWidth(txt_) / 2, GraphicsHeight() / 2 - AAStringHeight(txt_) / 2, txt_
-
 			Flip
 
-			bnd\KeyCode = WaitKeyScan()
+			keycode% = WaitKeyScan()
+			GetKey()
+			FlushKeys
+
+			For bnd_.ConsoleBind = Each ConsoleBind
+				If bnd_\KeyCode = keycode Then CreateConsoleMsg("This key is busy.", 255, 0, 0) : Return
+			Next
+
+			bnd = New ConsoleBind
+			bnd\KeyCode = keycode
+			bnd\Command = StrTemp
 
 			CreateConsoleMsg("Binded key " + bnd\KeyCode + " to command " + Chr(34) + bnd\Command + Chr(34) + " (to call, use [CALL BIND KEY] + you key).", 0, 255, 0)
 
@@ -1850,40 +1878,11 @@ Function ExecConsole(cin$, silent% = False)
 				EndIf
 			Next
 
-
-		Case "rotate"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-			StrTemp$ = Piece$(args$,1," ")
-			StrTemp2$ = Piece$(args$,2," ")
-			StrTemp3$ = Piece$(args$,3," ")
-			RotateEntity Collider,Float(StrTemp$),Float(StrTemp2$),Float(StrTemp3$)
-			RotateEntity Camera,Float(StrTemp$),Float(StrTemp2$),Float(StrTemp3$)
-			ResetEntity Collider
-			ResetEntity Camera
-			CreateConsoleMsg("Rotated to (roll|yaw|pitch): "+EntityRoll(Collider)+"|"+EntityYaw(Collider)+"|"+EntityPitch(Collider))
-
 		Case "enablefog"
 			ShowEntity Fog
 
 		Case "disablefog"
 			HideEntity Fog
-
-		;Local curr_sc.SecurityCams = Null, curr_scr.Screens = Null
-		;Case "spawnsecuritycam"
-		;	If curr_sc = Null and curr_scr = Null Then
-		;		curr_scr = CreateScreen(EntityX(Collider), EntityY(Collider), EntityZ(Collider), "GFX\AIface2.jpg", Null)
-		;
-		;		curr_sc = CreateSecurityCam(EntityX(Collider), EntityY(Collider), EntityZ(Collider), Null, curr_scr\obj)
-		;		PositionEntity(curr_sc\CameraObj, EntityX(Collider), EntityY(Collider) - 0.1, EntityZ(Collider))
-		;		CreateConsoleMsg("Created new camera.", 0, 255, 0)
-		;	End If
-		;
-		;;Case "teleportscreen"
-		;	If curr_sc <> Null Then
-		;		PositionEntity(curr_scr\obj, EntityX(Collider), EntityY(Collider), EntityZ(Collider))
-		;	End If
-		;Case "spawnscreen"
-		;	CreateScreen(EntityX(Collider), EntityY(Collider), EntityZ(Collider), "GFX\AIface2.png", PlayerRoom)
 
 		Case "teleport173to"
 			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
@@ -1905,17 +1904,6 @@ Function ExecConsole(cin$, silent% = False)
 			;AddLight(Null, lx, ly, lz, ltype, lrange, lr, lg, lb)
 			AddLight(Null, EntityX(Collider), EntityY(Collider), EntityZ(Collider), 2, 10, Int(StrTemp), Int(StrTemp2), Int(StrTemp3))	
 			
-
-		;Case "initnewemptygame":
-		;	SelectedDifficulty\otherFactors = EASY
-		;
-		;	LoadEntities()
-		;	LoadAllSounds()
-		;	InitNewGame(False)
-		;	MainMenuOpen = False
-		;	FlushKeys()
-		;	FlushMouse()
-
 		Case "secondarylight"
 			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
 			
@@ -1933,45 +1921,6 @@ Function ExecConsole(cin$, silent% = False)
 			Else
 				CreateConsoleMsg("SecondaryLight OFF")	
 			EndIf
-
-		;Local light_on%
-		;Case "light"
-		;	StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-		;
-		;	Select StrTemp
-		;		Case "on", "1", "true"
-		;			light_on = True						
-		;		Case "off", "0", "false"
-		;			light_on = False	
-		;		Default
-		;			light_on = Not light_on
-		;	End Select
-		;	
-		;	If light_on Then
-		;		CreateConsoleMsg("Light ON")
-		;		ShowEntity Light
-		;		;EntityAlpha(Light, 0.5)
-		;	Else
-		;		CreateConsoleMsg("Light OFF")
-		;		HideEntity Light
-		;	EndIf
-
-		;Case "unmount"
-		;	If CurrMountedEntity <> 0 Then
-		;		CurrMountedEntity = 0
-		;		CreateConsoleMsg("Entity unmounted from player.", 0, 255, 0)
-		;	Else
-		;		CreateConsoleMsg("No entity mounted.", 255, 0, 0)
-		;	End If
-
-		;Case "downloadmusic"
-		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-		;	StrTemp$ = Piece$(args$,1," ")
-		;	StrTemp2$ = Piece$(args$,2," ")
-		;
-		;	CreateConsoleMsg(Download(StrTemp, "SFX\Music\Custom\", StrTemp2), 255, 0, 255)
-		;
-		;	CreateConsoleMsg("Downloaded file from " + StrTemp + " and saved as " + StrTemp2 + ".", 0, 255, 0)
 
 		Local prop% = 0
 		Local t_ent_scale#
@@ -2011,6 +1960,36 @@ Function ExecConsole(cin$, silent% = False)
 
 				CreateConsoleMsg("Created " + Chr(34) + StrTemp + Chr(34) + " prop.", 0, 255, 0)
 			End If
+
+		Case "camera.range"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			;CameraRange Camera, , Float(StrTemp2)
+			CameraRangeNear = Float(StrTemp)
+			CameraRangeFar = Float(StrTemp2)
+
+			CreateConsoleMsg("Set camera range to near " + Float(StrTemp) + " and far " + Float(StrTemp2) + ".", 0, 255, 0)
+
+		Case "item.nearest.remove"
+			it.Items = GetNearestItemToEntity(Collider)
+			RemoveItem(it)
+			CreateConsoleMsg("Removed nearest item to player.", 0, 255, 0)
+
+		Case "sound.play"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			If StrTemp2 = StrTemp Or StrTemp2 = "" Then StrTemp2 = SFXVolume
+
+			If FileSize(StrTemp) = 0 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
+
+			chn = PlaySound_Strict(LoadSound_Strict(StrTemp))
+			ChannelVolume(chn, Float(StrTemp2))
+
+			CreateConsoleMsg("Played file " + Chr(34) + StrTemp + Chr(34) + " with volume " + Float(StrTemp2) + ".", 0, 255, 0)
 
 		; === CONTROLLABLE NPC ===
 
@@ -2194,32 +2173,6 @@ Function ExecConsole(cin$, silent% = False)
 				CreateConsoleMsg("Follow mode not enabled.", 255, 0, 0)
 			End If
 
-		;Case "cnpc.follow.followpoint.rotation.turn"
-		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-		;	StrTemp$ = Piece$(args$,1," ")
-		;	StrTemp2$ = Piece$(args$,2," ")
-		;	StrTemp3$ = Piece$(args$,3," ")
-		;
-		;	If ctrl_npc_follow Then
-		;		TurnEntity ctrl_npc_follow_entity, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
-		;		CreateConsoleMsg("Follow point entity turned on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
-		;	Else
-		;		CreateConsoleMsg("Follow mode not enabled.", 255, 0, 0)
-		;	End If
-		;
-		;Case "cnpc.follow.followpoint.rotation.set"
-		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-		;	StrTemp$ = Piece$(args$,1," ")
-		;	StrTemp2$ = Piece$(args$,2," ")
-		;	StrTemp3$ = Piece$(args$,3," ")
-		;
-		;	If ctrl_npc_follow Then
-		;		RotateEntity ctrl_npc_follow_entity, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
-		;		CreateConsoleMsg("Follow point entity rotation set on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
-		;	Else
-		;		CreateConsoleMsg("Follow mode not enabled.", 255, 0, 0)
-		;	End If
-		;
 		Case "cnpc.follow.followpoint.reset"
 			If ctrl_npc_follow Then
 				PositionEntity ctrl_npc_follow_entity, 0, 0.5, -0.5
@@ -2229,43 +2182,15 @@ Function ExecConsole(cin$, silent% = False)
 				CreateConsoleMsg("Follow mode not enabled.", 255, 0, 0)
 			End If
 
-			
+		Case "cnpc.interaction.accesslevel.get"
+			CreateConsoleMsg("Access level of controllable NPC equals to " + ctrl_npc_access_level + ".", 0, 255, 0)
 
-		;Case "cnpc.death"
-		;	If ctrl_npc <> Null Then
-		;		StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-		;
-		;		Select StrTemp
-		;			Case "on", "1", "true"
-		;				ctrl_npc\State = 6				
-		;			Case "off", "0", "false"
-		;				ctrl_npc\State = 0
-		;			Default
-		;				If ctrl_npc\State <> 6 Then
-		;					ctrl_npc\State = 6
-		;				Else
-		;					ctrl_npc\State = 0
-		;				End If
-		;		End Select
-		;
-		;		If ctrl_npc\State = 6 Then
-		;			ctrl_npc_lock_movement = True
-		;			CreateConsoleMsg("Current controllable NPC killed.", 0, 255, 0)
-		;		Else
-		;			ctrl_npc_lock_movement = False
-		;			CreateConsoleMsg("Current controllable NPC revived.", 0, 255, 0)
-		;		End If
-		;	Else
-		;		CreateConsoleMsg("Current controllable NPC doesn`t exist.", 255, 0, 0)
-		;	End If
-		;
-		;	If ctrl_npc\State <> 6 Then
-        ;        ctrl_npc\State = 6 ; "Kill" ctrl_npc
-        ;        ctrl_npc_lock_movement = True
-        ;    Else
-        ;        ctrl_npc\State = 0 ; "Revive" ctrl_npc
-        ;        ctrl_npc_lock_movement = False
-        ;    End If
+		Case "cnpc.interaction.accesslevel.set"
+			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			ctrl_npc_access_level = Int(StrTemp)
+			
+			CreateConsoleMsg("Access level of controllable NPC set to value " + Int(StrTemp) + ".", 0, 255, 0)
 
 
 		; === SECURITY CAMERAS & MONITORS ===
@@ -2447,7 +2372,6 @@ Function ExecConsole(cin$, silent% = False)
 
 			Console_SetTextureForAllSCP079Instances(texScr079)
 
-		;Local ctr% = 1
 		Case "scp079.screen.image.clear"
 			ctr% = 1
 			For rm.Rooms = Each Rooms
@@ -2460,35 +2384,36 @@ Function ExecConsole(cin$, silent% = False)
 				End If
 			Next
 
-		Case "scp079.sound.play.fromfile"
-			StrTemp = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-
-			If FileSize(StrTemp) = 0 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
-
-			PlaySound_Strict(LoadSound_Strict(StrTemp))
-
-			CreateConsoleMsg("Played file " + Chr(34) + StrTemp + Chr(34) + ".", 0, 255, 0)
-
-			;ctr% = 1
-			;For rm.Rooms = Each Rooms
-			;	If rm\RoomTemplate\Name = "room079"
-			;		PlaySound_Strict(LoadSound_Strict(StrTemp))
-			;
-			;		CreateConsoleMsg("Played file " + Chr(34) + StrTemp + Chr(34) + " at SCP-079 instance number " + Str(ctr) + ".", 0, 255, 0)
-			;
-			;		ctr = ctr + 1
-			;	End If
-			;Next
-
 		; === SCP-173 COMMANDS ===
 
-		Case "scp173.movement.lock"
-			Curr173\Idle = True
-			CreateConsoleMsg("Current SCP-173 movement locked.", 0, 255, 0)
+		Case "scp173.idle"
+			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+		
+			Select StrTemp
+				Case "enable", "on", "1", "true"
+					Curr173\Idle = True						
+				Case "disable", "off", "0", "false"
+					Curr173\Idle = False	
+				Default
+					Curr173\Idle = Not Curr173\Idle
+			End Select
+			
+			If Curr173\Idle Then
+				CreateConsoleMsg("Current SCP-173 Idle enabled.", 0, 255, 0)
+			Else
+				CreateConsoleMsg("Current SCP-173 Idle disabled.", 0, 255, 0)
+			End If
 
-		Case "scp173.movement.unlock"
-			Curr173\Idle = False
-			CreateConsoleMsg("Current SCP-173 movement unlocked.", 0, 255, 0)
+		Case "scp173.position.translate"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			TranslateEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Curr173\Collider
+
+			CreateConsoleMsg("Current SCP-173 position translated on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " offset.", 0, 255, 0)
 
 		Case "scp173.position.move"
 			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
@@ -2535,6 +2460,62 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 rotation set on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 
+		; === PLAYER CONTROL COMMADS ===
+
+		Case "player.position.translate"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			TranslateEntity Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Collider
+
+			CreateConsoleMsg("Player position translated on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+
+		Case "player.position.move"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			MoveEntity Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Collider
+
+			CreateConsoleMsg("Player position moved on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+
+		Case "player.position.set"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			PositionEntity Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Collider
+
+			CreateConsoleMsg("Player position set on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+
+		Case "player.rotation.turn"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			TurnEntity Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Collider
+
+			CreateConsoleMsg("Player rotation turned on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+
+		Case "player.rotation.set"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			RotateEntity Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			ResetEntity Collider
+
+			CreateConsoleMsg("Player rotation set on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Default
 			;[Block]
@@ -2617,6 +2598,9 @@ Global Camera%, CameraShake#, CurrCameraZoom#
 Global Brightness% = GetINIFloat("options.ini", "options", "brightness")
 Global CameraFogNear# = GetINIFloat("options.ini", "options", "camera fog near")
 Global CameraFogFar# = GetINIFloat("options.ini", "options", "camera fog far")
+
+Global CameraRangeNear# = GetINIFloat(OptionFile, "display", "camera range near")
+Global CameraRangeFar# = GetINIFloat(OptionFile, "display", "camera range far")
 
 Global StoredCameraFogFar# = CameraFogFar
 
@@ -4055,7 +4039,7 @@ Repeat
 			CameraFogColor(Camera, 0,0,0)
 			;CameraFogColor(Camera, 0.7, 0.7, 0.7)
 			CameraFogMode Camera,1
-			CameraRange(Camera, 0.05, Min(CameraFogFar*LightVolume*1.5,28))
+			;CameraRange(Camera, 0.05, Min(CameraFogFar*LightVolume*1.5,28))
 
 			
 			If PlayerRoom\RoomTemplate\Name<>"pocketdimension" Then
@@ -12179,6 +12163,52 @@ Function UpdateINIFile$(filename$)
 	CloseFile(f)
 End Function
 
+Function IsINIParameterExist%(file$, section$, parameter$)
+	Local TemporaryString$ = ""
+	
+	Local lfile.INIFile = Null
+	For k.INIFile = Each INIFile
+		If k\name = Lower(file) Then
+			lfile = k
+			Exit
+		EndIf
+	Next
+	
+	If lfile = Null Then
+		DebugLog "CREATE BANK FOR "+file
+		lfile = New INIFile
+		lfile\name = Lower(file)
+		lfile\bank = 0
+		UpdateINIFile(lfile\name)
+	EndIf
+	
+	lfile\bankOffset = 0
+	
+	section = Lower(section)
+	
+	;While Not Eof(f)
+	While lfile\bankOffset<lfile\size
+		Local strtemp$ = ReadINILine(lfile)
+		If Left(strtemp,1) = "[" Then
+			strtemp$ = Lower(strtemp)
+			If Mid(strtemp, 2, Len(strtemp)-2)=section Then
+				Repeat
+					TemporaryString = ReadINILine(lfile)
+					If Lower(Trim(Left(TemporaryString, Max(Instr(TemporaryString, "=") - 1, 0)))) = Lower(parameter) Then
+						;CloseFile f
+						Return True
+					EndIf
+				Until (Left(TemporaryString, 1) = "[") Or (lfile\bankOffset>=lfile\size)
+				
+				;CloseFile f
+				Return False
+			EndIf
+		EndIf
+	Wend
+	
+	Return False
+End Function
+
 Function GetINIString$(file$, section$, parameter$, defaultvalue$="")
 	Local TemporaryString$ = ""
 	
@@ -12558,6 +12588,7 @@ End Function
 Function RenderWorld2()
 	CameraProjMode ark_blur_cam,0
 	CameraProjMode Camera,1
+	CameraRange Camera, CameraRangeNear, CameraRangeFar
 	
 	If WearingNightVision>0 And WearingNightVision<3 Then
 		AmbientLight Min(Brightness*2,255), Min(Brightness*2,255), Min(Brightness*2,255)

@@ -87,6 +87,8 @@ Function UpdateCustomEvents()
 
     ;CatchErrors("DebugHUD")
 
+    UpdateDelayedCommands()
+
     If Not CheatGameControlEnabled Return
 
     If ctrl_npc <> Null Then ControllableNPCUpdate()
@@ -109,8 +111,6 @@ Function UpdateCustomEvents()
             UseDoor(PlayerRoom\RoomDoors[6])
         End If
 
-        ;FlushKeys
-
     Else If KeyDown(KEY_CALL_BIND) Then ; Custom keybinds system.
         For b.ConsoleBind = Each ConsoleBind
             If KeyHit(b\KeyCode) Then
@@ -119,36 +119,6 @@ Function UpdateCustomEvents()
                 CreateConsoleMsg("Executing command from key bind " + b\KeyCode + ". Done.", 255, 127, 0)
             End If
         Next
-
-        ;FlushKeys
-
-    ;Else ; Custom control keys for special rooms
-    ;
-    ;    Select PlayerRoom\RoomTemplate\Name
-    ;        Case "room079"
-    ;            Custom079EventUpdate(PlayerRoom)
-    ;
-    ;        Case "173":
-    ;            If (Not event173_fixedblink) And KeyHit(NUMPAD_KEY_1) Then
-    ;                CameraFogMode(Camera, 0)
-	; 	            AmbientLight (140, 140, 140)
-	;				HideEntity(Fog)
-	;				
-	;				LightVolume = 4.0
-	;				TempLightVolume = 4.0	
-    ;
-    ;                event173_fixedblink = True
-    ;            End If
-    ;
-    ;
-    ;        ;Case "room2tunnel"
-    ;        ;    If KeyHit(79) Then
-    ;        ;        UseDoor(PlayerRoom\RoomDoors[0])
-    ;        ;    Else If KeyHit(80) Then
-    ;        ;        UseDoor(PlayerRoom\RoomDoors[2])
-    ;        ;    End If
-    ;
-    ;    End Select
 
     End If
 
@@ -160,6 +130,7 @@ End Function
 Global ctrl_npc.NPCs = Null
 Global ctrl_npc_follow% = False, ctrl_npc_follow_entity% = 0, ctrl_npc_follow_enable_player_rotating% = True
 Global ctrl_npc_lock_movement% = False
+Global ctrl_npc_access_level% = 5
 
 Function RemoveControllableNPC()
     If ctrl_npc = Null Then Return
@@ -187,7 +158,7 @@ Function ControllableNPCUpdate()
 
     If KeyDown(KEY_RIGHT_CONTROL) Then
         If KeyHit(KEY_ENTER) Then
-            UseDoor(GetNearestDoorToEntityByButtons(ctrl_npc\Collider, 1), False, True, 5)
+            UseDoor(GetNearestDoorToEntityByButtons(ctrl_npc\Collider, 1), False, True, ctrl_npc_access_level)
         ;Else If KeyHit(37) ; 'K' key
         ;    If ctrl_npc\State <> 6 Then
         ;        ctrl_npc\State = 6 ; "Kill" ctrl_npc
@@ -317,6 +288,46 @@ End Function
 
 ; ================================================================================================================
 
+Type DelayedCommand
+
+    Field time#
+    Field command$
+    Field silent%
+
+End Type
+
+Function CreateDelayedCommand.DelayedCommand(time#, command$, silent% = False)
+    ret.DelayedCommand = New DelayedCommand
+
+    ret\time = time
+    ret\command = command
+    ret\silent = silent
+
+    Return ret
+End Function
+
+Function RemoveDelayedCommand(dc.DelayedCommand)
+    If dc = Null Then Return
+
+    Delete dc
+End Function
+
+Function UpdateDelayedCommands()
+    For dc.DelayedCommand = Each DelayedCommand
+        If MilliSecs() / 1000 >= dc\time Then
+            command$ = dc\command
+            silent% = dc\silent
+            RemoveDelayedCommand(dc)
+
+            If Not silent Then CreateConsoleMsg("Executing delayed command " + Chr(34) + command + Chr(34) + "...", 255, 127, 0)
+            ExecConsole(command, True)
+            If Not silent Then CreateConsoleMsg("Executing delayed command " + Chr(34) + command + Chr(34) + ". Done.", 255, 127, 0)
+        End If
+    Next
+End Function
+
+; ================================================================================================================
+
 Function CreateLightCone(x#, y#, z#, r%, g%, b%)
     Local lc = CopyEntity(LightConeModel)
     ScaleEntity lc, 0.01, 0.01, 0.01
@@ -357,12 +368,10 @@ Function GetNearestSCToEntity.SecurityCams(obj, max_distance# = -1)
     Local ret.SecurityCams = Null
 
     For sc.SecurityCams = Each SecurityCams
-        If sc\Screen Then
-            dist_ = EntityDistance(obj, sc\obj)
-            If dist_ < dist and (dist_ <= max_distance Or max_distance < 0) Then
-                dist = dist_
-                ret = sc
-            End If
+        dist_ = EntityDistance(obj, sc\obj)
+        If dist_ < dist and (dist_ <= max_distance Or max_distance < 0) Then
+            dist = dist_
+            ret = sc
         End If
     Next
 
@@ -381,6 +390,22 @@ Function GetNearestSCToEntityByMonitor.SecurityCams(obj, max_distance# = -1)
                 dist = dist_
                 ret = sc
             End If
+        End If
+    Next
+
+    Return ret
+End Function
+
+Function GetNearestItemToEntity.Items(obj, max_distance# = -1)
+    Local dist# = 2 ^ 31 - 1
+    Local dist_# = dist
+    Local ret.Items = Null
+
+    For it.Items = Each Items
+        dist_ = EntityDistance(obj, it\collider)
+        If dist_ < dist and (dist_ <= max_distance Or max_distance < 0) Then
+            dist = dist_
+            ret = it
         End If
     Next
 
