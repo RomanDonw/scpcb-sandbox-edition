@@ -10,11 +10,14 @@ Const KEY_RIGHT_CONTROL% = 157
 Const KEY_ENTER% = 28
 Const KEY_SLASH% = 53
 
+Global ConsoleBindNextID% = 0
+
 Local event173_fixedblink% = False
 
 
 Type ConsoleBind
 
+    Field id%
     Field KeyCode%
     Field Command$
 
@@ -114,9 +117,15 @@ Function UpdateCustomEvents()
     Else If KeyDown(KEY_CALL_BIND) Then ; Custom keybinds system.
         For b.ConsoleBind = Each ConsoleBind
             If KeyHit(b\KeyCode) Then
-                CreateConsoleMsg("Executing command from key bind " + b\KeyCode + "...", 255, 127, 0)
-                ExecConsole(b\Command, True)
-                CreateConsoleMsg("Executing command from key bind " + b\KeyCode + ". Done.", 255, 127, 0)
+                i% = 0
+                For b_.ConsoleBind = Each ConsoleBind
+                    If b_\KeyCode = b\KeyCode Then
+                        CreateConsoleMsg("Executing command from key bind " + b\KeyCode + " (index " + i + ")...", 255, 127, 0)
+                        ExecConsole(b_\Command, True)
+                        CreateConsoleMsg("Executing command from key bind " + b\KeyCode + " (index " + i + "). Done.", 255, 127, 0)
+                        i = i + 1
+                    End If
+                Next
             End If
         Next
 
@@ -325,6 +334,41 @@ Function UpdateDelayedCommands()
         End If
     Next
 End Function
+
+; ================================================================================================================
+
+;Type Lever
+;    Field BaseObj%, LeverObj%
+;    Field locked%
+;End Type
+
+;Function CreateLever.Lever(locked%, x#, y#, z#, roll# = 0, yaw# = 0, pitch# = 0)
+;    Local ret.Lever = New Lever
+;
+;    ret\locked = locked
+;    ret\BaseObj = CopyEntity(LeverBaseOBJ)
+;    ret\LeverObj = CopyEntity(LeverOBJ)
+;    EntityParent ret\LeverObj, ret\BaseObj
+;    PositionEntity ret\BaseObj, x, y, z
+;    RotateEntity ret\BaseObj, roll, yaw, pitch
+;
+;    Return ret
+;End Function
+
+;Function RemoveLever(lever.Lever)
+;    If lever = Null Then Return
+;
+;    FreeEntity lever\LeverObj
+;    FreeEntity lever\BaseObj
+;
+;    Delete lever
+;End Function
+
+;Function UpdateLevers()
+;    For lever.Lever = Each Lever
+;        UpdateLever(lever\LeverObj, lever\locked)
+;    Next
+;End Function
 
 ; ================================================================================================================
 

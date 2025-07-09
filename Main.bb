@@ -1678,7 +1678,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("bind <command> - binds command to key.")
 			CreateConsoleMsg("binds - display all binds.")
-			CreateConsoleMsg("unbind <scancode> - unbinds command from key.")
+			CreateConsoleMsg("unbind <id> - unbinds command from key by bind ID.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Uncategorized commands:", 255, 127, 0)
@@ -1718,7 +1718,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("cnpc.follow.playerrotating [on/true/1 off/false/0] - toggles (or sets) player rotating by follow point.")
 			CreateConsoleMsg("cnpc.follow.followpoint.show - shows follow point (debug function).")
 			CreateConsoleMsg("cnpc.follow.followpoint.hide - hides follow point (debug function).")
-			CreateConsoleMsg("cnpc.follow.followpoint.position.move <x> <y> <z> - moves follow point on <x>, <y> and <z>.")
+			CreateConsoleMsg("cnpc.follow.followpoint.position.move <x> <y> <z> - moves follow point on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("cnpc.follow.followpoint.position.translate <x> <y> <z> - translates follow point on <x>, <y> and <z> offset.")
 			CreateConsoleMsg("cnpc.follow.followpoint.position.set <x> <y> <z> - sets follow point position on <x>, <y> and <z>.")
 			CreateConsoleMsg("cnpc.follow.followpoint.reset - resets position of follow point.")
 			CreateConsoleMsg("cnpc.interaction.accesslevel.get - gets access level of controllable NPC.")
@@ -1730,12 +1731,12 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("sc.create [allowsaving:allow/yes/true/1 deny/no/false/0 = false]- spawns security camera and its monitor (allow saving <allowsaving>, default to deny) at current player position.")
 			CreateConsoleMsg("sc.camera.nearest.remove - removes nearest to player camera with its monitor.")
-			CreateConsoleMsg("sc.camera.nearest.position.move <x> <y> <z> - moves nearest to player camera on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("sc.camera.nearest.position.translate <x> <y> <z> - translates nearest to player camera on <x>, <y> and <z> offset.")
 			CreateConsoleMsg("sc.camera.nearest.rotation.set <x/roll> <y/yaw> - sets rotation roll (x) and yaw (y) nearest to player camera on <x/roll> and <y/yaw> angles.")
 			CreateConsoleMsg("sc.camera.nearest.rotation.turn <x/roll> <y/yaw> - turns rotation roll (x) and yaw (y) nearest to player camera on <x/roll> and <y/yaw> angles.")
 			CreateConsoleMsg("sc.camera.nearest.turnangle.set <turn> - sets turn angle (maximim rotation angle when camera rotating) of camera.")
 			CreateConsoleMsg("sc.monitor.nearest.remove - removes nearest to player monitor with its camera.")
-			CreateConsoleMsg("sc.monitor.nearest.position.move <x> <y> <z> - moves nearest to player monitor on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("sc.monitor.nearest.position.translate <x> <y> <z> - translates nearest to player monitor on <x>, <y> and <z> offset.")
 			CreateConsoleMsg("sc.monitor.nearest.rotation.set <x/roll> <y/yaw> <z/pitch> - sets rotation nearest to player monitor on <x/roll>, <y/yaw> and <z/pitch> angles.")
 			CreateConsoleMsg("sc.monitor.nearest.rotation.turn <x/roll> <y/yaw> <z/pitch> - turns rotation nearest to player monitor on <x/roll>, <y/yaw> and <z/pitch> angles.")
 
@@ -1807,29 +1808,30 @@ Function ExecConsole(cin$, silent% = False)
 			GetKey()
 			FlushKeys
 
-			For bnd_.ConsoleBind = Each ConsoleBind
-				If bnd_\KeyCode = keycode Then CreateConsoleMsg("This key is busy.", 255, 0, 0) : Return
-			Next
+			;For bnd_.ConsoleBind = Each ConsoleBind
+			;	If bnd_\KeyCode = keycode Then CreateConsoleMsg("This key is busy.", 255, 0, 0) : Return
+			;Next
 
 			bnd = New ConsoleBind
+			bnd\id = ConsoleBindNextID : ConsoleBindNextID = ConsoleBindNextID + 1
 			bnd\KeyCode = keycode
 			bnd\Command = StrTemp
 
-			CreateConsoleMsg("Binded key " + bnd\KeyCode + " to command " + Chr(34) + bnd\Command + Chr(34) + " (to call, use [CALL BIND KEY] + you key).", 0, 255, 0)
+			CreateConsoleMsg("Binded key " + KeyName(bnd\KeyCode) + " to command " + Chr(34) + bnd\Command + Chr(34) + " (to call, use " + KeyName(KEY_CALL_BIND) + " + " + KeyName(bnd\KeyCode) +").", 0, 255, 0)
 
 		Case "unbind"
 			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
 			bnd = Null
 
 			For bnd_.ConsoleBind = Each ConsoleBind
-				If bnd_\KeyCode = Int(StrTemp) Then
+				If bnd_\id = Int(StrTemp) Then
 					bnd = bnd_
 					Exit
 				End If
 			Next
 
 			If bnd <> Null Then
-				CreateConsoleMsg("Unbinded key " + bnd\KeyCode + " from command " + bnd\Command + ".", 0, 255, 0)
+				CreateConsoleMsg("Unbinded key " + KeyName(bnd\KeyCode) + " from command " + Chr(34) + bnd\Command + Chr(34) + ".", 0, 255, 0)
 				Delete bnd
 			Else
 				CreateConsoleMsg("Key bind not found.", 255, 0, 0)
@@ -1837,7 +1839,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "binds"
 			For bnd_.ConsoleBind = Each ConsoleBind
-				CreateConsoleMsg("Scan code: " + bnd_\KeyCode + ", command: " + Chr(34) + bnd_\Command + Chr(34) + ".", 0, 255, 255)
+				CreateConsoleMsg("ID: " + bnd_\id + ", Key: " + KeyName(bnd_\KeyCode) + ", command: " + Chr(34) + bnd_\Command + Chr(34) + ".", 0, 255, 255)
 			Next
 
 		Case "noblinking"
@@ -1917,9 +1919,9 @@ Function ExecConsole(cin$, silent% = False)
 			End Select
 			
 			If SecondaryLightOn Then
-				CreateConsoleMsg("SecondaryLight ON")
+				CreateConsoleMsg("SecondaryLight ON", 0, 255, 0)
 			Else
-				CreateConsoleMsg("SecondaryLight OFF")	
+				CreateConsoleMsg("SecondaryLight OFF", 0, 255, 0)	
 			EndIf
 
 		Local prop% = 0
@@ -1990,6 +1992,32 @@ Function ExecConsole(cin$, silent% = False)
 			ChannelVolume(chn, Float(StrTemp2))
 
 			CreateConsoleMsg("Played file " + Chr(34) + StrTemp + Chr(34) + " with volume " + Float(StrTemp2) + ".", 0, 255, 0)
+
+		;Case "lever.create"
+		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+		;	StrTemp$ = Piece$(args$,1," ")
+		;	StrTemp2$ = Piece$(args$,2," ")
+		;	StrTemp3$ = Piece$(args$,3," ")
+		;	StrTemp4$ = Piece$(args$,4," ")
+		;
+		;	If StrTemp4 = StrTemp3 Or StrTemp4 = "" Then StrTemp4 = "false"
+		;
+		;	locked% = False
+		;
+		;	Select StrTemp4
+		;		Case "locked", "true", "1"
+		;			locked = True
+		;
+		;		Case "unlocked", "false", "0"
+		;			locked = False
+		;
+		;		Default
+		;			locked = False
+		;	End Select
+		;
+		;	CreateLever(locked, Float(StrTemp), Float(StrTemp2), Float(StrTemp3))
+		;
+		;	CreateConsoleMsg("Created new lever at (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " (locked: " + locked + ").", 0, 255, 0)
 
 		; === CONTROLLABLE NPC ===
 
@@ -2160,6 +2188,19 @@ Function ExecConsole(cin$, silent% = False)
 				CreateConsoleMsg("Follow mode not enabled.", 255, 0, 0)
 			End If
 
+		Case "cnpc.follow.followpoint.position.translate"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			If ctrl_npc_follow Then
+				TranslateEntity ctrl_npc_follow_entity, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+				CreateConsoleMsg("Follow point entity translated on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			Else
+				CreateConsoleMsg("Follow mode not enabled.", 255, 0, 0)
+			End If
+
 		Case "cnpc.follow.followpoint.position.set"
 			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
 			StrTemp$ = Piece$(args$,1," ")
@@ -2229,7 +2270,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Nearest camera removed with monitor.", 0, 255, 0)
 
-		Case "sc.camera.nearest.position.move"
+		Case "sc.camera.nearest.position.translate"
 			sc = GetNearestSCToEntity(Collider)
 
 			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
@@ -2239,7 +2280,7 @@ Function ExecConsole(cin$, silent% = False)
 			
 			PositionEntity sc\obj, EntityX(sc\obj, True) + Float(StrTemp), EntityY(sc\obj, True) + Float(StrTemp2), EntityZ(sc\obj, True) + Float(StrTemp3), True
 
-			CreateConsoleMsg("Nearest camera moved on offset (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			CreateConsoleMsg("Nearest camera translated on offset (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "sc.camera.nearest.rotation.set"
 			sc = GetNearestSCToEntity(Collider)
@@ -2302,7 +2343,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Nearest monitor removed with camera.", 0, 255, 0)
 
-		Case "sc.monitor.nearest.position.move"
+		Case "sc.monitor.nearest.position.translate"
 			sc = GetNearestSCToEntityByMonitor(Collider)
 
 			;CreateConsoleMsg(, 255, 0, 255)
@@ -2312,9 +2353,9 @@ Function ExecConsole(cin$, silent% = False)
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
 			
-			MoveEntity sc\ScrObj, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+			TranslateEntity sc\ScrObj, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
 
-			CreateConsoleMsg("Nearest camera monitor moved on offset (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			CreateConsoleMsg("Nearest camera monitor translated on offset (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "sc.monitor.nearest.rotation.set"
 			sc = GetNearestSCToEntityByMonitor(Collider)
