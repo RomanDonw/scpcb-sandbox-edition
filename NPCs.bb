@@ -15,6 +15,7 @@ Type NPCs
 	Field DropSpeed#, Gravity%
 	Field State#, State2#, State3#, PrevState%
 	Field MakingNoise%
+	;Field Camera%
 	
 	Field Frame#
 	
@@ -90,6 +91,8 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#)
 			EntityRadius n\Collider, 0.23, 0.32
 			EntityType n\Collider, HIT_PLAYER
 			n\Gravity = True
+			;n\Camera = CreateCamera(n\Collider)
+			;CameraProjMode n\Camera, 0
 			
 			n\obj = LoadMesh_Strict("GFX\npcs\173_2.b3d")
 			
@@ -662,6 +665,8 @@ Function RemoveNPC(n.NPCs)
 	If n\Sound<>0 Then FreeSound_Strict n\Sound : n\Sound = 0
 	If n\Sound2<>0 Then FreeSound_Strict n\Sound2 : n\Sound2 = 0
 	
+	;If n\Camera <> 0 Then FreeEntity(n\Camera) : n\Camera = 0
+
 	FreeEntity(n\obj) : n\obj = 0
 	FreeEntity(n\Collider) : n\Collider = 0	
 	
@@ -719,11 +724,10 @@ Function UpdateNPCs()
 								n\SoundChn = LoopSound2(StoneDragSFX, n\SoundChn, Camera, n\Collider, 10.0, n\State)
 								
 								n\PrevX = EntityX(n\Collider)
-								n\PrevZ = EntityZ(n\Collider)				
-								
-								If (BlinkTimer < - 16 Or BlinkTimer > - 6) And (IsNVGBlinking=False) Then
-									If EntityInView(n\obj, Camera) Then move = False
-								EndIf
+								n\PrevZ = EntityZ(n\Collider)
+								If (Not EntityVisible(Camera, n\obj)) Or ((BlinkTimer < - 16 Or BlinkTimer > - 6) And (IsNVGBlinking=False) And EntityInView(n\obj, Camera)) Then
+									move = False
+								End If
 							EndIf
 							
 							If NoTarget Then move = True
@@ -872,7 +876,7 @@ Function UpdateNPCs()
 											Else
 												n\EnemyX = 0 : n\EnemyY = 0 : n\EnemyZ = 0
 											End If
-										Else
+										Else If SCP173RandomMovingWhenPlayerUnseen
 											If Rand(400)=1 Then RotateEntity (n\Collider, 0, Rnd(360), 10)
 											TranslateEntity n\Collider,Cos(EntityYaw(n\Collider)+90.0)*n\Speed*FPSfactor,0.0,Sin(EntityYaw(n\Collider)+90.0)*n\Speed*FPSfactor
 											

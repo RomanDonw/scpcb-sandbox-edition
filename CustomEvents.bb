@@ -94,8 +94,6 @@ Function UpdateCustomEvents()
 
     If Not CheatGameControlEnabled Return
 
-    If ctrl_npc <> Null Then ControllableNPCUpdate()
-
     If KeyDown(KEY_RIGHT_CONTROL) ; Right Control key (main control keys for all rooms)
 
         If KeyHit(NUMPAD_KEY_1) Then
@@ -130,6 +128,8 @@ Function UpdateCustomEvents()
         Next
 
     End If
+
+    If ctrl_npc <> Null Then ControllableNPCUpdate()
 
     ;FlushKeys
 End Function
@@ -401,6 +401,22 @@ Function GetNearestDoorToEntityByButtons.Doors(obj, max_distance# = -1)
         Next
     Next
     CatchErrors("GetNearestDoorToEntityByButtons")
+
+    Return ret
+End Function
+
+Function GetNearestDoorToEntityByFrame.Doors(obj, max_distance# = -1)
+    Local dist# = 2 ^ 31 - 1
+    Local ret.Doors = Null
+
+    For door.Doors = Each Doors
+        Local t_dist# = EntityDistance(obj, door\frameobj)
+        If t_dist < dist And (t_dist <= max_distance Or max_distance < 0) Then
+            dist = t_dist
+            ret = door
+        End If
+    Next
+    CatchErrors("GetNearestDoorToEntityByFrame")
 
     Return ret
 End Function

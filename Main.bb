@@ -63,6 +63,7 @@ Global BypassOpeningConsole% = GetINIInt(OptionFile, "console", "bypass opening"
 
 Global EnableSCP173Teleporting% = GetINIInt(OptionFile, "SCP-173", "teleporting")
 Global EnableSCP173HorrorEffects% = GetINIInt(OptionFile, "SCP-173", "horror effects")
+Global SCP173RandomMovingWhenPlayerUnseen% = GetINIInt(OptionFile, "SCP-173", "random moving when player unseen")
 
 Global PresetDisableSCP106% = GetINIInt(OptionFile, "SCP-106", "preset disabled")
 
@@ -802,9 +803,7 @@ Function ExecConsole(cin$, silent% = False)
 					CreateConsoleMsg("- teleport [room name]")
 					CreateConsoleMsg("- spawnitem [item name]")
 					CreateConsoleMsg("- wireframe")
-					CreateConsoleMsg("- 173speed")
 					CreateConsoleMsg("- 106speed")
-					CreateConsoleMsg("- 173state")
 					CreateConsoleMsg("- 106state")
 					CreateConsoleMsg("******************************")
 					CreateConsoleMsg("Use "+Chr(34)+"help 2/3"+Chr(34)+" to find more commands.")
@@ -815,8 +814,6 @@ Function ExecConsole(cin$, silent% = False)
 					CreateConsoleMsg("******************************")
 					CreateConsoleMsg("- spawn [npc type] [state]")
 					CreateConsoleMsg("- reset096")
-					CreateConsoleMsg("- disable173")
-					CreateConsoleMsg("- enable173")
 					CreateConsoleMsg("- disable106")
 					CreateConsoleMsg("- enable106")
 					CreateConsoleMsg("- halloween")
@@ -1116,25 +1113,20 @@ Function ExecConsole(cin$, silent% = False)
 			
 			WireFrame WireframeState
 			;[End Block]
-		Case "173speed"
-			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-			Curr173\Speed = Float(StrTemp)
-			CreateConsoleMsg("173's speed set to " + StrTemp)
-			;[End Block]
+		
 		Case "106speed"
 			;[Block]
 			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
 			Curr106\Speed = Float(StrTemp)
 			CreateConsoleMsg("106's speed set to " + StrTemp)
 			;[End Block]
-		Case "173state"
-			;[Block]
-			CreateConsoleMsg("SCP-173")
-			CreateConsoleMsg("Position: " + EntityX(Curr173\obj) + ", " + EntityY(Curr173\obj) + ", " + EntityZ(Curr173\obj))
-			CreateConsoleMsg("Idle: " + Curr173\Idle)
-			CreateConsoleMsg("State: " + Curr173\State)
-			;[End Block]
+		;Case "173state"
+		;	;[Block]
+		;	CreateConsoleMsg("SCP-173")
+		;	CreateConsoleMsg("Position: " + EntityX(Curr173\obj) + ", " + EntityY(Curr173\obj) + ", " + EntityZ(Curr173\obj))
+		;	CreateConsoleMsg("Idle: " + Curr173\Idle)
+		;	CreateConsoleMsg("State: " + Curr173\State)
+		;	;[End Block]
 		Case "106state"
 			;[Block]
 			CreateConsoleMsg("SCP-106")
@@ -1156,18 +1148,6 @@ Function ExecConsole(cin$, silent% = False)
 					Exit
 				EndIf
 			Next
-			;[End Block]
-		Case "disable173"
-			;[Block]
-			Curr173\Idle = 3 ;This phenominal comment is brought to you by PolyFox. His absolute wisdom in this fatigue of knowledge brought about a new era of 173 state checks.
-			HideEntity Curr173\obj
-			HideEntity Curr173\Collider
-			;[End Block]
-		Case "enable173"
-			;[Block]
-			Curr173\Idle = False
-			ShowEntity Curr173\obj
-			ShowEntity Curr173\Collider
 			;[End Block]
 		Case "disable106"
 			;[Block]
@@ -1554,11 +1534,11 @@ Function ExecConsole(cin$, silent% = False)
 			EntityType(it\collider, HIT_ITEM)
 			it\state = 101
 			;[End Block]
-		Case "teleport173"
-			;[Block]
-			PositionEntity Curr173\Collider,EntityX(Collider),EntityY(Collider)+0.2,EntityZ(Collider)
-			ResetEntity Curr173\Collider
-			;[End Block]
+		;Case "teleport173"
+		;	;[Block]
+		;	PositionEntity Curr173\Collider,EntityX(Collider),EntityY(Collider)+0.2,EntityZ(Collider)
+		;	ResetEntity Curr173\Collider
+		;	;[End Block]
 		Case "seteventstate"
 			;[Block]
 			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
@@ -1689,7 +1669,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("spawnroom <roomname> - spawns room with using room template <roomname> at current player position.")
 			CreateConsoleMsg("setcurrentroom <roomname> - sets current player room to <roomname>.")
 			CreateConsoleMsg("enablefog/disablefog - toggles display fog entity.")
-			CreateConsoleMsg("teleport173to <x> <y> <z> - teleports current instance of SCP-173 to <x>, <y> and <z> position.")
+			;CreateConsoleMsg("teleport173to <x> <y> <z> - teleports current instance of SCP-173 to <x>, <y> and <z> position.")
 			CreateConsoleMsg("addlight <r:0-255> <g:0-255> <b:0-255> - spawns light at current player position width RGB-color <r> <g> <b>.")
 			CreateConsoleMsg("secondarylight [on/true/1 off/false/0] - toggles (or sets) state of secondary light.")
 			CreateConsoleMsg("props.create <propname:cabinet.a/cabinet.b/keyboard> [scale=1] - spawns prop <propname> with scale <scale> at current player position.")
@@ -1758,6 +1738,20 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("scp173.position.set <x> <y> <z> - sets current SCP-173 position on <x>, <y> and <z>.")
 			CreateConsoleMsg("scp173.rotation.turn <roll/x> <yaw/y> <pitch/z> - turnes (rotates) current SCP-173 on <roll/x>, <yaw/y> and <pitch/z>.")
 			CreateConsoleMsg("scp173.rotation.set <roll/x> <yaw/y> <pitch/z> - sets current SCP-173 position on <roll/x>, <yaw/y> and <pitch/z>.")
+			CreateConsoleMsg("scp173.teleport - teleports current SCP-173 to player.")
+			CreateConsoleMsg("scp173.enable/scp173.disable - enables or disables current SCP-173 instance.")
+			CreateConsoleMsg("scp173.speed.get - prints speed of current SCP-173.")
+			CreateConsoleMsg("scp173.speed.set <speed> - sets speed of current SCP-173.")
+			CreateConsoleMsg("scp173.speed.reset - resets speed of current SCP-173 to default value.")
+
+			CreateConsoleMsg(" ")
+			CreateConsoleMsg("- GFX driver control commands:", 255, 127, 0)
+			CreateConsoleMsg(" ")
+
+			CreateConsoleMsg("gfxdriver.list - prints list of GFX drives.")
+			CreateConsoleMsg("gfxdriver.current.set <index> - sets current GFX driver by index.")
+
+			CreateConsoleMsg("")
 
 			ConsoleR = oldcr : ConsoleG = oldcg : ConsoleB = oldcb
 
@@ -1886,15 +1880,15 @@ Function ExecConsole(cin$, silent% = False)
 		Case "disablefog"
 			HideEntity Fog
 
-		Case "teleport173to"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-			StrTemp$ = Piece$(args$,1," ")
-			StrTemp2$ = Piece$(args$,2," ")
-			StrTemp3$ = Piece$(args$,3," ")
-
-			If Curr173 <> Null Then
-				PositionEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
-			End If
+		;Case "teleport173to"
+		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+		;	StrTemp$ = Piece$(args$,1," ")
+		;	StrTemp2$ = Piece$(args$,2," ")
+		;	StrTemp3$ = Piece$(args$,3," ")
+		;
+		;	If Curr173 <> Null Then
+		;		PositionEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
+		;	End If
 
 		Case "addlight"
 			Local lr%, lg%, lb%
@@ -2500,6 +2494,39 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Current SCP-173 rotation set on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
+		Case "scp173.teleport"
+			PositionEntity Curr173\Collider, EntityX(Collider), EntityY(Collider) + 0.2, EntityZ(Collider)
+			ResetEntity Curr173\Collider
+
+			CreateConsoleMsg("Teleported current SCP-173 to player.", 0, 255, 0)
+
+		Case "scp173.disable"
+			Curr173\Idle = 3 ;This phenominal comment is brought to you by PolyFox. His absolute wisdom in this fatigue of knowledge brought about a new era of 173 state checks.
+			HideEntity Curr173\obj
+			HideEntity Curr173\Collider
+
+			CreateConsoleMsg("Current SCP-173 disabled.", 0, 255, 0)
+		
+		Case "scp173.enable"
+			Curr173\Idle = False
+			ShowEntity Curr173\obj
+			ShowEntity Curr173\Collider
+
+			CreateConsoleMsg("Current SCP-173 enabled.", 0, 255, 0)
+
+		Case "scp173.speed.set"
+			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			Curr173\Speed = Float(StrTemp)
+
+			CreateConsoleMsg("Speed of current SCP-173 set to " + Float(StrTemp) + ".", 0, 255, 0)
+
+		Case "scp173.speed.reset"
+			Curr173\Speed = (GetINIFloat("DATA\NPCs.ini", "SCP-173", "speed") / 100.0)
+
+			CreateConsoleMsg("Resetted speed of current SCP-173.", 0, 255, 0)
+
+		Case "scp173.speed.get"
+			CreateConsoleMsg("Speed of current SCP-173 equals to " + Curr173\Speed + ".", 0, 255, 0)
 
 		; === PLAYER CONTROL COMMADS ===
 
@@ -2558,6 +2585,25 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Player rotation set on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
+		; === GFX DRIVER CONTROL ===
+
+		Case "gfxdriver.list"
+			For i = 1 To CountGfxDrivers()
+				CreateConsoleMsg("(" + i + ") " + GfxDriverName(i) + ".", 0, 255, 0)
+			Next
+
+		Case "gfxdriver.current.set"
+			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			index% = Int(StrTemp)
+
+			If index > 0 And index <= CountGfxDrivers() Then
+				SetGfxDriver index
+				CreateConsoleMsg("Setted current GFX driver to " + Chr(34) + GfxDriverName(index) + Chr(34) + ".", 0, 255, 0)
+			Else
+				CreateConsoleMsg("Incorrect GFX driver index.", 255, 0, 0)
+			End If
+
 		Default
 			;[Block]
 			CreateConsoleMsg("Command not found.",255,0,0)
@@ -2602,10 +2648,8 @@ CreateConsoleMsg("  - heal")
 CreateConsoleMsg(" ")
 CreateConsoleMsg("  - spawnitem [item name]")
 CreateConsoleMsg(" ")
-CreateConsoleMsg("  - 173speed [x] (default = 35)")
-CreateConsoleMsg("  - disable173/enable173")
 CreateConsoleMsg("  - disable106/enable106")
-CreateConsoleMsg("  - 173state/106state/096state")
+CreateConsoleMsg("  - 106state/096state")
 CreateConsoleMsg("  - spawn [npc type]")
 CreateConsoleMsg(" ")
 CreateConsoleMsg(" ============================== ", 63, 127, 63)
@@ -5920,12 +5964,93 @@ Function DrawGUI()
 	Next
 	
 	If Using294 Then Use294()
+
+	x% = 80
+	y% = GraphicHeight - 95
+
+	If DebugHUD Then
+		Color 255, 255, 255
+		AASetFont ConsoleFont
+		
+		AAText x + 800, 50, "Zone: " + (EntityZ(Collider)/8.0)
+		AAText x - 50, 50, "Player Position: (" + f2s(EntityX(Collider), 3) + ", " + f2s(EntityY(Collider), 3) + ", " + f2s(EntityZ(Collider), 3) + ")"
+		AAText x - 50, 70, "Camera Position: (" + f2s(EntityX(Camera), 3)+ ", " + f2s(EntityY(Camera), 3) +", " + f2s(EntityZ(Camera), 3) + ")"
+		AAText x - 50, 100, "Player Rotation: (" + f2s(EntityPitch(Collider), 3) + ", " + f2s(EntityYaw(Collider), 3) + ", " + f2s(EntityRoll(Collider), 3) + ")"
+		AAText x - 50, 120, "Camera Rotation: (" + f2s(EntityPitch(Camera), 3)+ ", " + f2s(EntityYaw(Camera), 3) +", " + f2s(EntityRoll(Camera), 3) + ")"
+		AAText x - 50, 150, "Room: " + PlayerRoom\RoomTemplate\Name
+		For ev.Events = Each Events
+			If ev\room = PlayerRoom Then
+				AAText x - 50, 170, "Room event: " + ev\EventName   
+				AAText x - 50, 190, "state: " + ev\EventState
+				AAText x - 50, 210, "state2: " + ev\EventState2   
+				AAText x - 50, 230, "state3: " + ev\EventState3
+				AAText x - 50, 250, "str: "+ ev\EventStr
+				Exit
+			EndIf
+		Next
+		AAText x - 50, 280, "Room coordinates: (" + Floor(EntityX(PlayerRoom\obj) / 8.0 + 0.5) + ", " + Floor(EntityZ(PlayerRoom\obj) / 8.0 + 0.5) + ", angle: "+PlayerRoom\angle + ")"
+		AAText x - 50, 300, "Stamina: " + f2s(Stamina, 3)
+		AAText x - 50, 320, "Death timer: " + f2s(KillTimer, 3)               
+		AAText x - 50, 340, "Blink timer: " + f2s(BlinkTimer, 3)
+		AAText x - 50, 360, "Injuries: " + Injuries
+		AAText x - 50, 380, "Bloodloss: " + Bloodloss
+		If Curr173 <> Null
+			AAText x - 50, 410, "SCP - 173 Position (collider): (" + f2s(EntityX(Curr173\Collider), 3) + ", " + f2s(EntityY(Curr173\Collider), 3) + ", " + f2s(EntityZ(Curr173\Collider), 3) + ")"
+			AAText x - 50, 430, "SCP - 173 Position (obj): (" + f2s(EntityX(Curr173\obj), 3) + ", " + f2s(EntityY(Curr173\obj), 3) + ", " + f2s(EntityZ(Curr173\obj), 3) + ")"
+			;Text x - 50, 410, "SCP - 173 Idle: " + Curr173\Idle
+			AAText x - 50, 450, "SCP - 173 State: " + Curr173\State
+		EndIf
+		If Curr106 <> Null
+			AAText x - 50, 470, "SCP - 106 Position: (" + f2s(EntityX(Curr106\obj), 3) + ", " + f2s(EntityY(Curr106\obj), 3) + ", " + f2s(EntityZ(Curr106\obj), 3) + ")"
+			AAText x - 50, 490, "SCP - 106 Idle: " + Curr106\Idle
+			AAText x - 50, 510, "SCP - 106 State: " + Curr106\State
+		EndIf
+		offset% = 0
+		For npc.NPCs = Each NPCs
+			If npc\NPCtype = NPCtype096 Then
+				AAText x - 50, 530, "SCP - 096 Position: (" + f2s(EntityX(npc\obj), 3) + ", " + f2s(EntityY(npc\obj), 3) + ", " + f2s(EntityZ(npc\obj), 3) + ")"
+				AAText x - 50, 550, "SCP - 096 Idle: " + npc\Idle
+				AAText x - 50, 570, "SCP - 096 State: " + npc\State
+				AAText x - 50, 590, "SCP - 096 Speed: " + f2s(npc\currspeed, 5)
+			EndIf
+			If npc\NPCtype = NPCtypeMTF Then
+				AAText x - 50, 620 + 60 * offset, "MTF " + offset + " Position: (" + f2s(EntityX(npc\obj), 3) + ", " + f2s(EntityY(npc\obj), 3) + ", " + f2s(EntityZ(npc\obj), 3) + ")"
+				AAText x - 50, 640 + 60 * offset, "MTF " + offset + " State: " + npc\State
+				AAText x - 50, 660 + 60 * offset, "MTF " + offset + " LastSeen: " + npc\lastseen					
+				offset = offset + 1
+			EndIf
+		Next
+		If PlayerRoom\RoomTemplate\Name$ = "dimension1499"
+			AAText x + 350, 50, "Current Chunk X/Z: ("+(Int((EntityX(Collider)+20)/40))+", "+(Int((EntityZ(Collider)+20)/40))+")"
+			Local CH_Amount% = 0
+			For ch.Chunk = Each Chunk
+				CH_Amount = CH_Amount + 1
+			Next
+			AAText x + 350, 70, "Current Chunk Amount: "+CH_Amount
+		Else
+			AAText x + 350, 50, "Current Room Position: ("+PlayerRoom\x+", "+PlayerRoom\y+", "+PlayerRoom\z+")"
+		EndIf
+		GlobalMemoryStatus m.MEMORYSTATUS
+		AAText x + 350, 90, (m\dwAvailPhys%/1024/1024)+" MB/"+(m\dwTotalPhys%/1024/1024)+" MB ("+(m\dwAvailPhys%/1024)+" KB/"+(m\dwTotalPhys%/1024)+" KB)"
+		AAText x + 350, 110, "Triangles rendered: "+CurrTrisAmount
+		AAText x + 350, 130, "Active textures: "+ActiveTextures()
+		AAText x + 350, 150, "SCP-427 state (secs): "+Int(I_427\Timer/70.0)
+		AAText x + 350, 170, "SCP-008 infection: "+Infect
+		For i = 0 To 5
+			AAText x + 350, 190+(20*i), "SCP-1025 State "+i+": "+SCP1025state[i]
+		Next
+		If SelectedMonitor <> Null Then
+			AAText x + 350, 310, "Current monitor: "+SelectedMonitor\ScrObj
+		Else
+			AAText x + 350, 310, "Current monitor: NULL"
+		EndIf
+		
+		AASetFont Font1
+	EndIf
 	
 	If HUDenabled Then 
 		
 		Local width% = 204, height% = 20
-		x% = 80
-		y% = GraphicHeight - 95
 		
 		Color 255, 255, 255	
 		Rect (x, y, width, height, False)
@@ -5961,86 +6086,6 @@ Function DrawGUI()
 			DrawImage CrouchIcon, x - 50, y
 		Else
 			DrawImage SprintIcon, x - 50, y
-		EndIf
-		
-		If DebugHUD Then
-			Color 255, 255, 255
-			AASetFont ConsoleFont
-			
-			AAText x + 700, 50, "Zone: " + (EntityZ(Collider)/8.0)
-			AAText x - 50, 50, "Player Position: (" + f2s(EntityX(Collider), 3) + ", " + f2s(EntityY(Collider), 3) + ", " + f2s(EntityZ(Collider), 3) + ")"
-			AAText x - 50, 70, "Camera Position: (" + f2s(EntityX(Camera), 3)+ ", " + f2s(EntityY(Camera), 3) +", " + f2s(EntityZ(Camera), 3) + ")"
-			AAText x - 50, 100, "Player Rotation: (" + f2s(EntityPitch(Collider), 3) + ", " + f2s(EntityYaw(Collider), 3) + ", " + f2s(EntityRoll(Collider), 3) + ")"
-			AAText x - 50, 120, "Camera Rotation: (" + f2s(EntityPitch(Camera), 3)+ ", " + f2s(EntityYaw(Camera), 3) +", " + f2s(EntityRoll(Camera), 3) + ")"
-			AAText x - 50, 150, "Room: " + PlayerRoom\RoomTemplate\Name
-			For ev.Events = Each Events
-				If ev\room = PlayerRoom Then
-					AAText x - 50, 170, "Room event: " + ev\EventName   
-					AAText x - 50, 190, "state: " + ev\EventState
-					AAText x - 50, 210, "state2: " + ev\EventState2   
-					AAText x - 50, 230, "state3: " + ev\EventState3
-					AAText x - 50, 250, "str: "+ ev\EventStr
-					Exit
-				EndIf
-			Next
-			AAText x - 50, 280, "Room coordinates: (" + Floor(EntityX(PlayerRoom\obj) / 8.0 + 0.5) + ", " + Floor(EntityZ(PlayerRoom\obj) / 8.0 + 0.5) + ", angle: "+PlayerRoom\angle + ")"
-			AAText x - 50, 300, "Stamina: " + f2s(Stamina, 3)
-			AAText x - 50, 320, "Death timer: " + f2s(KillTimer, 3)               
-			AAText x - 50, 340, "Blink timer: " + f2s(BlinkTimer, 3)
-			AAText x - 50, 360, "Injuries: " + Injuries
-			AAText x - 50, 380, "Bloodloss: " + Bloodloss
-			If Curr173 <> Null
-				AAText x - 50, 410, "SCP - 173 Position (collider): (" + f2s(EntityX(Curr173\Collider), 3) + ", " + f2s(EntityY(Curr173\Collider), 3) + ", " + f2s(EntityZ(Curr173\Collider), 3) + ")"
-				AAText x - 50, 430, "SCP - 173 Position (obj): (" + f2s(EntityX(Curr173\obj), 3) + ", " + f2s(EntityY(Curr173\obj), 3) + ", " + f2s(EntityZ(Curr173\obj), 3) + ")"
-				;Text x - 50, 410, "SCP - 173 Idle: " + Curr173\Idle
-				AAText x - 50, 450, "SCP - 173 State: " + Curr173\State
-			EndIf
-			If Curr106 <> Null
-				AAText x - 50, 470, "SCP - 106 Position: (" + f2s(EntityX(Curr106\obj), 3) + ", " + f2s(EntityY(Curr106\obj), 3) + ", " + f2s(EntityZ(Curr106\obj), 3) + ")"
-				AAText x - 50, 490, "SCP - 106 Idle: " + Curr106\Idle
-				AAText x - 50, 510, "SCP - 106 State: " + Curr106\State
-			EndIf
-			offset% = 0
-			For npc.NPCs = Each NPCs
-				If npc\NPCtype = NPCtype096 Then
-					AAText x - 50, 530, "SCP - 096 Position: (" + f2s(EntityX(npc\obj), 3) + ", " + f2s(EntityY(npc\obj), 3) + ", " + f2s(EntityZ(npc\obj), 3) + ")"
-					AAText x - 50, 550, "SCP - 096 Idle: " + npc\Idle
-					AAText x - 50, 570, "SCP - 096 State: " + npc\State
-					AAText x - 50, 590, "SCP - 096 Speed: " + f2s(npc\currspeed, 5)
-				EndIf
-				If npc\NPCtype = NPCtypeMTF Then
-					AAText x - 50, 620 + 60 * offset, "MTF " + offset + " Position: (" + f2s(EntityX(npc\obj), 3) + ", " + f2s(EntityY(npc\obj), 3) + ", " + f2s(EntityZ(npc\obj), 3) + ")"
-					AAText x - 50, 640 + 60 * offset, "MTF " + offset + " State: " + npc\State
-					AAText x - 50, 660 + 60 * offset, "MTF " + offset + " LastSeen: " + npc\lastseen					
-					offset = offset + 1
-				EndIf
-			Next
-			If PlayerRoom\RoomTemplate\Name$ = "dimension1499"
-				AAText x + 350, 50, "Current Chunk X/Z: ("+(Int((EntityX(Collider)+20)/40))+", "+(Int((EntityZ(Collider)+20)/40))+")"
-				Local CH_Amount% = 0
-				For ch.Chunk = Each Chunk
-					CH_Amount = CH_Amount + 1
-				Next
-				AAText x + 350, 70, "Current Chunk Amount: "+CH_Amount
-			Else
-				AAText x + 350, 50, "Current Room Position: ("+PlayerRoom\x+", "+PlayerRoom\y+", "+PlayerRoom\z+")"
-			EndIf
-			GlobalMemoryStatus m.MEMORYSTATUS
-			AAText x + 350, 90, (m\dwAvailPhys%/1024/1024)+" MB/"+(m\dwTotalPhys%/1024/1024)+" MB ("+(m\dwAvailPhys%/1024)+" KB/"+(m\dwTotalPhys%/1024)+" KB)"
-			AAText x + 350, 110, "Triangles rendered: "+CurrTrisAmount
-			AAText x + 350, 130, "Active textures: "+ActiveTextures()
-			AAText x + 350, 150, "SCP-427 state (secs): "+Int(I_427\Timer/70.0)
-			AAText x + 350, 170, "SCP-008 infection: "+Infect
-			For i = 0 To 5
-				AAText x + 350, 190+(20*i), "SCP-1025 State "+i+": "+SCP1025state[i]
-			Next
-			If SelectedMonitor <> Null Then
-				AAText x + 350, 310, "Current monitor: "+SelectedMonitor\ScrObj
-			Else
-				AAText x + 350, 310, "Current monitor: NULL"
-			EndIf
-			
-			AASetFont Font1
 		EndIf
 		
 	EndIf
@@ -9122,11 +9167,11 @@ Function LoadEntities()
 	SetBuffer BackBuffer()
 	
 	Dark = CreateSprite(Camera)
-	ScaleSprite(Dark, 1.0, Float(GraphicHeight) / Float(GraphicWidth))
+	ScaleSprite(Dark, GraphicsWidth() / 1000 + 1, GraphicsHeight() / 1000 + 1)
 	EntityTexture(Dark, DarkTexture)
 	EntityBlend (Dark, 1)
 	EntityOrder Dark, -1002
-	MoveEntity(Dark, 0, 0, 1.0)
+	MoveEntity(Dark, -0.5, -0.5, 1.0)
 	EntityAlpha Dark, 0.0
 	
 	LightTexture = CreateTexture(1024, 1024, 1 + 2+256)
@@ -10735,6 +10780,16 @@ Function Use914(item.Items, setting$, x#, y#, z#)
 	
 	Local it2.Items
 	Select item\itemtemplate\name
+		Case "SCP-173"
+			PositionEntity Curr173\Collider, x, y + 0.2, z
+			ResetEntity Curr173\Collider
+
+			chn = PlaySound_Strict(LoadSound_Strict("sandbox\SFX\wonderful_idea.ogg"))
+			;ChannelVolume(chn, SFXVolume)
+			ChannelVolume(chn, 1.0)
+
+			RemoveItem(item)
+
 		Case "Gas Mask", "Heavy Gas Mask"
 			Select setting
 				Case "rough", "coarse"
