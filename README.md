@@ -23,7 +23,7 @@
 3. Открыть файл Main.bb.
 4. Убираем галочку в меню Blitz3D Debug Enabeled.
 5. Для компиляции используйте пункт контекстного меню Create Executable.
-6. Вики SCP - Containment Breach рекомендуется патчить exe-файл [4GB Патчем](https://ntcore.com/?page_id=371), однако я не нахожу это обязательным.
+6. [Ру-Вики SCP - Containment Breach](https://scpcontainmentbreach.fandom.com/ru/wiki/%D0%9C%D0%BE%D0%B4%D0%B4%D0%B8%D0%BD%D0%B3:%D0%9A%D0%BE%D0%BC%D0%BF%D0%B8%D0%BB%D1%8F%D1%86%D0%B8%D1%8F_%D0%B8%D1%81%D1%85%D0%BE%D0%B4%D0%BD%D0%BE%D0%B3%D0%BE_%D0%BA%D0%BE%D0%B4%D0%B0) рекомендуется патчить exe-файл [4GB Патчем](https://ntcore.com/?page_id=371), однако я не нахожу это обязательным.
 
 #### Linux
 
