@@ -425,6 +425,20 @@ Function LoadRMesh(file$,rt.RoomTemplates)
 					If tex[j]<>0 Then
 						If temp1i=1 Then TextureBlend tex[j],5
 						If Instr(Lower(temp1s),"_lm")<>0 Then
+							If RMeshLightmapPixelColorModifing Then
+								LockBuffer TextureBuffer(tex[j])
+								For py = 0 To TextureHeight(tex[j]) - 1
+									For px = 0 To TextureWidth(tex[j]) - 1
+										argb% = ReadPixelFast(px, py, TextureBuffer(tex[j]))
+										r% = UnpackARGBr(argb) + RMeshLightmapPixelRModifer
+										g% = UnpackARGBg(argb) + RMeshLightmapPixelGModifer
+										b% = UnpackARGBb(argb) + RMeshLightmapPixelBModifer
+										WritePixelFast(px, py, PackARGB(r, g, b, UnpackARGBa(argb)), TextureBuffer(tex[j]))
+									Next
+								Next
+								UnlockBuffer TextureBuffer(tex[j])
+							End If
+
 							TextureBlend tex[j],3
 						EndIf
 						AddTextureToCache(tex[j])
@@ -2142,7 +2156,7 @@ Function FillRoom(r.Rooms)
 			d = CreateDoor(r\zone, r\x+416.0*RoomScale,0,r\z + 640.0 * RoomScale,0,r,False,False,1)
 			
 			;the forest
-			If I_Zone\HasCustomForest = False Then
+			If I_Zone\HasCustomForest = False And EnableSCP860Forest Then
 				Local fr.Forest = New Forest
 				r\fr=fr
 				GenForestGrid(fr)

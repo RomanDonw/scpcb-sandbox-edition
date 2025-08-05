@@ -52,6 +52,8 @@ Global NPCsUpdateEnabled% = GetINIInt(OptionFile, "gamectl", "npcs update")
 Global UpdateMTFEnabled% = GetINIInt(OptionFile, "gamectl", "mtf update")
 Global DestroyIntroSequence% = GetINIInt(OptionFile, "gamectl", "destroy intro sequence")
 Global DisableTeslaSequence% = GetINIInt(OptionFile, "gamectl", "disable tesla sequence")
+Global EnableSCP860Forest% = GetINIInt(OptionFile, "gamectl", "enable SCP-860 forest")
+Global SCP970StrangeEvent% = GetINIInt(OptionFile, "gamectl", "SCP-970 strange event")
 
 Global ConsoleBufferLimited% = GetINIInt(OptionFile, "console", "buffer limited")
 Global SendErrorsToConsole% = GetINIInt(OptionFile, "console", "receive errors")
@@ -83,6 +85,10 @@ Global SaveSFX% = GetINIInt(OptionFile, "sound", "save sfx")
 Global ClsColorR% = GetINIInt(OptionFile, "display", "cls color r")
 Global ClsColorG% = GetINIInt(OptionFile, "display", "cls color g")
 Global ClsColorB% = GetINIInt(OptionFile, "display", "cls color b")
+Global RMeshLightmapPixelColorModifing% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel color modifing")
+Global RMeshLightmapPixelRModifer% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel r modifer")
+Global RMeshLightmapPixelGModifer% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel g modifer")
+Global RMeshLightmapPixelBModifer% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel b modifer")
 Global EnableSCP106PocketDimensionBlinkingScreamer% = GetINIInt(OptionFile, "display", "enable scp106 pocketdimension blinking screamer")
 Global EnableDoorUsingMessage% = GetINIInt(OptionFile, "display", "enable door using message")
 Global EnableLoadingScreens% = GetINIInt(OptionFile, "display", "enable loading screens")
@@ -765,6 +771,9 @@ Function UpdateConsole(exec_command% = True)
 	AASetFont Font1
 	
 End Function
+
+
+Global CurrDoor.Doors = Null
 
 Function ExecConsole(cin$, silent% = False)
 	If Not silent Then
@@ -1665,11 +1674,9 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("noblinking [on/true/1 off/false/0] - toggles no blinking mode (or sets if special parameter set).")
-			CreateConsoleMsg("spawndoor <doortype> - spawns door with type <type> at player position & rotation.")
 			CreateConsoleMsg("spawnroom <roomname> - spawns room with using room template <roomname> at current player position.")
 			CreateConsoleMsg("setcurrentroom <roomname> - sets current player room to <roomname>.")
 			CreateConsoleMsg("enablefog/disablefog - toggles display fog entity.")
-			;CreateConsoleMsg("teleport173to <x> <y> <z> - teleports current instance of SCP-173 to <x>, <y> and <z> position.")
 			CreateConsoleMsg("addlight <r:0-255> <g:0-255> <b:0-255> - spawns light at current player position width RGB-color <r> <g> <b>.")
 			CreateConsoleMsg("secondarylight [on/true/1 off/false/0] - toggles (or sets) state of secondary light.")
 			CreateConsoleMsg("props.create <propname:cabinet.a/cabinet.b/keyboard> [scale=1] - spawns prop <propname> with scale <scale> at current player position.")
@@ -1684,8 +1691,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("player.position.move <x> <y> <z> - moves player position on <x>, <y> and <z> offset.")
 			CreateConsoleMsg("player.position.translate <x> <y> <z> - translates player position on <x>, <y> and <z> offset.")
 			CreateConsoleMsg("player.position.set <x> <y> <z> - sets player position on <x>, <y> and <z>.")
-			CreateConsoleMsg("player.rotation.turn <roll/x> <yaw/y> <pitch/z> - moves player rotation on <roll/x>, <yaw/y> and <pitch/z> offset.")
-			CreateConsoleMsg("player.rotation.set <roll/x> <yaw/y> <pitch/z> - sets player rotation on <roll/x>, <yaw/y> and <pitch/z>.")
+			CreateConsoleMsg("player.rotation.turn <pitch/x> <yaw/y> <roll/z> - moves player rotation on <pitch/x>, <yaw/y> and <roll/z> offset.")
+			CreateConsoleMsg("player.rotation.set <pitch/x> <yaw/y> <roll/z> - sets player rotation on <pitch/x>, <yaw/y> and <roll/z>.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Controllable NPC control commands:", 255, 127, 0)
@@ -1712,13 +1719,13 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("sc.create [allowsaving:allow/yes/true/1 deny/no/false/0 = false]- spawns security camera and its monitor (allow saving <allowsaving>, default to deny) at current player position.")
 			CreateConsoleMsg("sc.camera.nearest.remove - removes nearest to player camera with its monitor.")
 			CreateConsoleMsg("sc.camera.nearest.position.translate <x> <y> <z> - translates nearest to player camera on <x>, <y> and <z> offset.")
-			CreateConsoleMsg("sc.camera.nearest.rotation.set <x/roll> <y/yaw> - sets rotation roll (x) and yaw (y) nearest to player camera on <x/roll> and <y/yaw> angles.")
-			CreateConsoleMsg("sc.camera.nearest.rotation.turn <x/roll> <y/yaw> - turns rotation roll (x) and yaw (y) nearest to player camera on <x/roll> and <y/yaw> angles.")
+			CreateConsoleMsg("sc.camera.nearest.rotation.set <x/pitch> <y/yaw> - sets rotation pitch (x) and yaw (y) nearest to player camera on <x/pitch> and <y/yaw> angles.")
+			CreateConsoleMsg("sc.camera.nearest.rotation.turn <x/pitch> <y/yaw> - turns rotation pitch (x) and yaw (y) nearest to player camera on <x/pitch> and <y/yaw> angles.")
 			CreateConsoleMsg("sc.camera.nearest.turnangle.set <turn> - sets turn angle (maximim rotation angle when camera rotating) of camera.")
 			CreateConsoleMsg("sc.monitor.nearest.remove - removes nearest to player monitor with its camera.")
 			CreateConsoleMsg("sc.monitor.nearest.position.translate <x> <y> <z> - translates nearest to player monitor on <x>, <y> and <z> offset.")
-			CreateConsoleMsg("sc.monitor.nearest.rotation.set <x/roll> <y/yaw> <z/pitch> - sets rotation nearest to player monitor on <x/roll>, <y/yaw> and <z/pitch> angles.")
-			CreateConsoleMsg("sc.monitor.nearest.rotation.turn <x/roll> <y/yaw> <z/pitch> - turns rotation nearest to player monitor on <x/roll>, <y/yaw> and <z/pitch> angles.")
+			CreateConsoleMsg("sc.monitor.nearest.rotation.set <x/pitch> <y/yaw> <z/roll> - sets rotation nearest to player monitor on <x/pitch>, <y/yaw> and <z/roll> angles.")
+			CreateConsoleMsg("sc.monitor.nearest.rotation.turn <x/pitch> <y/yaw> <z/roll> - turns rotation nearest to player monitor on <x/pitch>, <y/yaw> and <z/roll> angles.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- SCP-079 instances control commands:", 255, 127, 0)
@@ -1736,8 +1743,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("scp173.position.move <x> <y> <z> - moves current SCP-173 position on <x>, <y> and <z> offset.")
 			CreateConsoleMsg("scp173.position.translate <x> <y> <z> - translates current SCP-173 position on <x>, <y> and <z> offset.")
 			CreateConsoleMsg("scp173.position.set <x> <y> <z> - sets current SCP-173 position on <x>, <y> and <z>.")
-			CreateConsoleMsg("scp173.rotation.turn <roll/x> <yaw/y> <pitch/z> - turnes (rotates) current SCP-173 on <roll/x>, <yaw/y> and <pitch/z>.")
-			CreateConsoleMsg("scp173.rotation.set <roll/x> <yaw/y> <pitch/z> - sets current SCP-173 position on <roll/x>, <yaw/y> and <pitch/z>.")
+			CreateConsoleMsg("scp173.rotation.turn <pitch/x> <yaw/y> <roll/z> - turnes (rotates) current SCP-173 on <pitch/x>, <yaw/y> and <roll/z>.")
+			CreateConsoleMsg("scp173.rotation.set <pitch/x> <yaw/y> <roll/z> - sets current SCP-173 position on <pitch/x>, <yaw/y> and <roll/z>.")
 			CreateConsoleMsg("scp173.teleport - teleports current SCP-173 to player.")
 			CreateConsoleMsg("scp173.enable/scp173.disable - enables or disables current SCP-173 instance.")
 			CreateConsoleMsg("scp173.speed.get - prints speed of current SCP-173.")
@@ -1750,6 +1757,33 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("gfxdriver.list - prints list of GFX drives.")
 			CreateConsoleMsg("gfxdriver.current.set <index> - sets current GFX driver by index.")
+
+			CreateConsoleMsg(" ")
+			CreateConsoleMsg("- Door control commands:", 255, 127, 0)
+			CreateConsoleMsg(" ")
+
+			CreateConsoleMsg("door.create <x> <y> <z> <angle> <type:light/default|big|heavy|elevator - integer> [access level - integer] [access code - string] - creates a door with specified properties.")
+			CreateConsoleMsg("door.createandselect <x> <y> <z> <angle> <type:light/default|big|heavy|elevator - integer> [access level - integer] [access code - string] - creates and selects a door with specified properties.")
+			CreateConsoleMsg("door.create.atplayer <type:light/default|big|heavy|elevator - integer> [access level - integer] [access code - string] - creates a door at player X, Y, Z and yaw (y) with specific properties.")
+			CreateConsoleMsg("door.createandselect.atplayer <type:light/default|big|heavy|elevator - integer> [access level - integer] [access code - string] - creates and selects a door at player X, Y, Z and yaw (y) with specific properties.")
+			CreateConsoleMsg("door.select.nearesttoplayer - selects nearest to player door.")
+			CreateConsoleMsg("door.select.nearesttopoint <x> <y> <z> - selects nearest door to X, Y and Z position.")
+			CreateConsoleMsg("door.selected.deselect - deselects selected door.")
+			CreateConsoleMsg("door.selected.remove - deletes selected door.")
+			CreateConsoleMsg("door.selected.use [access level = 0 - integer] - interacts with selected door with access level <access level>.")
+			CreateConsoleMsg("door.selected.lock - locks selected door.")
+			CreateConsoleMsg("door.selected.unlock - unlocks selected door.")
+			CreateConsoleMsg("door.selected.togglelock - toggle lock state of selected door.")
+			CreateConsoleMsg("door.selected.open - opens selected door.")
+			CreateConsoleMsg("door.selected.close - closes selected door.")
+			CreateConsoleMsg("door.selected.toggleopen - toggle open state of selected door.")
+			CreateConsoleMsg("door.selected.accesslevel.get - prints current access level of selected door.")
+			CreateConsoleMsg("door.selected.accesslevel.set <access level - integer> - sets access level of selected door.")
+			CreateConsoleMsg("door.selected.accesscode.get - prints current access code of selected door.")
+			CreateConsoleMsg("door.selected.accesscode.set <access code - string> - sets access code of selected door.")
+			CreateConsoleMsg("door.selected.position.move <x> <y> <z> - moves position of selected door.")
+			CreateConsoleMsg("door.selected.position.translate <x> <y> <z> - translates position of selected door.")
+			CreateConsoleMsg("door.selected.position.set <x> <y> <z> - sets position of selected door.")
 
 			CreateConsoleMsg("")
 
@@ -1854,11 +1888,6 @@ Function ExecConsole(cin$, silent% = False)
 				CreateConsoleMsg("NOBLINKING OFF")	
 			EndIf
 		
-
-		Case "spawndoor"
-			Local door_type% = Int(Lower(Right(cin, Len(cin) - Instr(cin, " "))))
-			CreateDoor(0, EntityX(Collider), EntityY(Collider) - 0.25, EntityZ(Collider), EntityYaw(Collider), Null, False, door_type, False)
-
 
 		Local rname$
 		Case "spawnroom"
@@ -2289,7 +2318,7 @@ Function ExecConsole(cin$, silent% = False)
 			sc\angle = Float(StrTemp2)
 			;TurnEntity sc\CameraObj, 0, 0, Float(StrTemp)
 
-			CreateConsoleMsg("Nearest camera rotation roll (x) and yaw (y) set on angles (roll|yaw) " + Float(StrTemp) + " " + Float(StrTemp2) + ".", 0, 255, 0)
+			CreateConsoleMsg("Nearest camera rotation pitch (x) and yaw (y) set on angles (pitch|yaw) " + Float(StrTemp) + " " + Float(StrTemp2) + ".", 0, 255, 0)
 
 		Case "sc.camera.nearest.rotation.turn"
 			sc = GetNearestSCToEntity(Collider)
@@ -2304,7 +2333,7 @@ Function ExecConsole(cin$, silent% = False)
 			sc\angle = sc\angle + Float(StrTemp2)
 			;TurnEntity sc\CameraObj, 0, 0, Float(StrTemp)
 
-			CreateConsoleMsg("Nearest camera rotation roll (x) and yaw (y) turned on angles (roll|yaw) " + Float(StrTemp) + " " + Float(StrTemp2) + ".", 0, 255, 0)
+			CreateConsoleMsg("Nearest camera rotation pitch (x) and yaw (y) turned on angles (pitch|yaw) " + Float(StrTemp) + " " + Float(StrTemp2) + ".", 0, 255, 0)
 
 		Case "sc.camera.nearest.turnangle.set"
 			sc = GetNearestSCToEntity(Collider)
@@ -2363,7 +2392,7 @@ Function ExecConsole(cin$, silent% = False)
 			
 			RotateEntity sc\ScrObj, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
 
-			CreateConsoleMsg("Nearest camera monitor rotation set on angles (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			CreateConsoleMsg("Nearest camera monitor rotation set on angles (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "sc.monitor.nearest.rotation.turn"
 			sc = GetNearestSCToEntityByMonitor(Collider)
@@ -2377,7 +2406,7 @@ Function ExecConsole(cin$, silent% = False)
 			
 			TurnEntity sc\ScrObj, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
 
-			CreateConsoleMsg("Nearest camera monitor rotation turned on angles (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			CreateConsoleMsg("Nearest camera monitor rotation turned on angles (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		; === SCP-079 INSTANCES CONTROL COMMANDS ===
 
@@ -2481,7 +2510,7 @@ Function ExecConsole(cin$, silent% = False)
 			TurnEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
 			ResetEntity Curr173\Collider
 
-			CreateConsoleMsg("Current SCP-173 rotation turned (rotated) on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			CreateConsoleMsg("Current SCP-173 rotation turned (rotated) on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "scp173.rotation.set"
 			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
@@ -2492,7 +2521,7 @@ Function ExecConsole(cin$, silent% = False)
 			RotateEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
 			ResetEntity Curr173\Collider
 
-			CreateConsoleMsg("Current SCP-173 rotation set on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			CreateConsoleMsg("Current SCP-173 rotation set on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "scp173.teleport"
 			PositionEntity Curr173\Collider, EntityX(Collider), EntityY(Collider) + 0.2, EntityZ(Collider)
@@ -2572,7 +2601,7 @@ Function ExecConsole(cin$, silent% = False)
 			TurnEntity Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
 			ResetEntity Collider
 
-			CreateConsoleMsg("Player rotation turned on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			CreateConsoleMsg("Player rotation turned on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.rotation.set"
 			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
@@ -2583,7 +2612,7 @@ Function ExecConsole(cin$, silent% = False)
 			RotateEntity Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
 			ResetEntity Collider
 
-			CreateConsoleMsg("Player rotation set on (roll|yaw|pitch) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+			CreateConsoleMsg("Player rotation set on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		; === GFX DRIVER CONTROL ===
 
@@ -2603,6 +2632,492 @@ Function ExecConsole(cin$, silent% = False)
 			Else
 				CreateConsoleMsg("Incorrect GFX driver index.", 255, 0, 0)
 			End If
+
+		; === DOOR CONTROL ===
+
+		Case "door.create"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ") ; x
+			StrTemp2$ = Piece$(args$,2," ") ; y
+			StrTemp3$ = Piece$(args$,3," ") ; z
+			StrTemp4$ = Piece$(args$,4," ") ; angle
+			StrTemp5$ = Piece$(args$,5," ") ; type
+			StrTemp6$ = Piece$(args$,6," ") ; access level
+			StrTemp7$ = Piece$(args$,7," ") ; access code
+
+			x# = Float(StrTemp)
+			y# = Float(StrTemp2)
+			z# = Float(StrTemp3)
+			angle# = Float(StrTemp4)
+			dtype% = 0
+
+			Select StrTemp5
+
+				Case "light", "default"
+					dtype = 0
+
+				Case "big"
+					dtype = 1
+
+				Case "heavy"
+					dtype = 2
+
+				Case "elevator"
+					dtype = 3
+
+				Default
+					dtype = Int(StrTemp5)
+
+			End Select
+
+			access_level% = Int(StrTemp6)
+			If CalculateCharCountInString(args, " ") < 5 Then access_level = 0
+			access_code$ = StrTemp7
+			If CalculateCharCountInString(args, " ") < 6 Then access_code = ""
+
+			CreateDoor(0, x, y, z, angle, Null, False, dtype, access_level, access_code)
+
+			CreateConsoleMsg("Created door at (X|Y|Z) " + x + " " + y + " " + z + ", angle " + angle + ", type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
+
+		Case "door.createandselect"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ") ; x
+			StrTemp2$ = Piece$(args$,2," ") ; y
+			StrTemp3$ = Piece$(args$,3," ") ; z
+			StrTemp4$ = Piece$(args$,4," ") ; angle
+			StrTemp5$ = Piece$(args$,5," ") ; type
+			StrTemp6$ = Piece$(args$,6," ") ; access level
+			StrTemp7$ = Piece$(args$,7," ") ; access code
+
+			x# = Float(StrTemp)
+			y# = Float(StrTemp2)
+			z# = Float(StrTemp3)
+			angle# = Float(StrTemp4)
+			dtype% = 0
+
+			Select StrTemp5
+
+				Case "light", "default"
+					dtype = 0
+
+				Case "big"
+					dtype = 1
+
+				Case "heavy"
+					dtype = 2
+
+				Case "elevator"
+					dtype = 3
+
+				Default
+					dtype = Int(StrTemp5)
+
+			End Select
+
+			access_level% = Int(StrTemp6)
+			If CalculateCharCountInString(args, " ") < 5 Then access_level = 0
+			access_code$ = StrTemp7
+			If CalculateCharCountInString(args, " ") < 6 Then access_code = ""
+
+			CurrDoor = CreateDoor(0, x, y, z, angle, Null, False, dtype, access_level, access_code)
+
+			CreateConsoleMsg("Created and selected door at (X|Y|Z) " + x + " " + y + " " + z + ", angle " + angle + ", type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
+
+		Case "door.create.atplayer"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ") ; type
+			StrTemp2$ = Piece$(args$,2," ") ; access level
+			StrTemp3$ = Piece$(args$,3," ") ; access code
+
+			x# = EntityX(Collider)
+			y# = EntityY(Collider) - 0.3
+			z# = EntityZ(Collider)
+			angle# = EntityYaw(Collider)
+			dtype% = 0
+
+			Select StrTemp
+
+				Case "light", "default"
+					dtype = 0
+
+				Case "big"
+					dtype = 1
+
+				Case "heavy"
+					dtype = 2
+
+				Case "elevator"
+					dtype = 3
+
+				Default
+					dtype = Int(StrTemp)
+
+			End Select
+
+			access_level% = Int(StrTemp2)
+			If CalculateCharCountInString(args, " ") < 1 Then access_level = 0
+			access_code$ = StrTemp3
+			If CalculateCharCountInString(args, " ") < 2 Then access_code = ""
+
+			CreateDoor(0, x, y, z, angle, Null, False, dtype, access_level, access_code)
+
+			CreateConsoleMsg("Created door at player position & yaw (y) angle type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
+
+		Case "door.createandselect.atplayer"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ") ; type
+			StrTemp2$ = Piece$(args$,2," ") ; access level
+			StrTemp3$ = Piece$(args$,3," ") ; access code
+
+			x# = EntityX(Collider)
+			y# = EntityY(Collider) - 0.3
+			z# = EntityZ(Collider)
+			angle# = EntityYaw(Collider)
+			dtype% = 0
+
+			Select StrTemp
+
+				Case "light", "default"
+					dtype = 0
+
+				Case "big"
+					dtype = 1
+
+				Case "heavy"
+					dtype = 2
+
+				Case "elevator"
+					dtype = 3
+
+				Default
+					dtype = Int(StrTemp)
+
+			End Select
+
+			access_level% = Int(StrTemp2)
+			If CalculateCharCountInString(args, " ") < 1 Then access_level = 0
+			access_code$ = StrTemp3
+			If CalculateCharCountInString(args, " ") < 2 Then access_code = ""
+
+			CurrDoor = CreateDoor(0, x, y, z, angle, Null, False, dtype, access_level, access_code)
+
+			CreateConsoleMsg("Created and selected door at player position & yaw (y) angle type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
+
+		Case "door.select.nearesttopoint"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			x# = Float(StrTemp)
+			y# = Float(StrTemp2)
+			z# = Float(StrTemp3)
+
+			CurrDoor = GetNearestDoorToPointByFrame(x, y, z)
+
+			CreateConsoleMsg("Selected nearest door to point (X|Y|Z) " + x + " " + y + " " + z + ".", 0, 255, 0)
+
+		Case "door.select.nearesttoplayer"
+			CurrDoor = GetNearestDoorToEntityByFrame(Collider)
+
+			CreateConsoleMsg("Selected nearest door to player.", 0, 255, 0)
+
+		Case "door.selected.deselect"
+			If CurrDoor <> Null Then
+				CurrDoor = Null
+
+				CreateConsoleMsg("Door deselected.", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+		
+		Case "door.selected.remove"
+			If CurrDoor <> Null Then
+				RemoveDoor(CurrDoor)
+				CurrDoor = Null
+
+				CreateConsoleMsg("Selected door removed.", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.position.set"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			x# = Float(StrTemp)
+			y# = Float(StrTemp2)
+			z# = Float(StrTemp3)
+
+			If CurrDoor <> Null Then
+				PositionEntity CurrDoor\frameobj, x, y, z
+				If CurrDoor\DoorHitOBJ <> 0 Then PositionEntity CurrDoor\DoorHitOBJ, x, y, z
+
+				CreateConsoleMsg("Position of selected door set on values (X|Y|Z) " + x + " " + y + " " + z + ".", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.position.translate"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			x# = Float(StrTemp)
+			y# = Float(StrTemp2)
+			z# = Float(StrTemp3)
+
+			If CurrDoor <> Null Then
+				TranslateEntity CurrDoor\frameobj, x, y, z
+				If CurrDoor\DoorHitOBJ <> 0 Then TranslateEntity CurrDoor\DoorHitOBJ, x, y, z
+
+				CreateConsoleMsg("Position of selected door translated on values (X|Y|Z) " + x + " " + y + " " + z + ".", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.position.move"
+			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			x# = Float(StrTemp)
+			y# = Float(StrTemp2)
+			z# = Float(StrTemp3)
+
+			If CurrDoor <> Null Then
+				MoveEntity CurrDoor\frameobj, x, y, z
+				If CurrDoor\DoorHitOBJ <> 0 Then MoveEntity CurrDoor\DoorHitOBJ, x, y, z
+
+				CreateConsoleMsg("Position of selected door moved on values (X|Y|Z) " + x + " " + y + " " + z + ".", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		;Case "door.selected.rotation.set"
+		;	angle# = Float(Lower(Right(cin, Len(cin) - Instr(cin, " "))))
+		;
+		;	If CurrDoor <> Null Then
+		;		If CurrDoor\open Then
+		;			CreateConsoleMsg("Can't set rotation of opened door. Sorry! I... I can't fix it now, maybe later...", 255, 0, 0)
+		;			Return
+		;		End If
+		;
+		;		CurrDoor\angle = angle
+		;		RotateEntity CurrDoor\obj, 0, angle, 0
+		;		RotateEntity CurrDoor\frameobj, 0, angle, 0
+		;		
+		;		If CurrDoor\obj2 <> 0 Then
+		;			If CurrDoor\dir = 1 Then
+		;				RotateEntity(CurrDoor\obj2, 0, angle, 0)
+		;			Else
+		;				RotateEntity(CurrDoor\obj2, 0, angle + 180, 0)
+		;			EndIf
+		;		EndIf
+		;		If CurrDoor\DoorHitOBJ <> 0 Then RotateEntity CurrDoor\DoorHitOBJ, 0, angle, 0
+		;
+		;		CreateConsoleMsg("Rotation of selected door set on angle " + angle + ".", 0, 255, 0)
+		;
+		;	Else
+		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
+		;	End If
+		;
+		;Case "door.selected.rotation.turn"
+		;	angle# = Float(Lower(Right(cin, Len(cin) - Instr(cin, " "))))
+		;
+		;	If CurrDoor <> Null Then
+		;		If CurrDoor\open Then
+		;			CreateConsoleMsg("Can't set rotation of opened door. Sorry! I... I can't fix it now, maybe later...", 255, 0, 0)
+		;			Return
+		;		End If
+		;
+		;		CurrDoor\angle = CurrDoor\angle + angle
+		;		TurnEntity CurrDoor\obj, 0, angle, 0
+		;		TurnEntity CurrDoor\frameobj, 0, angle, 0
+		;		
+		;		If CurrDoor\obj2 <> 0 Then
+		;			If CurrDoor\dir = 1 Then
+		;				TurnEntity(CurrDoor\obj2, 0, angle, 0)
+		;			Else
+		;				TurnEntity(CurrDoor\obj2, 0, angle + 180, 0)
+		;			EndIf
+		;		EndIf
+		;		If CurrDoor\DoorHitOBJ <> 0 Then TurnEntity CurrDoor\DoorHitOBJ, 0, angle, 0
+		;
+		;		CreateConsoleMsg("Rotation of selected door turned on angle " + angle + ".", 0, 255, 0)
+		;
+		;	Else
+		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
+		;	End If
+
+		Case "door.selected.use"
+			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			access_level% = Int(StrTemp)
+			If CalculateCharCountInString(cin, " ") = 0 Then access_level = 0
+
+			If CurrDoor <> Null Then
+				UseDoor(CurrDoor, False, True, access_level)
+
+				CreateConsoleMsg("Selected door used with access level " + access_level + ".", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.lock"
+
+			If CurrDoor <> Null Then
+				CurrDoor\locked = True
+
+				CreateConsoleMsg("Selected door locked.", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.unlock"
+
+			If CurrDoor <> Null Then
+				CurrDoor\locked = False
+
+				CreateConsoleMsg("Selected door unlocked.", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.togglelock"
+
+			If CurrDoor <> Null Then
+				CurrDoor\locked = Not CurrDoor\locked
+
+				If CurrDoor\locked Then
+					CreateConsoleMsg("Selected door locked.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door unlocked.", 0, 255, 0)
+				End If
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.open"
+
+			If CurrDoor <> Null Then
+				CurrDoor\open = True
+
+				CreateConsoleMsg("Selected door opened.", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.close"
+
+			If CurrDoor <> Null Then
+				CurrDoor\open = False
+
+				CreateConsoleMsg("Selected door closed.", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.toggleopen"
+
+			If CurrDoor <> Null Then
+				CurrDoor\open = Not CurrDoor\open
+
+				If CurrDoor\open Then
+					CreateConsoleMsg("Selected door opened.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door closed.", 0, 255, 0)
+				End If
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.accesslevel.set"
+			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			access_level% = Int(StrTemp)
+
+			If CurrDoor <> Null Then
+				CurrDoor\KeyCard = access_level
+				CurrDoor\Code = ""
+				ReloadDoorButtons(CurrDoor)
+
+				CreateConsoleMsg("Selected door access level set to " + access_level + ".", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.accesslevel.get"
+
+			If CurrDoor <> Null Then
+
+				CreateConsoleMsg("Access level of selected door equals to " + CurrDoor\KeyCard + ".", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.accesscode.set"
+			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			If CurrDoor <> Null Then
+				CurrDoor\Code = StrTemp
+				CurrDoor\KeyCard = 0
+				ReloadDoorButtons(CurrDoor)
+
+				CreateConsoleMsg("Selected door access code set to " + Chr(34) + StrTemp + Chr(34) + ".", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.accesscode.get"
+
+			If CurrDoor <> Null Then
+				CreateConsoleMsg("Access code of selected door equals to " + Chr(34) + CurrDoor\Code + Chr(34) + ".", 0, 255, 0)
+
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		;Case "door.selected.frame.show"
+		;
+		;	If CurrDoor <> Null Then
+		;		ShowEntity CurrDoor\frameobj
+		;
+		;		CreateConsoleMsg("Frame of selected door showed.", 0, 255, 0)
+		;
+		;	Else
+		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
+		;	End If
+		;
+		;Case "door.selected.frame.hide"
+		;
+		;	If CurrDoor <> Null Then
+		;		HideEntity CurrDoor\frameobj
+		;
+		;		CreateConsoleMsg("Frame of selected door hid.", 0, 255, 0)
+		;
+		;	Else
+		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
+		;	End If
 
 		Default
 			;[Block]
@@ -3977,6 +4492,7 @@ End Type
 
 Global I_Zone.MapZones = New MapZones
 
+Include "CustomEvents.bb"
 
 ;----------------------------------------------------------------------------------------------------------------------------------------------------
 ;----------------------------------------------       		MAIN LOOP                 ---------------------------------------------------------------
@@ -5904,7 +6420,7 @@ Function DrawGUI()
 	If ClosestButton <> 0 And SelectedDoor = Null And InvOpen = False And MenuOpen = False And OtherOpen = Null Then
 		temp% = CreatePivot()
 		PositionEntity temp, EntityX(Camera), EntityY(Camera), EntityZ(Camera)
-		PointEntity temp, ClosestButton
+		If ClosestButton <> 0 Then PointEntity temp, ClosestButton
 		yawvalue# = WrapAngle(EntityYaw(Camera) - EntityYaw(temp))
 		If yawvalue > 90 And yawvalue <= 180 Then yawvalue = 90
 		If yawvalue > 180 And yawvalue < 270 Then yawvalue = 270
@@ -6112,7 +6628,7 @@ Function DrawGUI()
 			RotateEntity pvt, 0, EntityYaw(ClosestButton,True)-180,0
 			MoveEntity pvt, 0,0,0.22
 			PositionEntity Camera, EntityX(pvt),EntityY(pvt),EntityZ(pvt)
-			PointEntity Camera, ClosestButton
+			If ClosestButton <> 0 Then PointEntity Camera, ClosestButton
 			FreeEntity pvt	
 			
 			CameraProject(Camera, EntityX(ClosestButton,True),EntityY(ClosestButton,True)+MeshHeight(ButtonOBJ)*0.015,EntityZ(ClosestButton,True))
@@ -9118,6 +9634,7 @@ Function LoadEntities()
 	EntityBlend (Fog, 2)
 	EntityOrder Fog, -1000
 	MoveEntity(Fog, 0, 0, 1.0)
+	HideEntity Fog
 	
 	GasMaskTexture = LoadTexture_Strict("GFX\GasmaskOverlay.jpg", 1)
 	GasMaskOverlay = CreateSprite(ark_blur_cam)
@@ -12701,6 +13218,7 @@ Function RenderWorld2()
 	HideEntity NVBlink
 	
 	CameraViewport Camera,0,0,GraphicWidth,GraphicHeight
+	AmbientLight 64, 64, 64
 	
 	Local hasBattery% = 2
 	Local power% = 0

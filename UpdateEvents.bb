@@ -1,5 +1,3 @@
-Include "CustomEvents.bb"
-
 Function UpdateEvents()
 	CatchErrors("Uncaught (UpdateEvents)")
 	Local dist#, i%, temp%, pvt%, strtemp$, j%, k%
@@ -4593,81 +4591,83 @@ Function UpdateEvents()
 							EndIf
 						Next
 						
-						Select e\EventState 
-							Case 2
-								i = Rand(0,MaxItemAmount-1)
-								If Inventory(i)<>Null Then RemoveItem(Inventory(i))								
-							Case 5
-								Injuries = Injuries + 0.3
-							Case 10
-								de.Decals = CreateDecal(3, EntityX(e\room\obj)+Cos(e\room\angle-90)*760*RoomScale, 0.0005, EntityZ(e\room\obj)+Sin(e\room\angle-90)*760*RoomScale,90,Rnd(360),0)
-							Case 14
-								For i = 0 To MaxItemAmount-1
-									If Inventory(i)<> Null Then
-										If Inventory(i)\itemtemplate\tempname = "paper" Then
-											RemoveItem(Inventory(i))
-											For itt.ItemTemplates = Each ItemTemplates
-												If itt\tempname = "paper" And Rand(6)=1 Then
-													Inventory(i) = CreateItem(itt\name, itt\tempname, 1,1,1)
-													HideEntity Inventory(i)\collider
-													Inventory(i)\Picked = True
-													Exit
-												EndIf
-											Next
-											Exit
+						If SCP970StrangeEvent
+							Select e\EventState 
+								Case 2
+									i = Rand(0,MaxItemAmount-1)
+									If Inventory(i)<>Null Then RemoveItem(Inventory(i))								
+								Case 5
+									Injuries = Injuries + 0.3
+								Case 10
+									de.Decals = CreateDecal(3, EntityX(e\room\obj)+Cos(e\room\angle-90)*760*RoomScale, 0.0005, EntityZ(e\room\obj)+Sin(e\room\angle-90)*760*RoomScale,90,Rnd(360),0)
+								Case 14
+									For i = 0 To MaxItemAmount-1
+										If Inventory(i)<> Null Then
+											If Inventory(i)\itemtemplate\tempname = "paper" Then
+												RemoveItem(Inventory(i))
+												For itt.ItemTemplates = Each ItemTemplates
+													If itt\tempname = "paper" And Rand(6)=1 Then
+														Inventory(i) = CreateItem(itt\name, itt\tempname, 1,1,1)
+														HideEntity Inventory(i)\collider
+														Inventory(i)\Picked = True
+														Exit
+													EndIf
+												Next
+												Exit
+											EndIf
 										EndIf
+									Next
+								Case 18
+									TFormPoint -344,176, 272, e\room\obj,0
+									it.Items = CreateItem("Strange Note", "paper", TFormedX(), TFormedY(), TFormedZ())
+									EntityType(it\collider, HIT_ITEM)
+								Case 25
+									e\room\NPC[0]=CreateNPC(NPCtypeD, EntityX(e\room\obj)+Cos(e\room\angle-90)*760*RoomScale, 0.35, EntityZ(e\room\obj)+Sin(e\room\angle-90)*760*RoomScale)
+									RotateEntity e\room\NPC[0]\Collider, 0, e\room\angle-200, 0, True
+									tex=LoadTexture("GFX\NPCs\corpse.jpg")
+									e\room\NPC[0]\texture = "GFX\NPCs\corpse.jpg"
+									EntityTexture e\room\NPC[0]\obj, tex
+									FreeTexture tex
+									SetAnimTime(e\room\NPC[0]\obj,80)
+									e\room\NPC[0]\State=10
+								Case 30
+									i = Rand(0,MaxItemAmount-1)
+									If Inventory(i)<>Null Then RemoveItem(Inventory(i))
+									Inventory(i) = CreateItem("Strange Note", "paper", 1,1,1)
+									HideEntity Inventory(i)\collider
+									Inventory(i)\Picked = True
+								Case 35
+									For i = 0 To 3
+										de.Decals = CreateDecal(17, e\room\x+Rnd(-2,2), 700*RoomScale, e\room\z+Rnd(-2,2), 270, Rand(360), 0)
+										de\Size = 0.05 : de\SizeChange = 0.0005 : EntityAlpha(de\obj, 0.8) : UpdateDecals
+									Next
+								Case 40
+									PlaySound_Strict(LoadTempSound("SFX\radio\franklin4.ogg"))
+								Case 50
+									e\room\NPC[1]=CreateNPC(NPCtypeGuard, EntityX(e\room\obj)+Cos(e\room\angle+90)*600*RoomScale, 0.35, EntityZ(e\room\obj)+Sin(e\room\angle+90)*600*RoomScale)
+									e\room\NPC[1]\State=7
+								Case 52
+									If e\room\NPC[1] <> Null Then
+										RemoveNPC(e\room\NPC[1])
+										e\room\NPC[1]=Null
 									EndIf
-								Next
-							Case 18
-								TFormPoint -344,176, 272, e\room\obj,0
-								it.Items = CreateItem("Strange Note", "paper", TFormedX(), TFormedY(), TFormedZ())
-								EntityType(it\collider, HIT_ITEM)
-							Case 25
-								e\room\NPC[0]=CreateNPC(NPCtypeD, EntityX(e\room\obj)+Cos(e\room\angle-90)*760*RoomScale, 0.35, EntityZ(e\room\obj)+Sin(e\room\angle-90)*760*RoomScale)
-								RotateEntity e\room\NPC[0]\Collider, 0, e\room\angle-200, 0, True
-								tex=LoadTexture("GFX\NPCs\corpse.jpg")
-								e\room\NPC[0]\texture = "GFX\NPCs\corpse.jpg"
-								EntityTexture e\room\NPC[0]\obj, tex
-								FreeTexture tex
-								SetAnimTime(e\room\NPC[0]\obj,80)
-								e\room\NPC[0]\State=10
-							Case 30
-								i = Rand(0,MaxItemAmount-1)
-								If Inventory(i)<>Null Then RemoveItem(Inventory(i))
-								Inventory(i) = CreateItem("Strange Note", "paper", 1,1,1)
-								HideEntity Inventory(i)\collider
-								Inventory(i)\Picked = True
-							Case 35
-								For i = 0 To 3
-									de.Decals = CreateDecal(17, e\room\x+Rnd(-2,2), 700*RoomScale, e\room\z+Rnd(-2,2), 270, Rand(360), 0)
-									de\Size = 0.05 : de\SizeChange = 0.0005 : EntityAlpha(de\obj, 0.8) : UpdateDecals
-								Next
-							Case 40
-								PlaySound_Strict(LoadTempSound("SFX\radio\franklin4.ogg"))
-							Case 50
-								e\room\NPC[1]=CreateNPC(NPCtypeGuard, EntityX(e\room\obj)+Cos(e\room\angle+90)*600*RoomScale, 0.35, EntityZ(e\room\obj)+Sin(e\room\angle+90)*600*RoomScale)
-								e\room\NPC[1]\State=7
-							Case 52
-								If e\room\NPC[1] <> Null Then
-									RemoveNPC(e\room\NPC[1])
-									e\room\NPC[1]=Null
-								EndIf
-							Case 60
-								If (Not HalloweenTex) Then
-									Local tex970 = LoadTexture_Strict("GFX\npcs\173h.pt", 1)
-									EntityTexture Curr173\obj, tex970, 0, 0
-									FreeTexture tex970
-								EndIf
-						End Select
+								Case 60
+									If (Not HalloweenTex) Then
+										Local tex970 = LoadTexture_Strict("GFX\npcs\173h.pt", 1)
+										EntityTexture Curr173\obj, tex970, 0, 0
+										FreeTexture tex970
+									EndIf
+							End Select
 						
-						If Rand(10)=1 Then
-							temp = Rand(0,2)
-							PlaySound_Strict(AmbientSFX(temp, Rand(0,AmbientSFXAmount(temp)-1)))
-						EndIf
+							If Rand(10)=1 Then
+								temp = Rand(0,2)
+								PlaySound_Strict(AmbientSFX(temp, Rand(0,AmbientSFXAmount(temp)-1)))
+							EndIf
+						End If
 					Else
 						If e\room\NPC[0] <> Null Then
 							If EntityDistance(Collider, e\room\NPC[0]\Collider)<3.0 Then
-								If EntityInView(e\room\NPC[0]\obj, Camera) Then
+								If EntityInView(e\room\NPC[0]\obj, Camera) And SCP970StrangeEvent Then
 									CurrCameraZoom = (Sin(Float(MilliSecs2())/20.0)+1.0)*15.0
 									HeartBeatVolume = Max(CurveValue(0.3, HeartBeatVolume, 2.0), HeartBeatVolume)
 									HeartBeatRate = Max(HeartBeatRate, 120)
@@ -4716,7 +4716,7 @@ Function UpdateEvents()
 				EndIf
 				
 				
-				If e\EventState > 26 Then
+				If e\EventState > 26 And SCP970StrangeEvent Then
 					If Abs(EntityX(Collider)-e\room\x)<8.0 Then
 						If Abs(EntityZ(Collider)-e\room\z)<8.0 Then
 							If e\Sound = 0 Then
@@ -6569,6 +6569,14 @@ Function UpdateEvents()
 									EndIf
 								ElseIf SelectedItem\itemtemplate\tempname="scp860" 
 									If MouseHit1 Then
+										If Not EnableSCP860Forest Then
+											PlaySound_Strict(LoadTempSound("SFX\Door\WoodenDoorBudge.ogg"))
+											Msg = "You try to turn the key, but it seems the lock is jammed."
+											MsgTimer = 5*70
+											SelectedItem = Null
+											Exit
+										End If
+
 										PlaySound_Strict(LoadTempSound("SFX\Door\WoodenDoorOpen.ogg"))
 										ShowEntity fr.Forest\Forest_Pivot
 										SelectedItem = Null
