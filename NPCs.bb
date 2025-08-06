@@ -717,6 +717,11 @@ Function UpdateNPCs()
 										n\EnemyX = EntityX(Collider, True)
 										n\EnemyY = EntityY(Collider, True)
 										n\EnemyZ = EntityZ(Collider, True)
+									Else
+										temp = False
+										n\EnemyX = 0
+										n\EnemyY = 0
+										n\EnemyZ = 0
 									EndIf
 								EndIf										
 								
