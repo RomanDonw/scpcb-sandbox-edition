@@ -115,6 +115,9 @@ Global CustomIntroSoundVolume# = GetINIFloat(OptionFile, "custom intro", "sound 
 Global CustomIntroSoundFedingStart# = GetINIFloat(OptionFile, "custom intro", "sound feding start")
 Global CustomIntroSoundFedingEnd# = GetINIFloat(OptionFile, "custom intro", "sound feding end")
 
+Global ScreenshotFolder$ = GetINIString(OptionFile, "screenshot", "folder path to save")
+Global ScreenshotNextID% = GetINIInt(OptionFile, "screenshot", "next id")
+
 Global EnableDecals% = GetINIInt(OptionFile, "decals", "enable")
 Dim EnabledDecalTextures%(20)
 For i% = 0 To 20
@@ -390,9 +393,10 @@ Global KEY_CONSOLE = GetINIInt(OptionFile, "binds", "Console key")
 Global KEY_TOGGLE_NOCLIP = GetINIInt(OptionFile, "binds", "Toggle Noclip key")
 Global KEY_TOGGLE_HUD = GetINIInt(OptionFile, "binds", "Toggle HUD key")
 Global KEY_TOGGLE_DEBUGHUD = GetINIInt(OptionFile, "binds", "Toggle DebugHUD key")
-Global KEY_TOGGLE_NOBLINKING = GetINIInt(OptionFile, "binds", "Toggle no blinking")
-Global KEY_TOGGLE_SHOWFPS = GetINIInt(OptionFile, "binds", "Toggle show FPS")
-Global KEY_CALL_BIND = GetINIInt(OptionFile, "binds", "Call bind")
+Global KEY_TOGGLE_NOBLINKING = GetINIInt(OptionFile, "binds", "Toggle no blinking key")
+Global KEY_TOGGLE_SHOWFPS = GetINIInt(OptionFile, "binds", "Toggle show FPS key")
+Global KEY_CALL_BIND = GetINIInt(OptionFile, "binds", "Call bind key")
+Global KEY_TAKE_SCREENSHOT = GetINIInt(OptionFile, "binds", "Screenshot key")
 Dim KEYS_SELECT_ITEM%(10)
 For keyi = 0 To 9
 	KEYS_SELECT_ITEM(keyi) = GetINIInt(OptionFile, "binds", "Select item " + (keyi + 1))
@@ -1799,7 +1803,7 @@ Function ExecConsole(cin$, silent% = False)
 		Case "execfile"
 			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
 
-			If FileSize(StrTemp) = 0 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
+			If FileType(StrTemp) <> 1 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
 
 			CreateConsoleMsg("Executing file " + Chr(34) + StrTemp + Chr(34) + "...", 255, 127, 0)
 			ExecConsoleFile(StrTemp)
@@ -3127,8 +3131,8 @@ Function ExecConsole(cin$, silent% = False)
 	End Select
 End Function
 
-Function ExecConsoleFile(filepath$)
-	If FileSize(filepath) = 0 Then Return
+Function ExecConsoleFile%(filepath$)
+	If FileType(filepath) <> 1 Then Return False
 
 	f = ReadFile(filepath)
 
@@ -3146,6 +3150,7 @@ Function ExecConsoleFile(filepath$)
 	Until Eof(f)
 
 	CloseFile(f)
+	Return True
 End Function
 
 ConsoleR = 0 : ConsoleG = 255 : ConsoleB = 255
@@ -5058,6 +5063,29 @@ Repeat
 	EntityFX fresize_image,1
 	EntityBlend fresize_image,1
 	EntityAlpha fresize_image,1.0
+
+	If KeyHit(KEY_TAKE_SCREENSHOT) Then
+		If Not IsINIParameterExist(OptionFile, "screenshot", "next id") Then
+			ScreenshotNextID = 0
+		End If
+		
+		If FileType(ScreenshotFolder) <> 2 Then
+			CreateDir(ScreenshotFolder)
+			ScreenshotNextID = 0
+		End If
+		If FileType(ScreenshotFolder) <> 2 Then RuntimeError "Cannot create folder for screenshots."
+		
+		path$ = ScreenshotFolder + "\" + ScreenshotNextID + ".bmp"
+
+		If TakeScreenshot(path) Then
+			ScreenshotNextID = ScreenshotNextID + 1
+			PutINIValue(OptionFile, "screenshot", "next id", ScreenshotNextID)
+
+			CreateConsoleMsg("Saved screenshot at " + Chr(34) + path + Chr(34) + ".", 0, 127, 0)
+		Else
+			CreateConsoleMsg("Taking a screenshot error.", 127, 0, 0)
+		End If
+	End If
 	
 	CatchErrors("Main loop / uncaught")
 	

@@ -591,6 +591,18 @@ Function ReloadDoorButtons(d.Doors)
     If closest_button_index >= 0 Then ClosestButton = d\buttons[closest_button_index]
 End Function
 
+Function TakeScreenshot%(filename$)
+    sw% = GraphicsWidth()
+    sh% = GraphicsHeight()
+
+    img% = CreateImage(sw, sh)
+    CopyRect 0, 0, sw, sh, 0, 0, FrontBuffer(), ImageBuffer(img)
+    success% = SaveImage(img, filename)
+    FreeImage img
+
+    Return success
+End Function
+
 ; ========================================================================================================================================================
 
 Function WaitKeyScan()
