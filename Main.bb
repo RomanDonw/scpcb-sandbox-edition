@@ -54,6 +54,7 @@ Global DestroyIntroSequence% = GetINIInt(OptionFile, "gamectl", "destroy intro s
 Global DisableTeslaSequence% = GetINIInt(OptionFile, "gamectl", "disable tesla sequence")
 Global EnableSCP860Forest% = GetINIInt(OptionFile, "gamectl", "enable SCP-860 forest")
 Global SCP970StrangeEvent% = GetINIInt(OptionFile, "gamectl", "SCP-970 strange event")
+Global SCP066Spawn% = GetINIInt(OptionFile, "gamectl", "SCP-066 spawn")
 
 Global ConsoleBufferLimited% = GetINIInt(OptionFile, "console", "buffer limited")
 Global SendErrorsToConsole% = GetINIInt(OptionFile, "console", "receive errors")
@@ -12077,8 +12078,11 @@ Function Use294()
 					glow = GetINIInt2("DATA\SCP-294.ini", loc, "glow")
 					;If alpha = 0 Then alpha = 1.0
 					If glow Then alpha = -alpha
+
+					texture% = 0
+					If IsINIParameterExist("DATA\SCP-294.ini", loc, "texture") Then texture = LoadTexture_Strict(GetINIString("DATA\SCP-294.ini", loc, "texture"))
 					
-					it.items = CreateItem("Cup", "cup", EntityX(PlayerRoom\Objects[1],True),EntityY(PlayerRoom\Objects[1],True),EntityZ(PlayerRoom\Objects[1],True), r,g,b,alpha)
+					it.items = CreateItem("Cup", "cup", EntityX(PlayerRoom\Objects[1],True),EntityY(PlayerRoom\Objects[1],True),EntityZ(PlayerRoom\Objects[1],True), r,g,b,alpha, 0, texture)
 					it\name = "Cup of "+Input294
 					EntityType (it\collider, HIT_ITEM)
 					
