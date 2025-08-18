@@ -14,3 +14,4 @@ updates/
 Thumbs.db
 *.SI
 screenshots/*
+*.code-workspace

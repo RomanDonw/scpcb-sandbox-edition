@@ -91,6 +91,7 @@ Function UpdateCustomEvents()
     ;CatchErrors("DebugHUD")
 
     UpdateDelayedCommands()
+    UpdateLevers()
 
     CatchErrors("UpdateCustomEvents (before cheat functions)")
     If Not CheatGameControlEnabled Return
@@ -341,38 +342,42 @@ End Function
 
 ; ================================================================================================================
 
-;Type Lever
-;    Field BaseObj%, LeverObj%
-;    Field locked%
-;End Type
+Type Lever
+    Field BaseObj%, LeverObj%
+    Field locked%
+End Type
 
-;Function CreateLever.Lever(locked%, x#, y#, z#, roll# = 0, yaw# = 0, pitch# = 0)
-;    Local ret.Lever = New Lever
-;
-;    ret\locked = locked
-;    ret\BaseObj = CopyEntity(LeverBaseOBJ)
-;    ret\LeverObj = CopyEntity(LeverOBJ)
-;    EntityParent ret\LeverObj, ret\BaseObj
-;    PositionEntity ret\BaseObj, x, y, z
-;    RotateEntity ret\BaseObj, roll, yaw, pitch
-;
-;    Return ret
-;End Function
+Function CreateLever.Lever(locked%, x#, y#, z#, roll# = 0, yaw# = 0, pitch# = 0)
+    Local ret.Lever = New Lever
 
-;Function RemoveLever(lever.Lever)
-;    If lever = Null Then Return
-;
-;    FreeEntity lever\LeverObj
-;    FreeEntity lever\BaseObj
-;
-;    Delete lever
-;End Function
+    ret\locked = locked
+    ret\BaseObj = CopyEntity(LeverBaseOBJ)
+    ret\LeverObj = CopyEntity(LeverOBJ, ret\BaseObj)
 
-;Function UpdateLevers()
-;    For lever.Lever = Each Lever
-;        UpdateLever(lever\LeverObj, lever\locked)
-;    Next
-;End Function
+    PositionEntity ret\BaseObj, x, y, z
+    RotateEntity ret\BaseObj, roll, yaw, pitch
+    ScaleEntity ret\BaseObj, 0.04, 0.04, 0.04
+
+    RotateEntity ret\LeverObj, 0, 180, 0
+    ;ScaleEntity ret\LeverObj, 0.04, 0.04, 0.04
+
+    Return ret
+End Function
+
+Function RemoveLever(lever.Lever)
+    If lever = Null Then Return
+
+    FreeEntity lever\LeverObj
+    FreeEntity lever\BaseObj
+
+    Delete lever
+End Function
+
+Function UpdateLevers()
+    For lever.Lever = Each Lever
+        UpdateLever(lever\LeverObj, lever\locked)
+    Next
+End Function
 
 ; ================================================================================================================
 

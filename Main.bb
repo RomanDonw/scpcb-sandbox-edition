@@ -1,4 +1,4 @@
-;SCP - Containment Breach
+;SCP - Containment Breach Sandbox Edition
 
 ;    The game is based on the works of the SCP Foundation community (http://www.scp-wiki.net/).
 
@@ -306,28 +306,27 @@ If CustomIntro Then
 	DrawImage img_, GraphicsWidth() / 2 - ImageWidth(img_) / 2, GraphicsHeight() / 2 - ImageHeight(img_) / 2
 	Flip
 
-	;CreateConsoleMsg(CustomIntroAudioPath, 255, 0, 0)
-
-	temp_IntroCHN = StreamSound_Strict(CustomIntroSoundPath, CustomIntroSoundVolume, False)
+	temp_IntroCHN = PlaySound_Strict(LoadSound_Strict(CustomIntroSoundPath))
+	ChannelVolume temp_IntroCHN, CustomIntroSoundVolume
 
 	FlushKeys
 
 	timer_% = MilliSecs()
-	While IsStreamPlaying_Strict(temp_IntroCHN)
+	While True
 		play_time# = (MilliSecs() - timer_) / 1000
 
 		If play_time >= CustomIntroSoundFedingStart And play_time <= CustomIntroSoundFedingEnd Then
-			precent# = play_time / CustomIntroSoundFedingEnd
+			precent# = (play_time - CustomIntroSoundFedingStart) / (CustomIntroSoundFedingEnd - CustomIntroSoundFedingStart)
 
 			;CreateConsoleMsg("inv prec: " + (1 - precent), 255, 0, 255)
 
-			SetStreamVolume_Strict(temp_IntroCHN, (1 - precent))
+			ChannelVolume temp_IntroCHN, (1 - precent) * CustomIntroSoundVolume
 		End If
 
 		If GetKey() Or GetMouse() Or play_time >= CustomIntroDuration Then Exit
 	Wend
 
-	StopStream_Strict(temp_IntroCHN)
+	StopChannel(temp_IntroCHN)
 
 	ClsColor 0, 0, 0
 	Cls
@@ -1756,6 +1755,12 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("scp173.speed.set <speed> - sets speed of current SCP-173.")
 			CreateConsoleMsg("scp173.speed.reset - resets speed of current SCP-173 to default value.")
 
+			;CreateConsoleMsg(" ")
+			;CreateConsoleMsg("- Current SCP-106 control commands:", 255, 127, 0)
+			;CreateConsoleMsg(" ")
+
+			;CreateConsoleMsg("scp106.spawn <x> <y> <z> - spawns current SCP-106 at <x>, <y> and <z> position.")
+
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- GFX driver control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
@@ -1874,6 +1879,8 @@ Function ExecConsole(cin$, silent% = False)
 			For bnd_.ConsoleBind = Each ConsoleBind
 				CreateConsoleMsg("ID: " + bnd_\id + ", Key: " + KeyName(bnd_\KeyCode) + ", command: " + Chr(34) + bnd_\Command + Chr(34) + ".", 0, 255, 255)
 			Next
+
+		; ====================
 
 		Case "noblinking"
 			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
@@ -2014,7 +2021,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			If StrTemp2 = StrTemp Or StrTemp2 = "" Then StrTemp2 = SFXVolume
 
-			If FileSize(StrTemp) = 0 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
+			If FileType(StrTemp) <> 1 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
 
 			chn = PlaySound_Strict(LoadSound_Strict(StrTemp))
 			ChannelVolume(chn, Float(StrTemp2))
@@ -2046,6 +2053,13 @@ Function ExecConsole(cin$, silent% = False)
 		;	CreateLever(locked, Float(StrTemp), Float(StrTemp2), Float(StrTemp3))
 		;
 		;	CreateConsoleMsg("Created new lever at (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " (locked: " + locked + ").", 0, 255, 0)
+
+		;Case "set106state"
+		;	StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+		;
+		;	Curr106\State = Float(StrTemp)
+		;
+		;	CreateConsoleMsg("Set state of current SCP-106 to " + Float(StrTemp) + ".", 0, 255, 0)
 
 		; === CONTROLLABLE NPC ===
 
@@ -2562,6 +2576,23 @@ Function ExecConsole(cin$, silent% = False)
 		Case "scp173.speed.get"
 			CreateConsoleMsg("Speed of current SCP-173 equals to " + Curr173\Speed + ".", 0, 255, 0)
 
+		; === SCP-106 COMMANDS ===
+
+		;Case "scp106.spawn"
+		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+		;	StrTemp$ = Piece$(args$,1," ")
+		;	StrTemp2$ = Piece$(args$,2," ")
+		;	StrTemp3$ = Piece$(args$,3," ")
+		;
+		;	SCP106SpawnPosX = Float(StrTemp)
+		;	SCP106SpawnPosY = Float(StrTemp2)
+		;	SCP106SpawnPosZ = Float(StrTemp3)
+		;	SCP106SpawnAtCustomPos = True
+		;
+		;	Curr106\State = -0.1
+		;
+		;	CreateConsoleMsg("Current SCP-106 spawned at (X|Y|Z) " + SCP106SpawnPosX + ", " + SCP106SpawnPosY + ", and " + SCP106SpawnPosZ + ".", 0, 255, 0)
+
 		; === PLAYER CONTROL COMMADS ===
 
 		Case "player.position.translate"
@@ -2620,6 +2651,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player rotation set on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		; === GFX DRIVER CONTROL ===
+
 
 		Case "gfxdriver.list"
 			For i = 1 To CountGfxDrivers()
@@ -3123,6 +3155,7 @@ Function ExecConsole(cin$, silent% = False)
 		;	Else
 		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
 		;	End If
+		
 
 		Default
 			;[Block]
@@ -3182,7 +3215,7 @@ CreateConsoleMsg(" ")
 If BypassOpeningConsole Then
 	CreateConsoleMsg(" ========== ATTENTION! ==========", 192, 192, 0)
 	CreateConsoleMsg("Console opening bypass enabled. You can open console in main menu. It can be dangerous for game when you using some commands.", 192, 192, 0)
-	CreateConsoleMsg("Commands, that works with gameplay are recommended to use only when save loaded (in game).", 255, 255, 0)
+	CreateConsoleMsg("Commands, that works with gameplay are recommended to use only when save loaded (in game).", 192, 192, 0)
 	CreateConsoleMsg("Be careful with this instrument. Good luck in usage!", 192, 192, 0)
 	CreateConsoleMsg(" ================================", 192, 192, 0)
 	CreateConsoleMsg(" ")
@@ -6160,7 +6193,7 @@ Function MouseLook()
 		Local up# = (Sin(Shake) / (20.0+CrouchState*20.0))*0.6;, side# = Cos(Shake / 2.0) / 35.0		
 		Local roll# = Max(Min(Sin(Shake/2)*2.5*Min(Injuries+0.25,3.0),8.0),-8.0)
 		
-		;käännetään kameraa sivulle jos pelaaja on vammautunut
+		;k?�?�nnet?�?�n kameraa sivulle jos pelaaja on vammautunut
 		;RotateEntity Collider, EntityPitch(Collider), EntityYaw(Collider), Max(Min(up*30*Injuries,50),-50)
 		PositionEntity Camera, EntityX(Collider), EntityY(Collider), EntityZ(Collider)
 		RotateEntity Camera, 0, EntityYaw(Collider), roll*0.5
@@ -6237,7 +6270,7 @@ Function MouseLook()
 		
 	EndIf
 	
-	;pölyhiukkasia
+	;p?�lyhiukkasia
 	If ParticleAmount=2
 		If Rand(35) = 1 Then
 			Local pvt% = CreatePivot()
@@ -7967,7 +8000,7 @@ Function DrawGUI()
 											DebugLog UserTrackName$(RadioState(0))
 										EndIf
 									EndIf
-								Case 1 ;hälytyskanava
+								Case 1 ;h?�lytyskanava
 									DebugLog RadioState(1) 
 									
 									ResumeChannel(RadioCHN(1))
@@ -8183,7 +8216,7 @@ Function DrawGUI()
 											If RadioCHN(Int(SelectedItem\state2)) <> 0 Then PauseChannel(RadioCHN(Int(SelectedItem\state2)))
 										EndIf
 										SelectedItem\state2 = i-2
-										;jos nykyistä kanavaa ollaan soitettu, laitetaan jatketaan toistoa samasta kohdasta
+										;jos nykyist?� kanavaa ollaan soitettu, laitetaan jatketaan toistoa samasta kohdasta
 										If RadioCHN(SelectedItem\state2)<>0 Then ResumeChannel(RadioCHN(SelectedItem\state2))
 									EndIf
 								Next
@@ -12078,11 +12111,8 @@ Function Use294()
 					glow = GetINIInt2("DATA\SCP-294.ini", loc, "glow")
 					;If alpha = 0 Then alpha = 1.0
 					If glow Then alpha = -alpha
-
-					texture% = 0
-					If IsINIParameterExist("DATA\SCP-294.ini", loc, "texture") Then texture = LoadTexture_Strict(GetINIString("DATA\SCP-294.ini", loc, "texture"))
 					
-					it.items = CreateItem("Cup", "cup", EntityX(PlayerRoom\Objects[1],True),EntityY(PlayerRoom\Objects[1],True),EntityZ(PlayerRoom\Objects[1],True), r,g,b,alpha, 0, texture)
+					it.items = CreateItem("Cup", "cup", EntityX(PlayerRoom\Objects[1],True),EntityY(PlayerRoom\Objects[1],True),EntityZ(PlayerRoom\Objects[1],True), r,g,b,alpha)
 					it\name = "Cup of "+Input294
 					EntityType (it\collider, HIT_ITEM)
 					
@@ -12229,7 +12259,7 @@ Function UpdateMTF%()
 	Local r.Rooms, n.NPCs
 	Local dist#, i%
 	
-	;mtf ei vielä spawnannut, spawnataan jos pelaaja menee tarpeeksi lähelle gate b:tä
+	;mtf ei viel?� spawnannut, spawnataan jos pelaaja menee tarpeeksi l?�helle gate b:t?�
 	If MTFtimer = 0 Then
 		If Rand(30)=1 And PlayerRoom\RoomTemplate\Name$ <> "dimension1499" Then
 			
@@ -12545,11 +12575,11 @@ Function CircleToLineSegIsect% (cx#, cy#, r#, l1x#, l1y#, l2x#, l2y#)
 	
 	;Palauttaa:
 	;  True (1) kun:
-	;      Ympyrä [keskipiste = (cx, cy): säde = r]
+	;      Ympyr?� [keskipiste = (cx, cy): s?�de = r]
 	;      leikkaa janan, joka kulkee pisteiden (l1x, l1y) & (l2x, l2y) kaitta
 	;  False (0) muulloin
 	
-	;Ympyrän keskipisteen ja (ainakin toisen) janan päätepisteen etäisyys < r
+	;Ympyr?�n keskipisteen ja (ainakin toisen) janan p?�?�tepisteen et?�isyys < r
 	;-> leikkaus
 	If Distance(cx, cy, l1x, l1y) <= r Then
 		Return True
@@ -12559,7 +12589,7 @@ Function CircleToLineSegIsect% (cx#, cy#, r#, l1x#, l1y#, l2x#, l2y#)
 		Return True
 	EndIf	
 	
-	;Vektorit (janan vektori ja vektorit janan päätepisteistä ympyrän keskipisteeseen)
+	;Vektorit (janan vektori ja vektorit janan p?�?�tepisteist?� ympyr?�n keskipisteeseen)
 	Local SegVecX# = l2x - l1x
 	Local SegVecY# = l2y - l1y
 	
@@ -12582,21 +12612,21 @@ Function CircleToLineSegIsect% (cx#, cy#, r#, l1x#, l1y#, l2x#, l2y#)
 		Return False
 	EndIf
 	
-	;Janan päätepisteiden kautta kulkevan suoran ;yhtälö; (ax + by + c = 0)
+	;Janan p?�?�tepisteiden kautta kulkevan suoran ;yht?�l?�; (ax + by + c = 0)
 	Local a# = (l2y - l1y) / (l2x - l1x)
 	Local b# = -1
 	Local c# = -(l2y - l1y) / (l2x - l1x) * l1x + l1y
 	
-	;Ympyrän keskipisteen etäisyys suorasta
+	;Ympyr?�n keskipisteen et?�isyys suorasta
 	Local d# = Abs(a * cx + b * cy + c) / Sqr(a * a + b * b)
 	
-	;Ympyrä on liian kaukana
+	;Ympyr?� on liian kaukana
 	;-> ei leikkausta
 	If d > r Then Return False
 	
 	;Local kateetin_pituus# = Cos(angle) * hyp
 	
-	;Jos päästään tänne saakka, ympyrä ja jana leikkaavat (tai ovat sisäkkäin)
+	;Jos p?�?�st?�?�n t?�nne saakka, ympyr?� ja jana leikkaavat (tai ovat sis?�kk?�in)
 	Return True
 End Function
 

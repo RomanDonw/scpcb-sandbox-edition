@@ -673,6 +673,8 @@ Function RemoveNPC(n.NPCs)
 	Delete n
 End Function
 
+Global UpdatingSCP106State% = True
+Global SCP106SpawnAtCustomPos% = False, SCP106SpawnPosX#, SCP106SpawnPosY#, SCP106SpawnPosZ#
 
 Function UpdateNPCs()
 	If Not NPCsUpdateEnabled Return
@@ -711,29 +713,29 @@ Function UpdateNPCs()
 							Local temp% = False
 							Local move% = True
 							If dist < 15 Then
-								If dist < 10.0 Then 
-									If EntityVisible(n\Collider, Collider) Then
-										temp = True
-										n\EnemyX = EntityX(Collider, True)
-										n\EnemyY = EntityY(Collider, True)
-										n\EnemyZ = EntityZ(Collider, True)
-									Else
-										temp = False
-										n\EnemyX = 0
-										n\EnemyY = 0
-										n\EnemyZ = 0
-									EndIf
-								EndIf										
-								
 								Local SoundVol# = Max(Min((Distance(EntityX(n\Collider), EntityZ(n\Collider), n\PrevX, n\PrevZ) * 2.5), 1.0), 0.0)
 								n\SoundChn = LoopSound2(StoneDragSFX, n\SoundChn, Camera, n\Collider, 10.0, n\State)
 								
 								n\PrevX = EntityX(n\Collider)
 								n\PrevZ = EntityZ(n\Collider)
-								If (Not EntityVisible(Camera, n\obj)) Or ((BlinkTimer < - 16 Or BlinkTimer > - 6) And (IsNVGBlinking=False) And EntityInView(n\obj, Camera)) Then
-									move = False
-								End If
 							EndIf
+
+							;If EntityVisible(n\Collider, Collider) Then
+							If EntityVisible(n\Collider, Camera) Then
+								temp = True
+								n\EnemyX = EntityX(Collider, True)
+								n\EnemyY = EntityY(Collider, True)
+								n\EnemyZ = EntityZ(Collider, True)
+							Else
+								temp = False
+								n\EnemyX = 0
+								n\EnemyY = 0
+								n\EnemyZ = 0
+							End If
+
+							If ((BlinkTimer < - 16 Or BlinkTimer > - 6) And (IsNVGBlinking=False) And EntityInView(n\obj, Camera)) Then
+								move = False
+							End If
 							
 							If NoTarget Then move = True
 							
@@ -991,19 +993,28 @@ Function UpdateNPCs()
 					EndIf
 					
 					If (Not n\Idle) And spawn106%
-						If n\State <= 0 Then	;attacking	
+						If n\State <= 0 Then	;attacking
+							;CreateConsoleMsg("SCP-106 attacking!", 255, 0, 255)	
 							If EntityY(n\Collider) < EntityY(Collider) - 20.0 - 0.55 Then
 								If Not PlayerRoom\RoomTemplate\DisableDecals Then
 									de.Decals = CreateDecal(0, EntityX(Collider), 0.01, EntityZ(Collider), 90, Rand(360), 0)
 									de\Size = 0.05 : de\SizeChange = 0.001 : EntityAlpha(de\obj, 0.8) : UpdateDecals
 								EndIf
 								
-								n\PrevY = EntityY(Collider)
+								If SCP106SpawnAtCustomPos Then
+									n\PrevY = SCP106SpawnPosY
+								Else
+									n\PrevY = EntityY(Collider)
+								End If
 								
 								SetAnimTime n\obj, 110
 								
 								If PlayerRoom\RoomTemplate\Name <> "coffin"
-									PositionEntity(n\Collider, EntityX(Collider), EntityY(Collider) - 15, EntityZ(Collider))
+									If SCP106SpawnAtCustomPos Then
+										PositionEntity(n\Collider, SCP106SpawnPosX, SCP106SpawnPosY - 15, SCP106SpawnPosZ)
+									Else
+										PositionEntity(n\Collider, EntityX(Collider), EntityY(Collider) - 15, EntityZ(Collider))
+									End If
 								EndIf
 								
 								PlaySound_Strict(DecaySFX(0))
@@ -1018,10 +1029,12 @@ Function UpdateNPCs()
 									PositionEntity n\Collider, EntityX(n\Collider), n\PrevY-0.15, EntityZ(n\Collider)
 									PointEntity n\obj, Collider
 									RotateEntity (n\Collider, 0, CurveValue(EntityYaw(n\obj),EntityYaw(n\Collider),100.0), 0, True)
+									;CreateConsoleMsg("SCP-106 spawning!", 255, 0, 255)
 									
 									AnimateNPC(n, 110, 259, 0.15, False)
 								Else
 									n\State = -10
+									SCP106SpawnAtCustomPos = False
 								EndIf
 							Else
 								If PlayerRoom\RoomTemplate\Name <> "gatea" Then ShouldPlay = 10
@@ -1050,7 +1063,7 @@ Function UpdateNPCs()
 										EndIf
 									EndIf
 								Else
-									n\State=n\State-FPSfactor
+									If UpdatingSCP106State Then n\State=n\State-FPSfactor
 								End If
 								
 								If dist > 0.8 Then
@@ -1217,9 +1230,9 @@ Function UpdateNPCs()
 							If (Not PlayerRoom\RoomTemplate\DisableDecals) Then
 								If PlayerRoom\RoomTemplate\Name <> "gatea"
 									If (SelectedDifficulty\aggressiveNPCs) Then
-										n\State=n\State-FPSfactor*2
+										If UpdatingSCP106State Then n\State=n\State-FPSfactor*2
 									Else
-										n\State=n\State-FPSfactor
+										If UpdatingSCP106State Then n\State=n\State-FPSfactor
 									EndIf
 								EndIf
 							EndIf
