@@ -56,13 +56,14 @@ Global EnableSCP860Forest% = GetINIInt(OptionFile, "gamectl", "enable SCP-860 fo
 Global SCP970StrangeEvent% = GetINIInt(OptionFile, "gamectl", "SCP-970 strange event")
 Global SCP066Spawn% = GetINIInt(OptionFile, "gamectl", "SCP-066 spawn")
 
-Global ConsoleBufferLimited% = GetINIInt(OptionFile, "console", "buffer limited")
+Global ConsoleBufferLimit% = GetINIInt(OptionFile, "console", "buffer limit")
 Global SendErrorsToConsole% = GetINIInt(OptionFile, "console", "receive errors")
 Global ConsoleX% = GetINIInt(OptionFile, "console", "x")
 Global ConsoleY% = GetINIInt(OptionFile, "console", "y")
 Global ConsoleWidth% = GetINIInt(OptionFile, "console", "width")
 Global ConsoleHeight% = GetINIInt(OptionFile, "console", "height")
 Global BypassOpeningConsole% = GetINIInt(OptionFile, "console", "bypass opening")
+Global ConsoleInputLimit% = GetINIInt(OptionFile, "console", "input limit")
 
 Global EnableSCP173Teleporting% = GetINIInt(OptionFile, "SCP-173", "teleporting")
 Global EnableSCP173HorrorEffects% = GetINIInt(OptionFile, "SCP-173", "horror effects")
@@ -97,6 +98,7 @@ Global EnableDrawingInteractionImage% = GetINIInt(OptionFile, "display", "enable
 Global EnableDrawingSelectedItemKeycard% = GetINIInt(OptionFile, "display", "enable drawing selected item keycard")
 Global EnableSCP079PicOnScreens% = GetINIInt(OptionFile, "display", "enable scp079 picture on screens")
 Global DisableCoffinEffect% = GetINIInt(OptionFile, "display", "disable coffin effect")
+Global PocketDimensionCameraEffect% = GetINIInt(OptionFile, "display", "pocket dimension camera effect")
 
 Global BypassSave% = GetINIInt(OptionFile, "player", "bypass save")
 Global PresetGodMode% = GetINIInt(OptionFile, "player", "preset godmode")
@@ -126,6 +128,8 @@ For i% = 0 To 20
 Next
 
 ; ===================================================================
+
+Global PDCameraEffect% = False
 
 Global UpdaterFont%
 Global Font1%, Font2%, Font3%, Font4%, Font5%
@@ -306,7 +310,7 @@ If CustomIntro Then
 	DrawImage img_, GraphicsWidth() / 2 - ImageWidth(img_) / 2, GraphicsHeight() / 2 - ImageHeight(img_) / 2
 	Flip
 
-	temp_IntroCHN = PlaySound_Strict(LoadSound_Strict(CustomIntroSoundPath))
+	temp_IntroCHN = PlaySound_Strict(LoadTempSound(CustomIntroSoundPath))
 	ChannelVolume temp_IntroCHN, CustomIntroSoundVolume
 
 	FlushKeys
@@ -711,7 +715,7 @@ Function UpdateConsole(exec_command% = True)
 		If oldConsoleInput<>ConsoleInput Then
 			ConsoleReissue = Null
 		EndIf
-		ConsoleInput = Left(ConsoleInput, 100)
+		If ConsoleInputLimit > 0 Then ConsoleInput = Left(ConsoleInput, ConsoleInputLimit)
 		
 		If KeyHit(28) And ConsoleInput <> "" Then
 			ConsoleReissue = Null
@@ -726,7 +730,7 @@ Function UpdateConsole(exec_command% = True)
 		Local count% = 0
 		For cm.ConsoleMsg = Each ConsoleMsg
 			count = count+1
-			If count>1000 And ConsoleBufferLimited Then
+			If count > ConsoleBufferLimit And ConsoleBufferLimit > 0 Then
 				Delete cm
 			Else
 				If TempY >= y And TempY < y + height - 20*MenuScale Then
@@ -794,7 +798,7 @@ Function ExecConsole(cin$, silent% = False)
 		Case "help"
 			;[Block]
 			If Instr(cin, " ")<>0 Then
-				StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			Else
 				StrTemp$ = ""
 			EndIf
@@ -1026,25 +1030,25 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "ending"
 			;[Block]
-			SelectedEnding = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			SelectedEnding = Right(cin, Len(cin) - Instr(cin, " "))
 			KillTimer = -0.1
 			;EndingTimer = -0.1
 			;[End Block]
 		Case "noclipspeed"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			NoClipSpeed = Float(StrTemp)
 			;[End Block]
 		Case "injure"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Injuries = Float(StrTemp)
 			;[End Block]
 		Case "infect"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Infect = Float(StrTemp)
 			;[End Block]
@@ -1055,7 +1059,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "teleport"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "895", "scp-895"
@@ -1085,7 +1089,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "spawnitem"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			temp = False 
 			For itt.Itemtemplates = Each ItemTemplates
 				If (Lower(itt\name) = StrTemp) Then
@@ -1107,7 +1111,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "wireframe"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -1129,7 +1133,7 @@ Function ExecConsole(cin$, silent% = False)
 		
 		Case "106speed"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			Curr106\Speed = Float(StrTemp)
 			CreateConsoleMsg("106's speed set to " + StrTemp)
 			;[End Block]
@@ -1213,7 +1217,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "godmode", "god"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -1256,7 +1260,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "noclip","fly"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -1302,7 +1306,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "debughud"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			Select StrTemp
 				Case "on", "1", "true"
 					DebugHUD = True
@@ -1341,20 +1345,20 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "camerafog"
 			;[Block]
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			CameraFogNear = Float(Left(args, Len(args) - Instr(args, " ")))
 			CameraFogFar = Float(Right(args, Len(args) - Instr(args, " ")))
 			CreateConsoleMsg("Near set to: " + CameraFogNear + ", far set to: " + CameraFogFar)
 			;[End Block]
 		Case "gamma"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			ScreenGamma = Int(StrTemp)
 			CreateConsoleMsg("Gamma set to " + ScreenGamma)
 			;[End Block]
 		Case "spawn"
 			;[Block]
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$, 1)
 			StrTemp2$ = Piece$(args$, 2)
 			
@@ -1368,7 +1372,7 @@ Function ExecConsole(cin$, silent% = False)
 		;new Console Commands in SCP:CB 1.3 - ENDSHN
 		Case "infinitestamina","infstam"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -1405,7 +1409,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "unlockexits"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "a"
@@ -1463,7 +1467,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[Block]
 			; I think this might be broken since the FMod library streaming was added. -Mark
 			If Instr(cin, " ")<>0 Then
-				StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			Else
 				StrTemp$ = ""
 			EndIf
@@ -1496,7 +1500,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "tele"
 			;[Block]
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -1508,7 +1512,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "notarget"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -1554,7 +1558,7 @@ Function ExecConsole(cin$, silent% = False)
 		;	;[End Block]
 		Case "seteventstate"
 			;[Block]
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -1586,7 +1590,7 @@ Function ExecConsole(cin$, silent% = False)
 		Case "spawnparticles"
 			;[Block]
 			If Instr(cin, " ")<>0 Then
-				StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			Else
 				StrTemp$ = ""
 			EndIf
@@ -1601,7 +1605,7 @@ Function ExecConsole(cin$, silent% = False)
 		Case "giveachievement"
 			;[Block]
 			If Instr(cin, " ")<>0 Then
-				StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			Else
 				StrTemp$ = ""
 			EndIf
@@ -1615,7 +1619,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "427state"
 			;[Block]
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			I_427\Timer = Float(StrTemp)*70.0
 			;[End Block]
@@ -1626,7 +1630,7 @@ Function ExecConsole(cin$, silent% = False)
 			;[End Block]
 		Case "setblinkeffect"
 			;[Block]
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			BlinkEffect = Float(Left(args, Len(args) - Instr(args, " ")))
 			BlinkEffectTimer = Float(Right(args, Len(args) - Instr(args, " ")))
 			CreateConsoleMsg("Set BlinkEffect to: " + BlinkEffect + "and BlinkEffect timer: " + BlinkEffectTimer)
@@ -1687,6 +1691,11 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("camera.range <near> <far> - sets camera range to near <near> and far <far>.")
 			CreateConsoleMsg("item.nearest.remove - removes nearest item to player.")
 			CreateConsoleMsg("sound.play <relative filepath> [volume=SFX volume] - plays strict sound from file <relative filepath> with volume [volume] or you SFX volume if [volume] not set.")
+			CreateConsoleMsg("doors.all.open/doors.all.close - closes or opens all unlocked doors in Facility.")
+			CreateConsoleMsg("set106state <state:float> - sets state of current SCP-106.")
+			CreateConsoleMsg("reset1025 - resets all SCP-1025 states.")
+			CreateConsoleMsg("displaymessage <timer:float> <message:string> - displays a message with text <message> for <timer> seconds.")
+			CreateConsoleMsg("setvomittimer <timer:float> - sets vomit timer to <timer> value.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Player control commands:", 255, 127, 0)
@@ -1697,6 +1706,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("player.position.set <x> <y> <z> - sets player position on <x>, <y> and <z>.")
 			CreateConsoleMsg("player.rotation.turn <pitch/x> <yaw/y> <roll/z> - moves player rotation on <pitch/x>, <yaw/y> and <roll/z> offset.")
 			CreateConsoleMsg("player.rotation.set <pitch/x> <yaw/y> <roll/z> - sets player rotation on <pitch/x>, <yaw/y> and <roll/z>.")
+			CreateConsoleMsg("player.camera.effect.pocketdimension.enable/player.camera.effect.pocketdimension.disable - enables or disables Pocket Dimension camera effect.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Controllable NPC control commands:", 255, 127, 0)
@@ -1807,7 +1817,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("", 0, 0, 0)
 
 		Case "execfile"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			If FileType(StrTemp) <> 1 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
 
@@ -1816,7 +1826,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Executing file " + Chr(34) + StrTemp + Chr(34) + ". Done.", 255, 127, 0)
 
 		Case "execwithdelay"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			;StrTemp2$ = Piece$(args$,2," ")
 			StrTemp2$ = Right(args, Len(args) - Instr(args, " ", Instr(args, " ")))
@@ -1829,7 +1839,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Local bnd.ConsoleBind = Null
 		Case "bind"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			;CreateConsoleMsg("Press key: ", 0, 255, 255)
 			;UpdateConsole(False)
@@ -1858,7 +1868,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Binded key " + KeyName(bnd\KeyCode) + " to command " + Chr(34) + bnd\Command + Chr(34) + " (to call, use " + KeyName(KEY_CALL_BIND) + " + " + KeyName(bnd\KeyCode) +").", 0, 255, 0)
 
 		Case "unbind"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			bnd = Null
 
 			For bnd_.ConsoleBind = Each ConsoleBind
@@ -1883,7 +1893,7 @@ Function ExecConsole(cin$, silent% = False)
 		; ====================
 
 		Case "noblinking"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -1903,11 +1913,11 @@ Function ExecConsole(cin$, silent% = False)
 
 		Local rname$
 		Case "spawnroom"
-			rname = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			rname = Right(cin, Len(cin) - Instr(cin, " "))
 			PlayerRoom = CreateRoom(0, 0, EntityX(Collider), EntityY(Collider) - 0.25, EntityZ(Collider), rname, True)
 
 		Case "setcurrentroom"
-			rname = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			rname = Right(cin, Len(cin) - Instr(cin, " "))
 			For r.Rooms = Each Rooms
 				If r\RoomTemplate\Name = rname Then
 					PlayerRoom = r
@@ -1922,7 +1932,7 @@ Function ExecConsole(cin$, silent% = False)
 			HideEntity Fog
 
 		;Case "teleport173to"
-		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
 		;	StrTemp$ = Piece$(args$,1," ")
 		;	StrTemp2$ = Piece$(args$,2," ")
 		;	StrTemp3$ = Piece$(args$,3," ")
@@ -1933,7 +1943,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "addlight"
 			Local lr%, lg%, lb%
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -1942,7 +1952,7 @@ Function ExecConsole(cin$, silent% = False)
 			AddLight(Null, EntityX(Collider), EntityY(Collider), EntityZ(Collider), 2, 10, Int(StrTemp), Int(StrTemp2), Int(StrTemp3))	
 			
 		Case "secondarylight"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -1962,7 +1972,7 @@ Function ExecConsole(cin$, silent% = False)
 		Local prop% = 0
 		Local t_ent_scale#
 		Case "props.create"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 
@@ -1999,7 +2009,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "camera.range"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 
@@ -2015,7 +2025,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Removed nearest item to player.", 0, 255, 0)
 
 		Case "sound.play"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 
@@ -2023,13 +2033,13 @@ Function ExecConsole(cin$, silent% = False)
 
 			If FileType(StrTemp) <> 1 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
 
-			chn = PlaySound_Strict(LoadSound_Strict(StrTemp))
+			chn = PlaySound_Strict(LoadTempSound(StrTemp))
 			ChannelVolume(chn, Float(StrTemp2))
 
 			CreateConsoleMsg("Played file " + Chr(34) + StrTemp + Chr(34) + " with volume " + Float(StrTemp2) + ".", 0, 255, 0)
 
 		;Case "lever.create"
-		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
 		;	StrTemp$ = Piece$(args$,1," ")
 		;	StrTemp2$ = Piece$(args$,2," ")
 		;	StrTemp3$ = Piece$(args$,3," ")
@@ -2054,18 +2064,54 @@ Function ExecConsole(cin$, silent% = False)
 		;
 		;	CreateConsoleMsg("Created new lever at (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " (locked: " + locked + ").", 0, 255, 0)
 
-		;Case "set106state"
-		;	StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
-		;
-		;	Curr106\State = Float(StrTemp)
-		;
-		;	CreateConsoleMsg("Set state of current SCP-106 to " + Float(StrTemp) + ".", 0, 255, 0)
+		Case "set106state"
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+		
+			Curr106\State = Float(StrTemp)
+		
+			CreateConsoleMsg("Set state of current SCP-106 to " + Float(StrTemp) + ".", 0, 255, 0)
+
+		Case "doors.all.open"
+			For d.Doors = Each Doors
+				If Not d\locked Then d\open = True
+			Next
+
+			CreateConsoleMsg("Opened all unlocked doors.", 0, 255, 0)
+
+		Case "doors.all.close"
+			For d.Doors = Each Doors
+				If Not d\locked Then d\open = False
+			Next
+
+			CreateConsoleMsg("Closed all unlocked doors.", 0, 255, 0)
+
+		Case "displaymessage"
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			Msg = StrTemp2
+			MsgTimer = 70 * Float(StrTemp)
+
+			CreateConsoleMsg("Displayed message with text " + Chr(34) + Msg + Chr(34) + "and timer " + Float(StrTemp) + " seconds.", 0, 255, 0)
+
+		Case "reset1025"
+			For i = 0 To 5
+				SCP1025state[i] = 0
+			Next
+
+			CreateConsoleMsg("Resetted all SCP-1025 states.", 0, 255, 0)
+
+		Case "setvomittimer"
+			VomitTimer = Float(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			CreateConsoleMsg("Set vomit timer to " + VomitTimer + ".", 0, 255, 0)
 
 		; === CONTROLLABLE NPC ===
 
 		Case "cnpc.spawn"
 			If ctrl_npc = Null Then
-				Select Lower(Right(cin, Len(cin) - Instr(cin, " "))) 
+				Select Right(cin, Len(cin) - Instr(cin, " "))
 
 					Case "gonzales"
 						ctrl_npc = CreateNPC(NPCtypeD, EntityX(Collider), EntityY(Collider) + 0.2, EntityZ(Collider))
@@ -2150,7 +2196,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "cnpc.follow"
 			If ctrl_npc <> Null Then
-				StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 		
 				Select StrTemp
 					Case "on", "1", "true"
@@ -2184,7 +2230,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "cnpc.follow.playerrotating"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 		
 			Select StrTemp
 				Case "on", "1", "true"
@@ -2218,7 +2264,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "cnpc.follow.followpoint.position.move"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2231,7 +2277,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "cnpc.follow.followpoint.position.translate"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2244,7 +2290,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "cnpc.follow.followpoint.position.set"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2269,7 +2315,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Access level of controllable NPC equals to " + ctrl_npc_access_level + ".", 0, 255, 0)
 
 		Case "cnpc.interaction.accesslevel.set"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			ctrl_npc_access_level = Int(StrTemp)
 			
@@ -2280,7 +2326,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Local sc.SecurityCams
 		Case "sc.create"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			sc = CreateSecurityCam(EntityX(Collider), EntityY(Collider), EntityZ(Collider), PlayerRoom, True)
 			PositionEntity sc\ScrObj, EntityX(Collider), EntityY(Collider) + 0.5, EntityZ(Collider)
@@ -2315,7 +2361,7 @@ Function ExecConsole(cin$, silent% = False)
 		Case "sc.camera.nearest.position.translate"
 			sc = GetNearestSCToEntity(Collider)
 
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2329,7 +2375,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			;CreateConsoleMsg(, 255, 0, 255)
 
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			
@@ -2344,7 +2390,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			;CreateConsoleMsg(, 255, 0, 255)
 
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			
@@ -2359,7 +2405,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			;CreateConsoleMsg(, 255, 0, 255)
 
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			
 			sc\turn = Float(StrTemp)
@@ -2390,7 +2436,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			;CreateConsoleMsg(, 255, 0, 255)
 
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2404,7 +2450,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			;CreateConsoleMsg(, 255, 0, 255)
 
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2418,7 +2464,7 @@ Function ExecConsole(cin$, silent% = False)
 
 			;CreateConsoleMsg(, 255, 0, 255)
 
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2431,7 +2477,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Local texScr079% = 0
 		Case "scp079.screen.image.set.fromdefault"
-			Select Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			Select Right(cin, Len(cin) - Instr(cin, " "))
 				Case "face", "0"
 					texScr079 = OldAiPics(0)
 
@@ -2447,9 +2493,9 @@ Function ExecConsole(cin$, silent% = False)
 			Console_SetTextureForAllSCP079Instances(texScr079)
 
 		Case "scp079.screen.image.set.fromfile"
-			StrTemp = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp = Right(cin, Len(cin) - Instr(cin, " "))
 
-			If FileSize(StrTemp) = 0 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
+			If FileType(StrTemp) <> 1 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
 
 			texScr079 = LoadTexture_Strict(StrTemp)
 
@@ -2470,7 +2516,7 @@ Function ExecConsole(cin$, silent% = False)
 		; === SCP-173 COMMANDS ===
 
 		Case "scp173.idle"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 		
 			Select StrTemp
 				Case "enable", "on", "1", "true"
@@ -2488,7 +2534,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "scp173.position.translate"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2499,7 +2545,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 position translated on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " offset.", 0, 255, 0)
 
 		Case "scp173.position.move"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2510,7 +2556,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 position moved on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " offset.", 0, 255, 0)
 
 		Case "scp173.position.set"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2521,7 +2567,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 position set on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "scp173.rotation.turn"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2532,7 +2578,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 rotation turned (rotated) on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "scp173.rotation.set"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2563,7 +2609,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 enabled.", 0, 255, 0)
 
 		Case "scp173.speed.set"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			Curr173\Speed = Float(StrTemp)
 
 			CreateConsoleMsg("Speed of current SCP-173 set to " + Float(StrTemp) + ".", 0, 255, 0)
@@ -2579,7 +2625,7 @@ Function ExecConsole(cin$, silent% = False)
 		; === SCP-106 COMMANDS ===
 
 		;Case "scp106.spawn"
-		;	args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
 		;	StrTemp$ = Piece$(args$,1," ")
 		;	StrTemp2$ = Piece$(args$,2," ")
 		;	StrTemp3$ = Piece$(args$,3," ")
@@ -2596,7 +2642,7 @@ Function ExecConsole(cin$, silent% = False)
 		; === PLAYER CONTROL COMMADS ===
 
 		Case "player.position.translate"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2607,7 +2653,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player position translated on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.position.move"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2618,7 +2664,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player position moved on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.position.set"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2629,7 +2675,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player position set on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.rotation.turn"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2640,7 +2686,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player rotation turned on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.rotation.set"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2649,6 +2695,16 @@ Function ExecConsole(cin$, silent% = False)
 			ResetEntity Collider
 
 			CreateConsoleMsg("Player rotation set on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
+
+		Case "player.camera.effect.pocketdimension.enable"
+			PDCameraEffect = True
+
+			CreateConsoleMsg("Enabled Pocket Dimension camera effect.", 0, 255, 0)
+
+		Case "player.camera.effect.pocketdimension.disable"
+			PDCameraEffect = False
+
+			CreateConsoleMsg("Disabled Pocket Dimension camera effect.", 0, 255, 0)
 
 		; === GFX DRIVER CONTROL ===
 
@@ -2659,7 +2715,7 @@ Function ExecConsole(cin$, silent% = False)
 			Next
 
 		Case "gfxdriver.current.set"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			index% = Int(StrTemp)
 
@@ -2673,7 +2729,7 @@ Function ExecConsole(cin$, silent% = False)
 		; === DOOR CONTROL ===
 
 		Case "door.create"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ") ; x
 			StrTemp2$ = Piece$(args$,2," ") ; y
 			StrTemp3$ = Piece$(args$,3," ") ; z
@@ -2717,7 +2773,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Created door at (X|Y|Z) " + x + " " + y + " " + z + ", angle " + angle + ", type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
 
 		Case "door.createandselect"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ") ; x
 			StrTemp2$ = Piece$(args$,2," ") ; y
 			StrTemp3$ = Piece$(args$,3," ") ; z
@@ -2761,7 +2817,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Created and selected door at (X|Y|Z) " + x + " " + y + " " + z + ", angle " + angle + ", type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
 
 		Case "door.create.atplayer"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ") ; type
 			StrTemp2$ = Piece$(args$,2," ") ; access level
 			StrTemp3$ = Piece$(args$,3," ") ; access code
@@ -2801,7 +2857,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Created door at player position & yaw (y) angle type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
 
 		Case "door.createandselect.atplayer"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ") ; type
 			StrTemp2$ = Piece$(args$,2," ") ; access level
 			StrTemp3$ = Piece$(args$,3," ") ; access code
@@ -2841,7 +2897,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Created and selected door at player position & yaw (y) angle type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
 
 		Case "door.select.nearesttopoint"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2881,7 +2937,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.position.set"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2901,7 +2957,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.position.translate"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2921,7 +2977,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.position.move"
-			args$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
@@ -2941,7 +2997,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		;Case "door.selected.rotation.set"
-		;	angle# = Float(Lower(Right(cin, Len(cin) - Instr(cin, " "))))
+		;	angle# = Float(Right(cin, Len(cin) - Instr(cin, " ")))
 		;
 		;	If CurrDoor <> Null Then
 		;		If CurrDoor\open Then
@@ -2969,7 +3025,7 @@ Function ExecConsole(cin$, silent% = False)
 		;	End If
 		;
 		;Case "door.selected.rotation.turn"
-		;	angle# = Float(Lower(Right(cin, Len(cin) - Instr(cin, " "))))
+		;	angle# = Float(Right(cin, Len(cin) - Instr(cin, " ")))
 		;
 		;	If CurrDoor <> Null Then
 		;		If CurrDoor\open Then
@@ -2997,7 +3053,7 @@ Function ExecConsole(cin$, silent% = False)
 		;	End If
 
 		Case "door.selected.use"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			access_level% = Int(StrTemp)
 			If CalculateCharCountInString(cin, " ") = 0 Then access_level = 0
@@ -3086,7 +3142,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.accesslevel.set"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			access_level% = Int(StrTemp)
 
@@ -3112,7 +3168,7 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.accesscode.set"
-			StrTemp$ = Lower(Right(cin, Len(cin) - Instr(cin, " ")))
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			If CurrDoor <> Null Then
 				CurrDoor\Code = StrTemp
@@ -3223,7 +3279,8 @@ End If
 
 ;---------------------------------------------------------------------------------------------------
 
-Global DebugHUD%
+Const DEBUG_HUD_PAGES_COUNT% = 2
+Global DebugHUD%, DebugHUDpage% = 1
 
 Global BlurVolume#, BlurTimer#
 
@@ -4531,7 +4588,7 @@ End Type
 
 Global I_Zone.MapZones = New MapZones
 
-Include "CustomEvents.bb"
+Include "sandbox\CustomEvents.bb"
 
 ;----------------------------------------------------------------------------------------------------------------------------------------------------
 ;----------------------------------------------       		MAIN LOOP                 ---------------------------------------------------------------
@@ -5911,6 +5968,11 @@ Function MovePlayer()
 	If KeyHit(KEY_TOGGLE_DEBUGHUD) Then
 		DebugHUD = Not DebugHUD
 	End If
+	If DebugHUD Then
+		For i% = 1 To DEBUG_HUD_PAGES_COUNT
+			If KeyHit(i + 1) Then DebugHUDpage = i
+		Next
+	End If
 
 	If KeyHit(KEY_TOGGLE_NOBLINKING) Then
 		NoBlinking = Not NoBlinking
@@ -5920,10 +5982,12 @@ Function MovePlayer()
 		ShowFPS = Not ShowFPS
 	End If
 
-	For keyi = 0 To 9
-		If KeyHit(KEYS_SELECT_ITEM(keyi)) SelectedItem = Inventory(keyi)
-	Next
-	;If KeyHit(2) SelectedItem = Inventory(0)
+	If Not DebugHUD Then
+		For keyi = 0 To 9
+			If KeyHit(KEYS_SELECT_ITEM(keyi)) SelectedItem = Inventory(keyi)
+		Next
+		;If KeyHit(2) SelectedItem = Inventory(0)
+	End If
 
 	;If PlayerRoom\RoomTemplate\Name = "roompj" CustomPJEvent()
 	;If PlayerRoom\RoomTemplate\Name = "room079" Custom079EventUpdate()
@@ -6199,6 +6263,7 @@ Function MouseLook()
 		RotateEntity Camera, 0, EntityYaw(Collider), roll*0.5
 		
 		MoveEntity Camera, side, up + 0.6 + CrouchState * -0.3, 0
+		;MoveEntity Camera, side, 0.6 + CrouchState * -0.3, 0
 		
 		;RotateEntity Collider, EntityPitch(Collider), EntityYaw(Collider), 0
 		;moveentity player, side, up, 0	
@@ -6230,7 +6295,7 @@ Function MouseLook()
 		
 		RotateEntity Camera, WrapAngle(user_camera_pitch + Rnd(-CameraShake, CameraShake)), WrapAngle(EntityYaw(Collider) + Rnd(-CameraShake, CameraShake)), roll ; Pitch the user;s camera up And down.
 		
-		If PlayerRoom\RoomTemplate\Name = "pocketdimension" Then
+		If (PlayerRoom\RoomTemplate\Name = "pocketdimension" Or PDCameraEffect) And PocketDimensionCameraEffect Then
 			If EntityY(Collider)<2000*RoomScale Or EntityY(Collider)>2608*RoomScale Then
 				RotateEntity Camera, WrapAngle(EntityPitch(Camera)),WrapAngle(EntityYaw(Camera)), roll+WrapAngle(Sin(MilliSecs2()/150.0)*30.0) ; Pitch the user;s camera up And down.
 			EndIf
@@ -6518,9 +6583,9 @@ Function DrawGUI()
 		If EnableDrawingInteractionImage DrawImage(HandIcon2, GraphicWidth / 2 + Sin(yawvalue) * (GraphicWidth / 3) - 32, GraphicHeight / 2 - Sin(pitchvalue) * (GraphicHeight / 3) - 32)
 	EndIf
 	
-	If DrawHandIcon Then DrawImage(HandIcon, GraphicWidth / 2 - 32, GraphicHeight / 2 - 32)
+	If DrawHandIcon And EnableDrawingInteractionImage Then DrawImage(HandIcon, GraphicWidth / 2 - 32, GraphicHeight / 2 - 32)
 	For i = 0 To 3
-		If DrawArrowIcon(i) Then
+		If DrawArrowIcon(i) And EnableDrawingInteractionImage Then
 			x = GraphicWidth / 2 - 32
 			y = GraphicHeight / 2 - 32		
 			Select i
@@ -6549,80 +6614,128 @@ Function DrawGUI()
 	If DebugHUD Then
 		Color 255, 255, 255
 		AASetFont ConsoleFont
-		
-		AAText x + 800, 50, "Zone: " + (EntityZ(Collider)/8.0)
-		AAText x - 50, 50, "Player Position: (" + f2s(EntityX(Collider), 3) + ", " + f2s(EntityY(Collider), 3) + ", " + f2s(EntityZ(Collider), 3) + ")"
-		AAText x - 50, 70, "Camera Position: (" + f2s(EntityX(Camera), 3)+ ", " + f2s(EntityY(Camera), 3) +", " + f2s(EntityZ(Camera), 3) + ")"
-		AAText x - 50, 100, "Player Rotation: (" + f2s(EntityPitch(Collider), 3) + ", " + f2s(EntityYaw(Collider), 3) + ", " + f2s(EntityRoll(Collider), 3) + ")"
-		AAText x - 50, 120, "Camera Rotation: (" + f2s(EntityPitch(Camera), 3)+ ", " + f2s(EntityYaw(Camera), 3) +", " + f2s(EntityRoll(Camera), 3) + ")"
-		AAText x - 50, 150, "Room: " + PlayerRoom\RoomTemplate\Name
-		For ev.Events = Each Events
-			If ev\room = PlayerRoom Then
-				AAText x - 50, 170, "Room event: " + ev\EventName   
-				AAText x - 50, 190, "state: " + ev\EventState
-				AAText x - 50, 210, "state2: " + ev\EventState2   
-				AAText x - 50, 230, "state3: " + ev\EventState3
-				AAText x - 50, 250, "str: "+ ev\EventStr
-				Exit
-			EndIf
-		Next
-		AAText x - 50, 280, "Room coordinates: (" + Floor(EntityX(PlayerRoom\obj) / 8.0 + 0.5) + ", " + Floor(EntityZ(PlayerRoom\obj) / 8.0 + 0.5) + ", angle: "+PlayerRoom\angle + ")"
-		AAText x - 50, 300, "Stamina: " + f2s(Stamina, 3)
-		AAText x - 50, 320, "Death timer: " + f2s(KillTimer, 3)               
-		AAText x - 50, 340, "Blink timer: " + f2s(BlinkTimer, 3)
-		AAText x - 50, 360, "Injuries: " + Injuries
-		AAText x - 50, 380, "Bloodloss: " + Bloodloss
-		If Curr173 <> Null
-			AAText x - 50, 410, "SCP - 173 Position (collider): (" + f2s(EntityX(Curr173\Collider), 3) + ", " + f2s(EntityY(Curr173\Collider), 3) + ", " + f2s(EntityZ(Curr173\Collider), 3) + ")"
-			AAText x - 50, 430, "SCP - 173 Position (obj): (" + f2s(EntityX(Curr173\obj), 3) + ", " + f2s(EntityY(Curr173\obj), 3) + ", " + f2s(EntityZ(Curr173\obj), 3) + ")"
-			;Text x - 50, 410, "SCP - 173 Idle: " + Curr173\Idle
-			AAText x - 50, 450, "SCP - 173 State: " + Curr173\State
-		EndIf
-		If Curr106 <> Null
-			AAText x - 50, 470, "SCP - 106 Position: (" + f2s(EntityX(Curr106\obj), 3) + ", " + f2s(EntityY(Curr106\obj), 3) + ", " + f2s(EntityZ(Curr106\obj), 3) + ")"
-			AAText x - 50, 490, "SCP - 106 Idle: " + Curr106\Idle
-			AAText x - 50, 510, "SCP - 106 State: " + Curr106\State
-		EndIf
-		offset% = 0
-		For npc.NPCs = Each NPCs
-			If npc\NPCtype = NPCtype096 Then
-				AAText x - 50, 530, "SCP - 096 Position: (" + f2s(EntityX(npc\obj), 3) + ", " + f2s(EntityY(npc\obj), 3) + ", " + f2s(EntityZ(npc\obj), 3) + ")"
-				AAText x - 50, 550, "SCP - 096 Idle: " + npc\Idle
-				AAText x - 50, 570, "SCP - 096 State: " + npc\State
-				AAText x - 50, 590, "SCP - 096 Speed: " + f2s(npc\currspeed, 5)
-			EndIf
-			If npc\NPCtype = NPCtypeMTF Then
-				AAText x - 50, 620 + 60 * offset, "MTF " + offset + " Position: (" + f2s(EntityX(npc\obj), 3) + ", " + f2s(EntityY(npc\obj), 3) + ", " + f2s(EntityZ(npc\obj), 3) + ")"
-				AAText x - 50, 640 + 60 * offset, "MTF " + offset + " State: " + npc\State
-				AAText x - 50, 660 + 60 * offset, "MTF " + offset + " LastSeen: " + npc\lastseen					
-				offset = offset + 1
-			EndIf
-		Next
-		If PlayerRoom\RoomTemplate\Name$ = "dimension1499"
-			AAText x + 350, 50, "Current Chunk X/Z: ("+(Int((EntityX(Collider)+20)/40))+", "+(Int((EntityZ(Collider)+20)/40))+")"
-			Local CH_Amount% = 0
-			For ch.Chunk = Each Chunk
-				CH_Amount = CH_Amount + 1
-			Next
-			AAText x + 350, 70, "Current Chunk Amount: "+CH_Amount
-		Else
-			AAText x + 350, 50, "Current Room Position: ("+PlayerRoom\x+", "+PlayerRoom\y+", "+PlayerRoom\z+")"
-		EndIf
-		GlobalMemoryStatus m.MEMORYSTATUS
-		AAText x + 350, 90, (m\dwAvailPhys%/1024/1024)+" MB/"+(m\dwTotalPhys%/1024/1024)+" MB ("+(m\dwAvailPhys%/1024)+" KB/"+(m\dwTotalPhys%/1024)+" KB)"
-		AAText x + 350, 110, "Triangles rendered: "+CurrTrisAmount
-		AAText x + 350, 130, "Active textures: "+ActiveTextures()
-		AAText x + 350, 150, "SCP-427 state (secs): "+Int(I_427\Timer/70.0)
-		AAText x + 350, 170, "SCP-008 infection: "+Infect
-		For i = 0 To 5
-			AAText x + 350, 190+(20*i), "SCP-1025 State "+i+": "+SCP1025state[i]
-		Next
-		If SelectedMonitor <> Null Then
-			AAText x + 350, 310, "Current monitor: "+SelectedMonitor\ScrObj
-		Else
-			AAText x + 350, 310, "Current monitor: NULL"
-		EndIf
-		
+
+		Select DebugHUDpage
+			Case 1
+				AAText x + 800, 50, "Zone: " + (EntityZ(Collider)/8.0)
+				AAText x - 50, 50, "Player Position: (" + f2s(EntityX(Collider), 3) + ", " + f2s(EntityY(Collider), 3) + ", " + f2s(EntityZ(Collider), 3) + ")"
+				AAText x - 50, 70, "Camera Position: (" + f2s(EntityX(Camera), 3)+ ", " + f2s(EntityY(Camera), 3) +", " + f2s(EntityZ(Camera), 3) + ")"
+				AAText x - 50, 100, "Player Rotation: (" + f2s(EntityPitch(Collider), 3) + ", " + f2s(EntityYaw(Collider), 3) + ", " + f2s(EntityRoll(Collider), 3) + ")"
+				AAText x - 50, 120, "Camera Rotation: (" + f2s(EntityPitch(Camera), 3)+ ", " + f2s(EntityYaw(Camera), 3) +", " + f2s(EntityRoll(Camera), 3) + ")"
+				AAText x - 50, 150, "Room: " + PlayerRoom\RoomTemplate\Name
+				For ev.Events = Each Events
+					If ev\room = PlayerRoom Then
+						AAText x - 50, 170, "Room event: " + ev\EventName   
+						AAText x - 50, 190, "state: " + ev\EventState
+						AAText x - 50, 210, "state2: " + ev\EventState2   
+						AAText x - 50, 230, "state3: " + ev\EventState3
+						AAText x - 50, 250, "str: "+ ev\EventStr
+						Exit
+					EndIf
+				Next
+				AAText x - 50, 280, "Room coordinates: (" + Floor(EntityX(PlayerRoom\obj) / 8.0 + 0.5) + ", " + Floor(EntityZ(PlayerRoom\obj) / 8.0 + 0.5) + ", angle: "+PlayerRoom\angle + ")"
+				AAText x - 50, 300, "Stamina: " + f2s(Stamina, 3)
+				AAText x - 50, 320, "Death timer: " + f2s(KillTimer, 3)               
+				AAText x - 50, 340, "Blink timer: " + f2s(BlinkTimer, 3)
+				AAText x - 50, 360, "Injuries: " + Injuries
+				AAText x - 50, 380, "Bloodloss: " + Bloodloss
+				If Curr173 <> Null
+					AAText x - 50, 410, "SCP - 173 Position (collider): (" + f2s(EntityX(Curr173\Collider), 3) + ", " + f2s(EntityY(Curr173\Collider), 3) + ", " + f2s(EntityZ(Curr173\Collider), 3) + ")"
+					AAText x - 50, 430, "SCP - 173 Position (obj): (" + f2s(EntityX(Curr173\obj), 3) + ", " + f2s(EntityY(Curr173\obj), 3) + ", " + f2s(EntityZ(Curr173\obj), 3) + ")"
+					;Text x - 50, 410, "SCP - 173 Idle: " + Curr173\Idle
+					AAText x - 50, 450, "SCP - 173 State: " + Curr173\State
+				EndIf
+				If Curr106 <> Null
+					AAText x - 50, 470, "SCP - 106 Position: (" + f2s(EntityX(Curr106\obj), 3) + ", " + f2s(EntityY(Curr106\obj), 3) + ", " + f2s(EntityZ(Curr106\obj), 3) + ")"
+					AAText x - 50, 490, "SCP - 106 Idle: " + Curr106\Idle
+					AAText x - 50, 510, "SCP - 106 State: " + Curr106\State
+				EndIf
+				offset% = 0
+				For npc.NPCs = Each NPCs
+					If npc\NPCtype = NPCtype096 Then
+						AAText x - 50, 530, "SCP - 096 Position: (" + f2s(EntityX(npc\obj), 3) + ", " + f2s(EntityY(npc\obj), 3) + ", " + f2s(EntityZ(npc\obj), 3) + ")"
+						AAText x - 50, 550, "SCP - 096 Idle: " + npc\Idle
+						AAText x - 50, 570, "SCP - 096 State: " + npc\State
+						AAText x - 50, 590, "SCP - 096 Speed: " + f2s(npc\currspeed, 5)
+					EndIf
+					If npc\NPCtype = NPCtypeMTF Then
+						AAText x - 50, 620 + 60 * offset, "MTF " + offset + " Position: (" + f2s(EntityX(npc\obj), 3) + ", " + f2s(EntityY(npc\obj), 3) + ", " + f2s(EntityZ(npc\obj), 3) + ")"
+						AAText x - 50, 640 + 60 * offset, "MTF " + offset + " State: " + npc\State
+						AAText x - 50, 660 + 60 * offset, "MTF " + offset + " LastSeen: " + npc\lastseen					
+						offset = offset + 1
+					EndIf
+				Next
+				If PlayerRoom\RoomTemplate\Name$ = "dimension1499"
+					AAText x + 350, 50, "Current Chunk X/Z: ("+(Int((EntityX(Collider)+20)/40))+", "+(Int((EntityZ(Collider)+20)/40))+")"
+					Local CH_Amount% = 0
+					For ch.Chunk = Each Chunk
+						CH_Amount = CH_Amount + 1
+					Next
+					AAText x + 350, 70, "Current Chunk Amount: "+CH_Amount
+				Else
+					AAText x + 350, 50, "Current Room Position: ("+PlayerRoom\x+", "+PlayerRoom\y+", "+PlayerRoom\z+")"
+				EndIf
+				GlobalMemoryStatus m.MEMORYSTATUS
+				AAText x + 350, 90, (m\dwAvailPhys%/1024/1024)+" MB/"+(m\dwTotalPhys%/1024/1024)+" MB ("+(m\dwAvailPhys%/1024)+" KB/"+(m\dwTotalPhys%/1024)+" KB)"
+				AAText x + 350, 110, "Triangles rendered: "+CurrTrisAmount
+				AAText x + 350, 130, "Active textures: "+ActiveTextures()
+				AAText x + 350, 150, "SCP-427 state (secs): "+Int(I_427\Timer/70.0)
+				AAText x + 350, 170, "SCP-008 infection: "+Infect
+				For i = 0 To 5
+					AAText x + 350, 190+(20*i), "SCP-1025 State "+i+": "+SCP1025state[i]
+				Next
+				If SelectedMonitor <> Null Then
+					AAText x + 350, 310, "Current monitor: "+SelectedMonitor\ScrObj
+				Else
+					AAText x + 350, 310, "Current monitor: NULL"
+				EndIf
+
+			Case 2
+				;player stats
+				AAText x - 50, 50, "MsgTimer: " + f2s(MsgTimer, 3)
+
+				AAText x - 50, 80, "KillTimer: " + f2s(KillTimer, 3)
+				AAText x - 50, 100, "PDCameraEffect: " + bool2s(PDCameraEffect)
+
+
+				AAText x + 350, 50, "EyeIrritation: " + f2s(EyeIrritation, 3)
+				AAText x + 350, 70, "EyeStuck: " + f2s(EyeStuck, 3)
+				AAText x + 350, 90, "BlinkEffect: " + f2s(BlinkEffect, 3)
+				AAText x + 350, 110, "BlinkEffectTimer: " + f2s(BlinkEffectTimer, 3)
+
+				AAText x + 350, 140, "StaminaEffect: " + f2s(StaminaEffect, 3)
+				AAText x + 350, 160, "StaminaEffectTimer: " + f2s(StaminaEffectTimer, 3)
+
+				AAText x + 350, 190, "CameraShake: " + CameraShake
+				AAText x + 350, 210, "CameraShakeTimer: " + f2s(CameraShakeTimer, 3)
+
+				AAText x + 350, 240, "Vomit: " + bool2s(Vomit)
+				AAText x + 350, 260, "VomitTimer: " + f2s(VomitTimer, 3)
+				AAText x + 350, 280, "Regurgitate: " + Regurgitate
+
+				AAText x + 350, 310, "HeartBeatRate: " + f2s(HeartBeatRate, 3)
+				AAText x + 350, 330, "HeartBeatTimer: " + f2s(HeartBeatTimer, 3)
+				AAText x + 350, 350, "HeartBeatVolume: " + f2s(HeartBeatVolume, 3)
+
+				AAText x + 350, 380, "WearingGasMask: " + bool2s(WearingGasMask)
+				AAText x + 350, 400, "WearingHazmat: " + bool2s(WearingHazmat)
+				AAText x + 350, 420, "WearingVest: " + bool2s(WearingVest)
+				AAText x + 350, 440, "Wearing714: " + bool2s(Wearing714)
+				AAText x + 350, 460, "WearingNightVision: " + bool2s(WearingNightVision)
+				AAText x + 350, 480, "NVTimer: " + f2s(NVTimer, 3)
+
+				AAText x + 350, 510, "GodMode: " + bool2s(GodMode)
+				AAText x + 350, 530, "Noclip: " + bool2s(Noclip)
+				AAText x + 350, 550, "NoTarget: " + bool2s(NoTarget)
+				AAText x + 350, 570, "NoBlinking: " + bool2s(NoBlinking)
+
+				AAText x + 350, 600, "SuperMan: " + bool2s(SuperMan)
+				AAText x + 350, 620, "SuperManTimer: " + f2s(SuperManTimer, 3)
+
+				AAText x + 350, 650, "BlurVolume: " + f2s(BlurVolume, 3)
+				AAText x + 350, 670, "BlurTimer: " + f2s(BlurTimer, 3)
+		End Select
+
 		AASetFont Font1
 	EndIf
 	
@@ -7847,6 +7960,10 @@ Function DrawGUI()
 						If strtemp <> "" Then StaminaEffect = Float(strtemp)^SelectedItem\state
 						strtemp = GetINIString2(iniStr, loc, "stamina effect timer")
 						If strtemp <> "" Then StaminaEffectTimer = Float(strtemp)*SelectedItem\state
+						
+						If IsINIParameterExist2(iniStr, loc, "pocket dimension effect") Then
+							PDCameraEffect = GetINIInt2(iniStr, loc, "pocket dimension effect")
+						End If
 						
 						strtemp = GetINIString2(iniStr, loc, "refusemessage")
 						If strtemp <> "" Then
@@ -10205,12 +10322,6 @@ End Function
 Function InitNewGame(create_empty_map% = False)
 	CatchErrors("Uncaught (InitNewGame)")
 	Local i%, de.Decals, d.Doors, it.Items, r.Rooms, sc.SecurityCams, e.Events
-
-	GodMode = PresetGodMode
-	NoClip = PresetNoclip
-	NoTarget = PresetNoTarget
-	NoBlinking = PresetNoBlinking
-	DebugHUD = PresetDebugHUD
 	
 	DrawLoading(45)
 	
@@ -10274,12 +10385,6 @@ Function InitNewGame(create_empty_map% = False)
 	Curr173 = CreateNPC(NPCtype173, 0, -30.0, 0)
 	Curr106 = CreateNPC(NPCtypeOldMan, 0, -30.0, 0)
 	Curr106\State = 70 * 60 * Rand(12,17)
-
-	If PresetDisableSCP106 Then
-		Curr106\Idle = True
-		Curr106\State = 200000
-		Contained106 = True
-	End If
 	
 	For d.Doors = Each Doors
 		EntityParent(d\obj, 0)
@@ -10418,6 +10523,9 @@ Function InitNewGame(create_empty_map% = False)
 	Next
 	
 	FreeTextureCache
+
+	OnInitNewGame()
+
 	DrawLoading(100)
 	
 	FlushKeys
@@ -10432,18 +10540,6 @@ End Function
 Function InitLoadGame()
 	CatchErrors("Uncaught (InitLoadGame)")
 	Local d.Doors, sc.SecurityCams, rt.RoomTemplates, e.Events
-
-	GodMode = PresetGodMode
-	NoClip = PresetNoclip
-	NoTarget = PresetNoTarget
-	DebugHUD = PresetDebugHUD
-	NoBlinking = PresetNoBlinking
-
-	If PresetDisableSCP106 Then
-		Curr106\Idle = True
-		Curr106\State = 200000
-		Contained106 = True
-	End If
 	
 	DrawLoading(80)
 	
@@ -10546,6 +10642,8 @@ Function NullGame(playbuttonsfx%=True)
 	Local i%, x%, y%, lvl
 	Local itt.ItemTemplates, s.Screens, lt.LightTemplates, d.Doors, m.Materials
 	Local wp.WayPoints, twp.TempWayPoints, r.Rooms, it.Items
+
+	OnNullGame()
 	
 	KillSounds()
 	If playbuttonsfx Then PlaySound_Strict ButtonSFX
@@ -10923,7 +11021,7 @@ Function UpdateMusic()
 	Else
 		If FPSfactor > 0 Or OptionsMenu = 2 Then
 			;CurrMusicVolume = 1.0
-			If EnableMusic Then If (Not ChannelPlaying(MusicCHN)) Then MusicCHN = PlaySound_Strict(CustomMusic)
+			If EnableMusic And (Not ChannelPlaying(MusicCHN)) Then MusicCHN = PlaySound_Strict(CustomMusic)
 			ChannelVolume MusicCHN,1.0*MusicVolume
 		EndIf
 	EndIf
@@ -11363,7 +11461,7 @@ Function Use914(item.Items, setting$, x#, y#, z#)
 			PositionEntity Curr173\Collider, x, y + 0.2, z
 			ResetEntity Curr173\Collider
 
-			chn = PlaySound_Strict(LoadSound_Strict("sandbox\SFX\wonderful_idea.ogg"))
+			chn = PlaySound_Strict(LoadTempSound("sandbox\SFX\wonderful_idea.ogg"))
 			;ChannelVolume(chn, SFXVolume)
 			ChannelVolume(chn, 1.0)
 
@@ -12156,6 +12254,92 @@ Function Use294()
 	
 End Function
 
+;Update any ailments inflicted by SCP-294 drinks.
+Function Update294()
+	CatchErrors("Uncaught (Update294)")
+	
+	If CameraShakeTimer > 0 Then
+		CameraShakeTimer = Max(CameraShakeTimer - (FPSfactor/70), 0)
+		CameraShake = 2
+	EndIf
+	
+	If VomitTimer > 0 Then
+		DebugLog VomitTimer
+		VomitTimer = VomitTimer - (FPSfactor/70)
+		
+		If (MilliSecs2() Mod 1600) < Rand(200, 400) Then
+			If BlurTimer = 0 Then BlurTimer = Rnd(10, 20)*70
+			CameraShake = Rnd(0, 2)
+		EndIf
+		
+;		If (MilliSecs2() Mod 1000) < Rand(1200) Then 
+		
+		If Rand(50) = 50 And (MilliSecs2() Mod 4000) < 200 Then PlaySound_Strict(CoughSFX(Rand(0,2)))
+		
+		;Regurgitate when timer is below 10 seconds. (ew)
+		If VomitTimer < 10 And Rnd(0, 500 * VomitTimer) < 2 Then
+			If (Not ChannelPlaying(VomitCHN)) And (Not Regurgitate) Then
+				VomitCHN = PlaySound_Strict(LoadTempSound("SFX\SCP\294\Retch" + Rand(1, 2) + ".ogg"))
+				Regurgitate = MilliSecs2() + 50
+			EndIf
+		EndIf
+		
+		If Regurgitate > MilliSecs2() And Regurgitate <> 0 Then
+			mouse_y_speed_1 = mouse_y_speed_1 + 1.0
+		Else
+			Regurgitate = 0
+		EndIf
+		
+	ElseIf VomitTimer < 0 Then ;vomit
+		VomitTimer = VomitTimer - (FPSfactor/70)
+		
+		If VomitTimer > -5 Then
+			If (MilliSecs2() Mod 400) < 50 Then CameraShake = 4 
+			mouse_x_speed_1 = 0.0
+			Playable = False
+		Else
+			Playable = True
+		EndIf
+		
+		If (Not Vomit) Then
+			BlurTimer = 40 * 70
+			VomitSFX = LoadSound_Strict("SFX\SCP\294\Vomit.ogg")
+			VomitCHN = PlaySound_Strict(VomitSFX)
+			PrevInjuries = Injuries
+			PrevBloodloss = Bloodloss
+			Injuries = 1.5
+			Bloodloss = 70
+			EyeIrritation = 9 * 70
+			
+			pvt = CreatePivot()
+			PositionEntity(pvt, EntityX(Camera), EntityY(Collider) - 0.05, EntityZ(Camera))
+			TurnEntity(pvt, 90, 0, 0)
+			EntityPick(pvt, 0.3)
+			de.decals = CreateDecal(5, PickedX(), PickedY() + 0.005, PickedZ(), 90, 180, 0)
+			de\Size = 0.001 : de\SizeChange = 0.001 : de\MaxSize = 0.6 : EntityAlpha(de\obj, 1.0) : EntityColor(de\obj, 0.0, Rnd(200, 255), 0.0) : ScaleSprite de\obj, de\size, de\size
+			FreeEntity pvt
+			Vomit = True
+		EndIf
+		
+		UpdateDecals()
+		
+		mouse_y_speed_1 = mouse_y_speed_1 + Max((1.0 + VomitTimer / 10), 0.0)
+		
+		If VomitTimer < -15 Then
+			FreeSound_Strict(VomitSFX)
+			VomitTimer = 0
+			If KillTimer >= 0 Then
+				PlaySound_Strict(BreathSFX(0,0))
+			EndIf
+			Injuries = PrevInjuries
+			Bloodloss = PrevBloodloss
+			Vomit = False
+		EndIf
+	EndIf
+	
+	CatchErrors("Update294")
+End Function
+
 Function Use427()
 	Local i%,pvt%,de.Decals,tempchn%
 	Local prevI427Timer# = I_427\Timer
@@ -12880,6 +13064,32 @@ Function IsINIParameterExist%(file$, section$, parameter$)
 			EndIf
 		EndIf
 	Wend
+	
+	Return False
+End Function
+
+Function IsINIParameterExist2%(file$, start%, parameter$)
+	Local TemporaryString$ = ""
+	Local f% = ReadFile(file)
+	
+	Local n%=0
+	While Not Eof(f)
+		Local strtemp$ = ReadLine(f)
+		n=n+1
+		If n=start Then 
+			Repeat
+				TemporaryString = ReadLine(f)
+				If Lower(Trim(Left(TemporaryString, Max(Instr(TemporaryString, "=") - 1, 0)))) = Lower(parameter) Then
+					CloseFile f
+					Return True
+				EndIf
+			Until Left(TemporaryString, 1) = "[" Or Eof(f)
+			CloseFile f
+			Return False
+		EndIf
+	Wend
+	
+	CloseFile f
 	
 	Return False
 End Function

@@ -5,6 +5,8 @@ Const NUMPAD_KEY_7% = 71, NUMPAD_KEY_8% = 72, NUMPAD_KEY_9% = 73
 Const KEY_UP_ARROW% = 200, KEY_LEFT_ARROW% = 203, KEY_RIGHT_ARROW% = 205, KEY_DOWN_ARROW% = 208
 
 Const KEY_LEFT_ALT% = 56
+Const KEY_LEFT_CONTROL% = 29
+Const KEY_RIGHT_ALT% = 184
 Const KEY_RIGHT_SHIFT% = 54
 Const KEY_RIGHT_CONTROL% = 157
 Const KEY_ENTER% = 28
@@ -33,6 +35,46 @@ End Function
 
 Function OnBeforeSave()
     RemoveControllableNPC()
+End Function
+
+Function OnLoad(f%)
+    GodMode = PresetGodMode
+	NoClip = PresetNoclip
+	NoTarget = PresetNoTarget
+	NoBlinking = PresetNoBlinking
+	DebugHUD = PresetDebugHUD
+
+    If PresetDisableSCP106 Then
+		Curr106\Idle = True
+		;Curr106\State = 200000
+		Contained106 = True
+	End If
+
+    PDCameraEffect = ReadByte(f)
+End Function
+
+Function OnSave(f%)
+    WriteByte(f, PDCameraEffect)
+End Function
+
+Function OnInitNewGame()
+    GodMode = PresetGodMode
+	NoClip = PresetNoclip
+	NoTarget = PresetNoTarget
+	NoBlinking = PresetNoBlinking
+	DebugHUD = PresetDebugHUD
+
+    If PresetDisableSCP106 Then
+		Curr106\Idle = True
+		;Curr106\State = 200000
+		Contained106 = True
+	End If
+
+    PDCameraEffect = False
+End Function
+
+Function OnNullGame()
+    PDCameraEffect = False
 End Function
 
 ; ===========================================================================================================================================================
@@ -92,6 +134,12 @@ Function UpdateCustomEvents()
 
     UpdateDelayedCommands()
     UpdateLevers()
+
+    ;If KeyDown(KEY_RIGHT_ALT) And DebugHUD
+    ;    For i% = 1 To DEBUG_HUD_PAGES_COUNT
+    ;        If KeyHit(i + 1) Then DebugHUDpage = i
+    ;    Next
+    ;End If
 
     CatchErrors("UpdateCustomEvents (before cheat functions)")
     If Not CheatGameControlEnabled Return
@@ -659,4 +707,12 @@ End Function
 
 Function UnpackARGBb%(argb%)
     Return argb And 255
+End Function
+
+Function bool2s$(bool%)
+    If bool Then
+        Return "True"
+    Else
+        Return "False"
+    End If
 End Function

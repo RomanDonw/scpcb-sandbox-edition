@@ -452,6 +452,9 @@ Function SaveGame(file$)
 	WriteFloat f, I_427\Timer
 	
 	WriteByte f, Wearing714
+	
+	OnSave(f)
+	
 	CloseFile f
 	
 	If Not MenuOpen Then
@@ -1196,6 +1199,8 @@ Function LoadGame(file$)
 	EndIf
 	
 	Wearing714 = ReadByte(f)
+
+	OnLoad(f)
 	
 	CloseFile f
 	
@@ -1290,6 +1295,8 @@ Function LoadGameQuick(file$)
 	Msg = ""
 	SelectedEnding = ""
 	
+	OnBeforeLoad()
+
 	PositionEntity Collider,0,1000.0,0,True
 	ResetEntity Collider
 	
@@ -1931,6 +1938,9 @@ Function LoadGameQuick(file$)
 	EndIf
 	
 	Wearing714 = ReadByte(f)
+
+	OnLoad(f)
+
 	CloseFile f
 	
 	If Collider <> 0 Then
