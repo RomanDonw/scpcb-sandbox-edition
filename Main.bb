@@ -1745,6 +1745,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("reset1025 - resets all SCP-1025 states.")
 			CreateConsoleMsg("displaymessage <timer:float> <message:string> - displays a message with text <message> for <timer> seconds.")
 			CreateConsoleMsg("setvomittimer <timer:float> - sets vomit timer to <timer> value.")
+			CreateConsoleMsg("lever.create <x> <y> <z> [locked:locked/true/1 unlocked/false/0 = false] - creates lever.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Player control commands:", 255, 127, 0)
