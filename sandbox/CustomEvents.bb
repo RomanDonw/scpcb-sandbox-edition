@@ -134,6 +134,7 @@ Function UpdateCustomEvents()
 
     UpdateDelayedCommands()
     UpdateLevers()
+    UpdateSFX3Des()
 
     ;If KeyDown(KEY_RIGHT_ALT) And DebugHUD
     ;    For i% = 1 To DEBUG_HUD_PAGES_COUNT
@@ -391,8 +392,13 @@ End Function
 ; ================================================================================================================
 
 Type Lever
-    Field BaseObj%, LeverObj%
+    ; Writable section
     Field locked%
+
+    ; Read-only section
+    Field enabled%
+
+    Field BaseObj%, LeverObj%
 End Type
 
 Function CreateLever.Lever(locked%, x#, y#, z#, roll# = 0, yaw# = 0, pitch# = 0)
@@ -407,7 +413,9 @@ Function CreateLever.Lever(locked%, x#, y#, z#, roll# = 0, yaw# = 0, pitch# = 0)
     ScaleEntity ret\BaseObj, 0.04, 0.04, 0.04
 
     RotateEntity ret\LeverObj, 0, 180, 0
-    ;ScaleEntity ret\LeverObj, 0.04, 0.04, 0.04
+
+    EntityPickMode ret\LeverObj, 1, False
+	EntityRadius ret\LeverObj, 0.1
 
     Return ret
 End Function
@@ -423,9 +431,88 @@ End Function
 
 Function UpdateLevers()
     For lever.Lever = Each Lever
-        UpdateLever(lever\LeverObj, lever\locked)
+        lever\enabled = UpdateLever(lever\LeverObj, lever\locked)
     Next
 End Function
+
+; ================================================================================================================
+
+Type SFX3D
+    ; Writable section
+
+    Field EmitterEntity%
+    Field Radius#, Volume#
+
+    ; Read-only section
+
+    Field Channel%
+End Type
+
+Function CreateSFX3D.SFX3D(sound%, emitter_entity%, radius# = 10, volume# = 1)
+    Local ret.SFX3D = New SFX3D
+
+    ret\Channel = PlaySound(sound)
+    ret\EmitterEntity = emitter_entity
+    ret\Radius = radius
+    ret\Volume = volume
+
+    ChannelVolume ret\Channel, 0
+
+    Return ret
+End Function
+
+Function RemoveSFX3D(sound.SFX3D)
+    If sound = Null Then Return
+
+    If ChannelPlaying(sound\Channel) Then
+        StopChannel sound\Channel
+    End If
+
+    Delete sound
+End Function
+
+Function UpdateSFX3Des()
+    For sfx.SFX3D = Each SFX3D
+        If Not ChannelPlaying(sfx\Channel) Then RemoveSFX3D(sfx)
+
+        If sfx\Radius > 0 Then
+            Local dist# = EntityDistance(Camera, sfx\EmitterEntity) / sfx\Radius
+            
+            If sfx\Volume > 0 And dist <= sfx\Radius Then
+                Local pan# = Sin(-DeltaYaw(Camera, sfx\EmitterEntity))
+                Local vol# = sfx\Volume * (1 - dist) * SFXVolume
+
+                ChannelVolume sfx\Channel, vol
+                ChannelPan sfx\Channel, pan
+            Else
+                ChannelVolume sfx\Channel, 0
+            End If
+        Else
+            ChannelVolume sfx\Channel, 0
+        End If    
+    Next
+End Function
+
+;Function Update3DSound(Chn%, cam%, entity%, range# = 10, volume# = 1.0)
+;    If Chn = 0 Or (Not ChannelPlaying(Chn)) Then Return
+;
+;	range# = Max(range,1.0)
+;	
+;	If volume > 0 Then
+;		Local dist# = EntityDistance(cam, entity) / range#			
+;        Local panvalue# = Sin(-DeltaYaw(cam,entity))
+;        
+;        Local vol# = volume# * (1 - dist#)*SFXVolume#
+;        If vol < 0 Then vol = 0
+;        ChannelVolume(Chn, vol)
+;
+;        CreateConsoleMsg(vol, 255, 0, 255)
+;
+;        ChannelPan(Chn, panvalue)
+;	Else
+;		ChannelVolume(Chn, 0)
+;	EndIf
+;End Function
 
 ; ================================================================================================================
 
@@ -441,7 +528,7 @@ Function CreateLightCone(x#, y#, z#, r%, g%, b%)
 End Function
 
 Function GetNearestDoorToEntityByButtons.Doors(obj%, max_distance# = -1)
-    Local dist# = 2 ^ 31 - 1
+    Local dist# = INFINITY;2 ^ 31 - 1
     Local ret.Doors = Null
 
     For door.Doors = Each Doors
@@ -463,7 +550,7 @@ Function GetNearestDoorToEntityByButtons.Doors(obj%, max_distance# = -1)
 End Function
 
 Function GetNearestDoorToPointByFrame.Doors(x#, y#, z#, max_distance# = -1)
-    Local dist# = 2 ^ 31 - 1
+    Local dist# = INFINITY;2 ^ 31 - 1
     Local ret.Doors = Null
 
     For door.Doors = Each Doors
@@ -479,7 +566,7 @@ Function GetNearestDoorToPointByFrame.Doors(x#, y#, z#, max_distance# = -1)
 End Function
 
 Function GetNearestDoorToEntityByFrame.Doors(obj%, max_distance# = -1)
-    Local dist# = 2 ^ 31 - 1
+    Local dist# = INFINITY;2 ^ 31 - 1
     Local ret.Doors = Null
 
     For door.Doors = Each Doors
@@ -496,7 +583,7 @@ End Function
 
 
 Function GetNearestSCToEntity.SecurityCams(obj%, max_distance# = -1)
-    Local dist# = 2 ^ 31 - 1
+    Local dist# = INFINITY;2 ^ 31 - 1
     Local dist_# = dist
     Local ret.SecurityCams = Null
 
@@ -512,7 +599,7 @@ Function GetNearestSCToEntity.SecurityCams(obj%, max_distance# = -1)
 End Function
 
 Function GetNearestSCToEntityByMonitor.SecurityCams(obj%, max_distance# = -1)
-    Local dist# = 2 ^ 31 - 1
+    Local dist# = INFINITY;2 ^ 31 - 1
     Local dist_# = dist
     Local ret.SecurityCams = Null
 
@@ -530,7 +617,7 @@ Function GetNearestSCToEntityByMonitor.SecurityCams(obj%, max_distance# = -1)
 End Function
 
 Function GetNearestItemToEntity.Items(obj%, max_distance# = -1)
-    Local dist# = 2 ^ 31 - 1
+    Local dist# = INFINITY;2 ^ 31 - 1
     Local dist_# = dist
     Local ret.Items = Null
 
@@ -645,15 +732,7 @@ Function ReloadDoorButtons(d.Doors)
 End Function
 
 Function TakeScreenshot%(filename$)
-    sw% = GraphicsWidth()
-    sh% = GraphicsHeight()
-
-    img% = CreateImage(sw, sh)
-    CopyRect 0, 0, sw, sh, 0, 0, FrontBuffer(), ImageBuffer(img)
-    success% = SaveImage(img, filename)
-    FreeImage img
-
-    Return success
+    Return SaveBuffer(FrontBuffer(), filename)
 End Function
 
 ; ========================================================================================================================================================

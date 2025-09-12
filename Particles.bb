@@ -82,6 +82,13 @@ Global InSmoke%
 Global HissSFX% = LoadSound_Strict("SFX\General\Hiss.ogg")
 Global SmokeDelay# = 0.0
 
+Local filepath$ = "SFX\General\Hiss.ogg"
+If FileType(filepath) <> 1 Then RuntimeError "Can't load sound from file " + Chr(34) + filepath + Chr(34) + "."
+
+Global HissSFXLooped% = LoadSound(filepath)
+LoopSound HissSFXLooped
+;CatchErrors("LoadSound Hiss.ogg (looped)")
+
 Type Emitters
 	Field Obj%
 	
@@ -94,7 +101,8 @@ Type Emitters
 	
 	Field Room.Rooms
 	
-	Field SoundCHN%
+	;Field SoundCHN%
+	Field Sound3D.SFX3D
 	
 	Field Speed#, RandAngle#
 	Field SizeChange#, Achange#
@@ -116,7 +124,8 @@ Function UpdateEmitters()
 			
 			p\Achange = e\achange
 			;EndIf
-			e\SoundCHN = LoopSound2(HissSFX, e\SoundCHN, Camera, e\Obj)
+			;e\SoundCHN = LoopSound2(HissSFX, e\SoundCHN, Camera, e\Obj)
+			;Update3DSound(e\SoundCHN, Camera, e\Obj)
 			
 			If InSmoke = False Then
 				If WearingGasMask=0 And WearingHazmat=0 Then
@@ -190,9 +199,23 @@ Function CreateEmitter.Emitters(x#, y#, z#, emittertype%)
 			e\Room = r
 		EndIf
 	Next
+
+	;;e\SoundCHN = LoopSound2(HissSFX, e\SoundCHN, Camera, e\Obj)
+	;e\SoundCHN = PlaySound(HissSFXLooped)
+	;ChannelVolume e\SoundCHN, 0
+
+	e\Sound3D = CreateSFX3D(HissSFXLooped, e\Obj)
 	
 	Return e
 		
+End Function
+
+Function RemoveEmitter(em.Emitters)
+	If em = Null Then Return
+
+	If em\Sound3D <> Null Then RemoveSFX3D(em\Sound3D)
+
+	Delete em
 End Function
 
 Type DevilEmitters

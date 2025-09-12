@@ -5652,9 +5652,10 @@ Function UpdateRooms()
 			Next
 		EndIf
 		
-		If hide Then
-			HideEntity r\obj
-		Else
+		;If hide Then
+		;	HideEntity r\obj
+		;Else
+		If (EntityInView(r\obj, Camera)) Or (Not hide) Then
 			ShowEntity r\obj
 			For i = 0 To MaxRoomLights-1
 				If r\Lights[i] <> 0 Then
@@ -5667,7 +5668,7 @@ Function UpdateRooms()
 					Exit
 				EndIf
 			Next
-			If DebugHUD
+			If DebugHUD And ShowRoomTriggerbox
 				If r\TriggerboxAmount>0
 					For i=0 To r\TriggerboxAmount-1
 						EntityColor r\Triggerbox[i],255,255,0
@@ -5682,6 +5683,8 @@ Function UpdateRooms()
 					Next
 				EndIf
  			EndIf
+		Else
+			HideEntity r\obj
 		EndIf
 	Next
 	
@@ -5690,30 +5693,30 @@ Function UpdateRooms()
 	
 	TempLightVolume = Max(TempLightVolume / 4.5, 1.0)
 	
-	If PlayerRoom<>Null Then
-		EntityAlpha(GetChild(PlayerRoom\obj,2),1)
-		For i=0 To 3
-			If PlayerRoom\Adjacent[i]<>Null Then
-				If PlayerRoom\AdjDoor[i]<>Null
-					x = Abs(EntityX(Collider,True)-EntityX(PlayerRoom\AdjDoor[i]\frameobj,True))
-					z = Abs(EntityZ(Collider,True)-EntityZ(PlayerRoom\AdjDoor[i]\frameobj,True))
-					If PlayerRoom\AdjDoor[i]\openstate = 0 Then
-						EntityAlpha(GetChild(PlayerRoom\Adjacent[i]\obj,2),0)
-					ElseIf (Not EntityInView(PlayerRoom\AdjDoor[i]\frameobj,Camera))
-						EntityAlpha(GetChild(PlayerRoom\Adjacent[i]\obj,2),0)
-					Else
-						EntityAlpha(GetChild(PlayerRoom\Adjacent[i]\obj,2),1)
-					EndIf
-				EndIf
-				
-				For j=0 To 3
-					If (PlayerRoom\Adjacent[i]\Adjacent[j]<>Null) Then
-						If (PlayerRoom\Adjacent[i]\Adjacent[j]<>PlayerRoom) Then EntityAlpha(GetChild(PlayerRoom\Adjacent[i]\Adjacent[j]\obj,2),0)
-					EndIf
-				Next
-			EndIf
-		Next
-	EndIf
+	;If PlayerRoom<>Null Then
+	;	EntityAlpha(GetChild(PlayerRoom\obj,2),1)
+	;	For i=0 To 3
+	;		If PlayerRoom\Adjacent[i]<>Null Then
+	;			If PlayerRoom\AdjDoor[i]<>Null
+	;				x = Abs(EntityX(Collider,True)-EntityX(PlayerRoom\AdjDoor[i]\frameobj,True))
+	;				z = Abs(EntityZ(Collider,True)-EntityZ(PlayerRoom\AdjDoor[i]\frameobj,True))
+	;				If PlayerRoom\AdjDoor[i]\openstate = 0 And False Then
+	;					EntityAlpha(GetChild(PlayerRoom\Adjacent[i]\obj,2),0)
+	;				ElseIf (Not EntityInView(PlayerRoom\AdjDoor[i]\frameobj,Camera)) And False
+	;					EntityAlpha(GetChild(PlayerRoom\Adjacent[i]\obj,2),0)
+	;				Else
+	;					EntityAlpha(GetChild(PlayerRoom\Adjacent[i]\obj,2),1)
+	;				EndIf
+	;			EndIf
+	;			
+	;			For j=0 To 3
+	;				If (PlayerRoom\Adjacent[i]\Adjacent[j]<>Null) And False Then
+	;					If (PlayerRoom\Adjacent[i]\Adjacent[j]<>PlayerRoom) Then EntityAlpha(GetChild(PlayerRoom\Adjacent[i]\Adjacent[j]\obj,2),0)
+	;				EndIf
+	;			Next
+	;		EndIf
+	;	Next
+	;EndIf
 	
 	CatchErrors("UpdateErrors")
 End Function
@@ -8014,7 +8017,7 @@ Function UpdateRoomLights(cam%)
 							If r\LightCone[i]<>0 Then
 								ScaleEntity r\LightCone[i],0.005+Max(((-0.4+random#)*0.025),0),0.005+Max(((-0.4+random#)*0.025),0),0.005+Max(((-0.4+random#)*0.025),0)
 								If r\LightFlicker%[i]>4 Then
-									If Rand(400)=1 Then
+									If Rand(400)=1 And LightFlickering Then
 										SetEmitter(r\LightSpritesPivot[i],ParticleEffect[0])
 										PlaySound2(IntroSFX(Rand(10,12)),cam,r\LightSpritesPivot[i])
 										ShowEntity r\LightConeSpark[i]

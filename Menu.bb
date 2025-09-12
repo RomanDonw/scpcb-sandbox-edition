@@ -1625,6 +1625,10 @@ End Function
 ;last_bksp_press_time% = -1
 
 Function rInput$(aString$)
+	If KeyHit(1) Then
+		Return ""
+	End If
+
 	Local value% = GetKey()
 	Local length% = Len(aString$)
 

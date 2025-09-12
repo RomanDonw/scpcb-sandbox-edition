@@ -7149,6 +7149,9 @@ Function Console_SpawnNPC(c_input$, c_state$ = "")
 		Case "939", "scp939", "scp-939"
 			;CreateConsoleMsg("SCP-939 instances cannot be spawned with the console. Sorry!", 255, 0, 0)
 			n.NPCs = CreateNPC(NPCtype939, EntityX(Collider), EntityY(Collider), EntityZ(Collider))
+			n\State = 2
+			n\State2 = 0
+			n\PrevState = 0
 			consoleMSG = "SCP-939 instance spawned."
 
 		Case "966", "scp966", "scp-966"

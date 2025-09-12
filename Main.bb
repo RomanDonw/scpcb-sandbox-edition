@@ -55,6 +55,7 @@ Global DisableTeslaSequence% = GetINIInt(OptionFile, "gamectl", "disable tesla s
 Global EnableSCP860Forest% = GetINIInt(OptionFile, "gamectl", "enable SCP-860 forest")
 Global SCP970StrangeEvent% = GetINIInt(OptionFile, "gamectl", "SCP-970 strange event")
 Global SCP066Spawn% = GetINIInt(OptionFile, "gamectl", "SCP-066 spawn")
+Global LightFlickering% = GetINIInt(OptionFile, "gamectl", "light flickering")
 
 Global ConsoleBufferLimit% = GetINIInt(OptionFile, "console", "buffer limit")
 Global SendErrorsToConsole% = GetINIInt(OptionFile, "console", "receive errors")
@@ -363,8 +364,10 @@ Font5% = AALoadFont("GFX\font\Journal\Journal.ttf", Int(58 * (GraphicHeight / 10
 
 Global CreditsFont%,CreditsFont2%
 
-ConsoleFont% = AALoadFont("Blitz", Int(20 * (GraphicHeight / 1024.0)), 0,0,0,1)
-Global ConsoleVeryLargeFont% = AALoadFont("Blitz", Int(100 * (GraphicHeight / 1024.0)), 0,0,0,1)
+;ConsoleFont% = AALoadFont("Blitz", Int(20 * (GraphicHeight / 1024.0)), 0,0,0,1)
+ConsoleFont% = AALoadFont("Consolas", Int(20 * (GraphicHeight / 1024.0)), 0,0,0,1)
+;Global ConsoleVeryLargeFont% = AALoadFont("Blitz", Int(100 * (GraphicHeight / 1024.0)), 0,0,0,1)
+Global ConsoleVeryLargeFont% = AALoadFont("Consolas", Int(100 * (GraphicHeight / 1024.0)), 0,0,0,1)
 
 AASetFont Font2
 
@@ -523,7 +526,7 @@ Type ConsoleMsg
 	Field r%,g%,b%
 End Type
 
-Function CreateConsoleMsg(txt$,r%=-1,g%=-1,b%=-1,isCommand%=False)
+Function CreateConsoleMsg(txt$ = "", r% = -1, g% = -1, b% = -1, isCommand% = False)
 	Local c.ConsoleMsg = New ConsoleMsg
 	Insert c Before First ConsoleMsg
 	
@@ -733,6 +736,52 @@ Function UpdateConsole(exec_command% = True)
 			If count > ConsoleBufferLimit And ConsoleBufferLimit > 0 Then
 				Delete cm
 			Else
+				;text$ = cm\txt
+				;
+				;If cm\isCommand Then text = "> " + text
+				;
+				;Repeat
+				;	If Not (TempY >= y And TempY < y + height - 20*MenuScale) Then Exit
+				;
+				;	;If TempY >= y And TempY < y + height - 20*MenuScale Then
+				;		If cm=ConsoleReissue Then
+				;			Color cm\r/4,cm\g/4,cm\b/4
+				;			Rect x,TempY-2*MenuScale,width-30*MenuScale,24*MenuScale,True
+				;		EndIf
+				;		Color cm\r,cm\g,cm\b
+				;		;If cm\isCommand Then
+				;		;	AAText(x + 20*MenuScale, TempY, "> "+cm\txt)
+				;		;Else
+				;		;	AAText(x + 20*MenuScale, TempY, cm\txt)
+				;		;EndIf
+				;
+				;		AAText(x + 20*MenuScale, TempY, Left(text, 15))
+				;
+				;		;Local cm_first_line_display% = True
+				;		;Repeat
+				;		;
+				;		;	Local cm_display_text$
+				;		;	If Len(cm\txt) > ConsoleMaxCharsCountInSignleLine Then
+				;		;		cm_display_text = Left(cm\txt, ConsoleMaxCharsCountInSignleLine)
+				;		;		cm\txt = Right(cm\txt, Len(cm\txt) - ConsoleMaxCharsCountInSignleLine)
+				;		;	Else
+				;		;		cm_display_text = cm\txt
+				;		;	End If
+				;		;
+				;		;	If cm\isCommand and cm_first_line_display Then
+				;		;		AAText(x + 20*MenuScale, TempY, "> " + cm_display_text)
+				;		;		cm_first_line_display = False
+				;		;	Else
+				;		;		AAText(x + 20*MenuScale, TempY, cm_display_text)
+				;		;	EndIf
+				;		;	TempY = TempY - 15*MenuScale
+				;		;
+				;		;Until Len(cm\txt) = 0 Or cm_display_text = cm\txt
+				;	;EndIf
+				;	text = Right(text, Max(Len(text) - 15))
+				;	TempY = TempY - 15*MenuScale
+				;Until Len(text) <= 0
+
 				If TempY >= y And TempY < y + height - 20*MenuScale Then
 					If cm=ConsoleReissue Then
 						Color cm\r/4,cm\g/4,cm\b/4
@@ -1810,9 +1859,7 @@ Function ExecConsole(cin$, silent% = False)
 			ConsoleR = oldcr : ConsoleG = oldcg : ConsoleB = oldcb
 
 		Case "cls"
-			For conmsg.ConsoleMsg = Each ConsoleMsg
-				Delete conmsg
-			Next
+			Delete Each ConsoleMsg
 
 			CreateConsoleMsg("", 0, 0, 0)
 
@@ -2038,31 +2085,31 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Played file " + Chr(34) + StrTemp + Chr(34) + " with volume " + Float(StrTemp2) + ".", 0, 255, 0)
 
-		;Case "lever.create"
-		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
-		;	StrTemp$ = Piece$(args$,1," ")
-		;	StrTemp2$ = Piece$(args$,2," ")
-		;	StrTemp3$ = Piece$(args$,3," ")
-		;	StrTemp4$ = Piece$(args$,4," ")
-		;
-		;	If StrTemp4 = StrTemp3 Or StrTemp4 = "" Then StrTemp4 = "false"
-		;
-		;	locked% = False
-		;
-		;	Select StrTemp4
-		;		Case "locked", "true", "1"
-		;			locked = True
-		;
-		;		Case "unlocked", "false", "0"
-		;			locked = False
-		;
-		;		Default
-		;			locked = False
-		;	End Select
-		;
-		;	CreateLever(locked, Float(StrTemp), Float(StrTemp2), Float(StrTemp3))
-		;
-		;	CreateConsoleMsg("Created new lever at (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " (locked: " + locked + ").", 0, 255, 0)
+		Case "lever.create"
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+			StrTemp4$ = Piece$(args$,4," ")
+		
+			If StrTemp4 = StrTemp3 Or StrTemp4 = "" Then StrTemp4 = "false"
+		
+			locked% = False
+		
+			Select StrTemp4
+				Case "locked", "true", "1"
+					locked = True
+		
+				Case "unlocked", "false", "0"
+					locked = False
+		
+				Default
+					locked = False
+			End Select
+		
+			CreateLever(locked, Float(StrTemp), Float(StrTemp2), Float(StrTemp3))
+		
+			CreateConsoleMsg("Created new lever at (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " (locked: " + locked + ").", 0, 255, 0)
 
 		Case "set106state"
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
@@ -3244,28 +3291,31 @@ Function ExecConsoleFile%(filepath$)
 End Function
 
 ConsoleR = 0 : ConsoleG = 255 : ConsoleB = 255
-CreateConsoleMsg("Console commands: ")
-CreateConsoleMsg("  - teleport [room name]")
-CreateConsoleMsg("  - godmode [on/off]")
-CreateConsoleMsg("  - noclip [on/off]")
-CreateConsoleMsg("  - noclipspeed [x] (default = 2.0)")
-CreateConsoleMsg("  - wireframe [on/off]")
-CreateConsoleMsg("  - debughud [on/off]")
-CreateConsoleMsg("  - camerafog [near] [far]")
-CreateConsoleMsg(" ")
-CreateConsoleMsg("  - status")
-CreateConsoleMsg("  - heal")
-CreateConsoleMsg(" ")
-CreateConsoleMsg("  - spawnitem [item name]")
-CreateConsoleMsg(" ")
-CreateConsoleMsg("  - disable106/enable106")
-CreateConsoleMsg("  - 106state/096state")
-CreateConsoleMsg("  - spawn [npc type]")
-CreateConsoleMsg(" ")
+CreateConsoleMsg("")
+;CreateConsoleMsg("Console commands: ")
+;CreateConsoleMsg("  - teleport [room name]")
+;CreateConsoleMsg("  - godmode [on/off]")
+;CreateConsoleMsg("  - noclip [on/off]")
+;CreateConsoleMsg("  - noclipspeed [x] (default = 2.0)")
+;CreateConsoleMsg("  - wireframe [on/off]")
+;CreateConsoleMsg("  - debughud [on/off]")
+;CreateConsoleMsg("  - camerafog [near] [far]")
+;CreateConsoleMsg(" ")
+;CreateConsoleMsg("  - status")
+;CreateConsoleMsg("  - heal")
+;CreateConsoleMsg(" ")
+;CreateConsoleMsg("  - spawnitem [item name]")
+;CreateConsoleMsg(" ")
+;CreateConsoleMsg("  - disable106/enable106")
+;CreateConsoleMsg("  - 106state/096state")
+;CreateConsoleMsg("  - spawn [npc type]")
+CreateConsoleMsg("Use command " + Chr(34) + "help" + Chr(34) + " to get list of vanilla game commands.")
+
+CreateConsoleMsg("")
 CreateConsoleMsg(" ============================== ", 63, 127, 63)
-CreateConsoleMsg(" --- Use command chelp to get list of custom commands. ---", 127, 63, 127)
+CreateConsoleMsg(" --- Use command " + Chr(34) + "chelp" + Chr(34) + " to get list of custom commands. ---", 127, 63, 127)
 CreateConsoleMsg(" ============================== ", 63, 127, 63)
-CreateConsoleMsg(" ")
+CreateConsoleMsg("")
 
 
 If BypassOpeningConsole Then
@@ -6295,10 +6345,8 @@ Function MouseLook()
 		
 		RotateEntity Camera, WrapAngle(user_camera_pitch + Rnd(-CameraShake, CameraShake)), WrapAngle(EntityYaw(Collider) + Rnd(-CameraShake, CameraShake)), roll ; Pitch the user;s camera up And down.
 		
-		If (PlayerRoom\RoomTemplate\Name = "pocketdimension" Or PDCameraEffect) And PocketDimensionCameraEffect Then
-			If EntityY(Collider)<2000*RoomScale Or EntityY(Collider)>2608*RoomScale Then
-				RotateEntity Camera, WrapAngle(EntityPitch(Camera)),WrapAngle(EntityYaw(Camera)), roll+WrapAngle(Sin(MilliSecs2()/150.0)*30.0) ; Pitch the user;s camera up And down.
-			EndIf
+		If ((PlayerRoom\RoomTemplate\Name = "pocketdimension" And (EntityY(Collider)<2000*RoomScale Or EntityY(Collider)>2608*RoomScale)) Or PDCameraEffect) And PocketDimensionCameraEffect Then
+			RotateEntity Camera, WrapAngle(EntityPitch(Camera)),WrapAngle(EntityYaw(Camera)), roll+WrapAngle(Sin(MilliSecs2()/150.0)*30.0) ; Pitch the user;s camera up And down.
 		EndIf
 		
 	Else
@@ -9496,7 +9544,7 @@ Function DrawMenu()
 						Font3% = AALoadFont("GFX\font\DS-DIGI\DS-Digital.ttf", Int(22 * (GraphicHeight / 1024.0)), 0,0,0)
 						Font4% = AALoadFont("GFX\font\DS-DIGI\DS-Digital.ttf", Int(60 * (GraphicHeight / 1024.0)), 0,0,0)
 						Font5% = AALoadFont("GFX\font\Journal\Journal.ttf", Int(58 * (GraphicHeight / 1024.0)), 0,0,0)
-						ConsoleFont% = AALoadFont("Blitz", Int(22 * (GraphicHeight / 1024.0)), 0,0,0,1)
+						;ConsoleFont% = AALoadFont("Blitz", Int(22 * (GraphicHeight / 1024.0)), 0,0,0,1)
 						;ReloadAAFont()
 						AATextEnable_Prev% = AATextEnable
 					EndIf
@@ -9512,7 +9560,7 @@ Function DrawMenu()
 				Local AbleToSave% = True
 				If RN$ = "173" Or RN$ = "exit1" Or RN$ = "gatea" Then AbleToSave = False
 				If (Not CanSave) Then AbleToSave = False
-				If AbleToSave
+				If AbleToSave Or BypassSave
 					QuitButton = 140
 					If DrawButton(x, y + 60*MenuScale, 390*MenuScale, 60*MenuScale, "Save & Quit") Then
 						DropSpeed = 0
@@ -10861,7 +10909,7 @@ Function NullGame(playbuttonsfx%=True)
 	Next
 	
 	For em.emitters = Each Emitters
-		Delete em
+		RemoveEmitter(em)
 	Next	
 	
 	For p.particles = Each Particles
@@ -10906,6 +10954,10 @@ Function NullGame(playbuttonsfx%=True)
 	Delete Each AchievementMsg
 	CurrAchvMSGID = 0
 	
+	For sfx.SFX3D = Each SFX3D
+		RemoveSFX3D(sfx)
+	Next
+
 	;DeInitExt
 	
 	ClearWorld
