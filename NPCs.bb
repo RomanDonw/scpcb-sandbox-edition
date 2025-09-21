@@ -5113,7 +5113,7 @@ Function UpdateNPCs()
 
 										nearestdoor.Doors = GetNearestDoorToEntityByFrame(n\obj, 1)
 										If nearestdoor <> Null Then
-											If (Not nearestdoor\locked) And nearestdoor\Code = "" And nearestdoor\KeyCard = 0 Then
+											If (Not nearestdoor\locked) And (Not nearestdoor\open) And nearestdoor\Code = "" And nearestdoor\KeyCard = 0 Then
 												;nearestdoor\open = True
 												UseDoor(nearestdoor, False, True, 0)
 												Log("UpdateNPCs/Maxwell the Cat", "Opened door.")
