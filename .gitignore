@@ -15,3 +15,6 @@ Thumbs.db
 *.SI
 screenshots/*
 *.code-workspace
+*-autosave.kra
+*.png~
+latest.log

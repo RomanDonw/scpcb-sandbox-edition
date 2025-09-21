@@ -82,12 +82,7 @@ Global InSmoke%
 Global HissSFX% = LoadSound_Strict("SFX\General\Hiss.ogg")
 Global SmokeDelay# = 0.0
 
-Local filepath$ = "SFX\General\Hiss.ogg"
-If FileType(filepath) <> 1 Then RuntimeError "Can't load sound from file " + Chr(34) + filepath + Chr(34) + "."
-
-Global HissSFXLooped% = LoadSound(filepath)
-LoopSound HissSFXLooped
-;CatchErrors("LoadSound Hiss.ogg (looped)")
+Global HissSFXLooped% = LoadLoopedSound("SFX\General\Hiss.ogg")
 
 Type Emitters
 	Field Obj%

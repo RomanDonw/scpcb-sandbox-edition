@@ -5854,15 +5854,15 @@ Function CreateWaypoint.WayPoints(x#,y#,z#,door.Doors, room.Rooms)
 	
 	w.waypoints = New WayPoints
 	
-	If 1 Then
-		w\obj = CreatePivot()
-		PositionEntity w\obj, x,y,z	
-	Else
+	If DebugShowWaypoints Then
 		w\obj = CreateSprite()
 		PositionEntity(w\obj, x, y, z)
 		ScaleSprite(w\obj, 0.15 , 0.15)
 		EntityTexture(w\obj, LightSpriteTex(0))
-		EntityBlend (w\obj, 3)	
+		EntityBlend (w\obj, 3)
+	Else
+		w\obj = CreatePivot()
+		PositionEntity w\obj, x,y,z		
 	EndIf
 	
 	EntityParent w\obj, room\obj
@@ -6197,6 +6197,8 @@ Function FindPath(n.NPCs, x#, y#, z#)
 			twentiethpoint = twentiethpoint\parent
 			n\Path[length] = twentiethpoint
 		Wend
+
+		n\PathEndPoint = EndPoint
 		
 		Return 1
 	Else

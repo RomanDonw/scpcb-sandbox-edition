@@ -55,6 +55,8 @@ LoadSaveGames()
 Global CurrLoadGamePage% = 0
 
 Function UpdateMainMenu()
+	CatchErrors("Uncaught (UpdateMainMenu)")
+
 	Local x%, y%, width%, height%, temp%
 	
 	Color 0,0,0
@@ -210,6 +212,8 @@ Function UpdateMainMenu()
 						;FMOD_StopStream(CurrMusicStream)
 						FSOUND_Stream_Stop(CurrMusicStream)
 						;FSOUND_Close()
+
+						OnEnd()
 						End
 					EndIf
 			End Select
@@ -1122,6 +1126,8 @@ Function UpdateMainMenu()
 	If Fullscreen Then DrawImage CursorIMG, ScaledMouseX(),ScaledMouseY()
 	
 	AASetFont Font1
+
+	CatchErrors("UpdateMainMenu")
 End Function
 
 Function UpdateLauncher()
@@ -1320,7 +1326,10 @@ Function UpdateLauncher()
 	
 	FreeImage(LauncherIMG) : LauncherIMG = 0
 	
-	If quit Then End
+	If quit Then
+		OnEnd()
+		End
+	End If
 End Function
 
 
@@ -1625,7 +1634,7 @@ End Function
 ;last_bksp_press_time% = -1
 
 Function rInput$(aString$)
-	If KeyHit(1) Then
+	If KeyHit(211) Then
 		Return ""
 	End If
 

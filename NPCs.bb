@@ -5,10 +5,12 @@ Const NPCtype372% = 6, NPCtypeApache% = 7, NPCtypeMTF% = 8, NPCtype096 = 9
 Const NPCtype049% = 10, NPCtypeZombie% = 11, NPCtype5131% = 12, NPCtypeTentacle% = 13
 Const NPCtype860% = 14, NPCtype939% = 15, NPCtype066% = 16, NPCtypePdPlane% = 17
 Const NPCtype966% = 18, NPCtype1048a = 19, NPCtype1499% = 20, NPCtype008% = 21, NPCtypeClerk% = 22
+
+Const NPCtypeMaxwellCat% = 23
 ;[End Block]
 
 Type NPCs
-	Field name$ = ""
+	;Field name$ = ""
 	
 	Field obj%, obj2%, obj3%, obj4%, Collider%
 	Field NPCtype%, ID%
@@ -39,6 +41,7 @@ Type NPCs
 	Field EnemyX#, EnemyY#, EnemyZ#
 	
 	Field Path.WayPoints[20], PathStatus%, PathTimer#, PathLocation%
+	Field PathEndPoint.WayPoints
 	
 	Field NVX#,NVY#,NVZ#,NVName$
 	
@@ -71,6 +74,9 @@ Type NPCs
 	Field IdleTimer#
 	Field SoundChn_IsStream%,SoundChn2_IsStream%
 	Field FallingPickDistance#
+
+	Field sound3d.SFX3D = Null
+	Field TeleportObjToSpawnPositionOnCreate% = True
 End Type
 
 Function CreateNPC.NPCs(NPCtype%, x#, y#, z#)
@@ -610,10 +616,23 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#)
 			
 			n\CollRadius = 0.32
 			;[End Block]
+
+		; ===============================
+
+		Case NPCtypeMaxwellCat
+			n\NVName = "Maxwell the Cat"
+			n\Collider = CreatePivot()
+			EntityRadius n\Collider, 0.01
+			EntityType n\Collider, HIT_PLAYER
+			n\obj = CopyEntity(MaxwellCatOBJ, n\Collider)
+			n\TeleportObjToSpawnPositionOnCreate = False
+			
+			;n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
+			n\Speed = 0.05
 	End Select
 	
 	PositionEntity(n\Collider, x, y, z, True)
-	PositionEntity(n\obj, x, y, z, True)
+	If n\TeleportObjToSpawnPositionOnCreate Then PositionEntity(n\obj, x, y, z, True)
 	
 	ResetEntity(n\Collider)
 	
@@ -666,6 +685,8 @@ Function RemoveNPC(n.NPCs)
 	If n\Sound2<>0 Then FreeSound_Strict n\Sound2 : n\Sound2 = 0
 	
 	;If n\Camera <> 0 Then FreeEntity(n\Camera) : n\Camera = 0
+
+	If n\sound3d <> Null Then RemoveSFX3D(n\sound3d) : n\sound3d = Null
 
 	FreeEntity(n\obj) : n\obj = 0
 	FreeEntity(n\Collider) : n\Collider = 0	
@@ -5023,6 +5044,128 @@ Function UpdateNPCs()
 				RotateEntity n\obj,0,EntityYaw(n\Collider)-180,0
 				PositionEntity n\obj,EntityX(n\Collider),EntityY(n\Collider)-0.2,EntityZ(n\Collider)
 				;[End Block]
+
+			; =============================================================================
+
+			; MAXWELL THE CAT'S AI
+
+			; States:
+			;	0 - idle. If player too far - starts moving.
+			;	1 - moving to player. If player is too far - remove NPC.
+			;	2 - moving to player. Doesn't delete NPC when player is too far.
+			;	3 - waiting for player (idle). Theme sound paused.
+
+			Case NPCtypeMaxwellCat
+				If n\sound3d = Null Then n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
+
+				Select n\State
+					Case 0 ; idle
+						If EntityDistance(n\Collider, Camera) > 16 Then ; player is far - start moving to it.
+							n\State = 1
+							n\PathTimer = 0
+
+							Log("UpdateNPCs/Maxwell the Cat", "Distance to player > 16 => moving to player.")
+						End If
+
+					Case 1, 2 ; searching & moving to player
+						If EntityDistance(n\Collider, Camera) > 64 And n\State <> 2 Then ; player too far - remove NPC.
+							RemoveNPC(n)
+
+							CreateConsoleMsg("Goodbye, Maxwell the Cat.", 255, 0, 0, False, True)
+
+							Log("UpdateNPCs/Maxwell the Cat", "Player toooooooo far. Leaving... [OK]")
+
+							Return
+
+						;Else If EntityDistance(n\Collider, n\PathEndPoint\obj) <= 0.3 Then ; player is near and visible - idling again.
+						;	n\State = 0
+						;
+						;	Log("UpdateNPCs/Maxwell the Cat", "I found a player.")
+
+						Else ; moving to player
+							Local targetx# = EntityX(Collider, True)
+							Local targety# = EntityY(Collider, True)
+							Local targetz# = EntityZ(Collider, True)
+
+							If n\PathTimer <= 0 Then ; refind path
+								n\PathStatus = FindPath(n, targetx, targety, targetz)
+								n\PathTimer = 70 * 5
+								n\PathLocation = 0
+
+								Log("UpdateNPCs/Maxwell the Cat", "Refound path to player.")
+							EndIf
+
+							Select n\PathStatus
+								Case 1 ; if successfully found
+									While n\Path[n\PathLocation]=Null
+										If n\PathLocation > 19 Then 
+											n\PathLocation = 0 : n\PathStatus = 0
+											Exit
+										Else
+											n\PathLocation = n\PathLocation + 1
+										EndIf
+									Wend
+
+									If n\Path[n\PathLocation] <> Null Then 
+										TranslateEntity n\Collider, 0, EntityY(n\Path[n\PathLocation]\obj, True) - EntityY(n\Collider, True), 0
+										TurnEntity n\Collider, 0, DeltaYaw(n\Collider, n\Path[n\PathLocation]\obj), 0
+										MoveEntity n\Collider, 0, 0, n\Speed
+
+										nearestdoor.Doors = GetNearestDoorToEntityByFrame(n\obj, 1)
+										If nearestdoor <> Null Then
+											If (Not nearestdoor\locked) And nearestdoor\Code = "" And nearestdoor\KeyCard = 0 Then
+												;nearestdoor\open = True
+												UseDoor(nearestdoor, False, True, 0)
+												Log("UpdateNPCs/Maxwell the Cat", "Opened door.")
+											End If
+										End If
+										
+										If EntityDistance(n\Collider, n\Path[n\PathLocation]\obj) <= 0.3 Then
+											n\PathLocation = n\PathLocation + 1
+
+											Log("UpdateNPCs/Maxwell the Cat", "Switched to point #" + n\PathLocation)
+										End If
+									EndIf
+
+									If n\PathEndPoint <> Null Then
+										If EntityDistance(n\Collider, n\PathEndPoint\obj) <= 0.3 Then
+											n\State = 0
+
+											Log("UpdateNPCs/Maxwell the Cat", "End of path. Idiling.")
+										End If
+									End If
+
+								Case 2 ; player unreachable
+									n\State = 3
+
+									Log("UpdateNPCs/Maxwell the Cat", "Player unreachable.")
+							End Select
+
+							n\PathTimer = Max(n\PathTimer-FPSfactor,0) ; update path refind timer
+
+						End If
+					
+					Case 3 ; waiting for player
+						If EntityDistance(n\Collider, Collider) < 8 And EntityVisible(n\Collider, Collider) And EntityInView(n\Collider, Camera) Then
+							n\State = 0
+							n\sound3d\Paused = False
+
+							Log("UpdateNPCs/Maxwell the Cat", "Idiling disabled because i found player. State = " + n\State)
+						Else
+							n\sound3d\Paused = True
+						End If
+						
+
+					Default
+						n\State = 0
+
+				End Select
+
+				;TurnEntity n\obj, 0, -0.5, 0 ; always rotating body
+				TurnEntity n\obj, 0, -2, 0 ; always rotating body
+
+			; ============================================================
+			
 		End Select
 		
 		If n\IsDead
@@ -7147,12 +7290,12 @@ Function Console_SpawnNPC(c_input$, c_state$ = "")
 			CreateConsoleMsg("SCP-860-2 cannot be spawned with the console. Sorry!", 255, 0, 0)
 			
 		Case "939", "scp939", "scp-939"
-			;CreateConsoleMsg("SCP-939 instances cannot be spawned with the console. Sorry!", 255, 0, 0)
-			n.NPCs = CreateNPC(NPCtype939, EntityX(Collider), EntityY(Collider), EntityZ(Collider))
-			n\State = 2
-			n\State2 = 0
-			n\PrevState = 0
-			consoleMSG = "SCP-939 instance spawned."
+			CreateConsoleMsg("SCP-939 instances cannot be spawned with the console. Sorry!", 255, 0, 0)
+			;n.NPCs = CreateNPC(NPCtype939, EntityX(Collider), EntityY(Collider), EntityZ(Collider))
+			;n\State = 2
+			;n\State2 = 3
+			;n\PrevState = 4
+			;consoleMSG = "SCP-939 instance spawned."
 
 		Case "966", "scp966", "scp-966"
 			n.NPCs = CreateNPC(NPCtype966, EntityX(Collider), EntityY(Collider) + 0.2, EntityZ(Collider))

@@ -1,3 +1,5 @@
+;Include "sandbox\hsv.bb"
+
 Const NUMPAD_KEY_1% = 79, NUMPAD_KEY_2% = 80, NUMPAD_KEY_3% = 81
 Const NUMPAD_KEY_4% = 75, NUMPAD_KEY_5% = 76, NUMPAD_KEY_6% = 77
 Const NUMPAD_KEY_7% = 71, NUMPAD_KEY_8% = 72, NUMPAD_KEY_9% = 73
@@ -43,6 +45,7 @@ Function OnLoad(f%)
 	NoTarget = PresetNoTarget
 	NoBlinking = PresetNoBlinking
 	DebugHUD = PresetDebugHUD
+    InfiniteStamina = PresetInfiniteStamina
 
     If PresetDisableSCP106 Then
 		Curr106\Idle = True
@@ -51,10 +54,13 @@ Function OnLoad(f%)
 	End If
 
     PDCameraEffect = ReadByte(f)
+
+    flag_maxwellcatspawned = ReadByte(f)
 End Function
 
 Function OnSave(f%)
     WriteByte(f, PDCameraEffect)
+    WriteByte(f, flag_maxwellcatspawned)
 End Function
 
 Function OnInitNewGame()
@@ -63,6 +69,7 @@ Function OnInitNewGame()
 	NoTarget = PresetNoTarget
 	NoBlinking = PresetNoBlinking
 	DebugHUD = PresetDebugHUD
+    InfiniteStamina = PresetInfiniteStamina
 
     If PresetDisableSCP106 Then
 		Curr106\Idle = True
@@ -71,14 +78,42 @@ Function OnInitNewGame()
 	End If
 
     PDCameraEffect = False
+    flag_maxwellcatspawned = False
 End Function
 
 Function OnNullGame()
     PDCameraEffect = False
+    flag_maxwellcatspawned = False
+End Function
+
+Global MaxwellCatOBJ%
+Global MaxwellCatLoopedThemeSound%
+
+Function OnLoadEntities()
+    CatchErrors("Uncaught (OnLoadEntities)")
+
+    MaxwellCatOBJ = LoadMesh_Strict("sandbox\GFX\NPC\MaxwellCat\models\maxwell.b3d")
+    HideEntity MaxwellCatOBJ
+    ScaleMesh MaxwellCatOBJ, 0.01, 0.01, 0.01
+    EntityTexture MaxwellCatOBJ, LoadTexture_Strict("sandbox\GFX\NPC\MaxwellCat\textures\maxwell.png", TEXTURE_FLAGS_PNG)
+
+    MaxwellCatLoopedThemeSound = LoadLoopedSound("sandbox\SFX\NPC\MaxwellCat\theme.ogg")
+    
+    CatchErrors("OnLoadEntities")
+End Function
+
+Function OnStart()
+    InitLog()
+End Function
+
+Function OnEnd()
+    EndLog()
 End Function
 
 ; ===========================================================================================================================================================
 
+
+Global flag_maxwellcatspawned%
 
 ;Global debug_axises_center = 0
 ;Global debug_axis_x = 0, debug_axis_y = 0, debug_axis_z = 0
@@ -88,6 +123,7 @@ End Function
 ;EntityColor cube, 255, 0, 255
 
 Function UpdateCustomEvents()
+    CatchErrors("Uncaught (UpdateCustomEvents)")
     ;If CurrMountedEntity <> 0 Then
     ;    PositionEntity CurrMountedEntity, PlayerRoom\x - EntityX(Camera), EntityY(Camera), EntityZ(Camera)
     ;    CreateConsoleMsg(Str(EntityX(CurrMountedEntity)) + " " + Str(EntityY(CurrMountedEntity)) + " " + Str(EntityZ(CurrMountedEntity)), 255, 0, 255)
@@ -134,13 +170,17 @@ Function UpdateCustomEvents()
 
     UpdateDelayedCommands()
     UpdateLevers()
-    UpdateSFX3Des()
 
     ;If KeyDown(KEY_RIGHT_ALT) And DebugHUD
     ;    For i% = 1 To DEBUG_HUD_PAGES_COUNT
     ;        If KeyHit(i + 1) Then DebugHUDpage = i
     ;    Next
     ;End If
+
+    If PlayerRoom\RoomTemplate\Name = "start" And MaxwellCatNaturalSpawn And (Not flag_maxwellcatspawned) Then
+        ExecConsole("maxwellcat", True)
+        flag_maxwellcatspawned = True
+    End If
 
     CatchErrors("UpdateCustomEvents (before cheat functions)")
     If Not CheatGameControlEnabled Return
@@ -401,7 +441,7 @@ Type Lever
     Field BaseObj%, LeverObj%
 End Type
 
-Function CreateLever.Lever(locked%, x#, y#, z#, roll# = 0, yaw# = 0, pitch# = 0)
+Function CreateLever.Lever(locked%, x#, y#, z#, pitch# = 0, yaw# = 0, roll# = 0)
     Local ret.Lever = New Lever
 
     ret\locked = locked
@@ -409,7 +449,7 @@ Function CreateLever.Lever(locked%, x#, y#, z#, roll# = 0, yaw# = 0, pitch# = 0)
     ret\LeverObj = CopyEntity(LeverOBJ, ret\BaseObj)
 
     PositionEntity ret\BaseObj, x, y, z
-    RotateEntity ret\BaseObj, roll, yaw, pitch
+    RotateEntity ret\BaseObj, pitch, yaw, roll
     ScaleEntity ret\BaseObj, 0.04, 0.04, 0.04
 
     RotateEntity ret\LeverObj, 0, 180, 0
@@ -442,6 +482,7 @@ Type SFX3D
 
     Field EmitterEntity%
     Field Radius#, Volume#
+    Field Paused% = False
 
     ; Read-only section
 
@@ -452,11 +493,10 @@ Function CreateSFX3D.SFX3D(sound%, emitter_entity%, radius# = 10, volume# = 1)
     Local ret.SFX3D = New SFX3D
 
     ret\Channel = PlaySound(sound)
+    ChannelVolume ret\Channel, 0
     ret\EmitterEntity = emitter_entity
     ret\Radius = radius
     ret\Volume = volume
-
-    ChannelVolume ret\Channel, 0
 
     Return ret
 End Function
@@ -471,48 +511,60 @@ Function RemoveSFX3D(sound.SFX3D)
     Delete sound
 End Function
 
-Function UpdateSFX3Des()
+Function UpdateSFX3Ds()
+    CatchErrors("Uncaught (UpdateSFX3Ds)")
+
     For sfx.SFX3D = Each SFX3D
-        If Not ChannelPlaying(sfx\Channel) Then RemoveSFX3D(sfx)
+        If (Not ChannelPlaying(sfx\Channel)) And (Not sfx\Paused) Then RemoveSFX3D(sfx)
 
-        If sfx\Radius > 0 Then
-            Local dist# = EntityDistance(Camera, sfx\EmitterEntity) / sfx\Radius
-            
-            If sfx\Volume > 0 And dist <= sfx\Radius Then
-                Local pan# = Sin(-DeltaYaw(Camera, sfx\EmitterEntity))
-                Local vol# = sfx\Volume * (1 - dist) * SFXVolume
+        If Not (sfx\Paused Or MenuOpen Or ConsoleOpen) Then
+            ResumeChannel sfx\Channel
+            If sfx\Radius > 0 Then
+                Local dist# = EntityDistance(Camera, sfx\EmitterEntity) / sfx\Radius
+                
+                If sfx\Volume > 0 And dist <= sfx\Radius Then
+                    Local pan# = Sin(-DeltaYaw(Camera, sfx\EmitterEntity))
+                    Local vol# = sfx\Volume * (1 - dist) * SFXVolume
 
-                ChannelVolume sfx\Channel, vol
-                ChannelPan sfx\Channel, pan
+                    ChannelVolume sfx\Channel, vol
+                    ChannelPan sfx\Channel, pan
+                Else
+                    ChannelVolume sfx\Channel, 0
+                End If
             Else
                 ChannelVolume sfx\Channel, 0
             End If
         Else
-            ChannelVolume sfx\Channel, 0
-        End If    
+            PauseChannel sfx\Channel
+        End If   
     Next
+
+    CatchErrors("UpdateSFX3Ds")
 End Function
 
-;Function Update3DSound(Chn%, cam%, entity%, range# = 10, volume# = 1.0)
-;    If Chn = 0 Or (Not ChannelPlaying(Chn)) Then Return
+; ================================================================================================================
 ;
-;	range# = Max(range,1.0)
-;	
-;	If volume > 0 Then
-;		Local dist# = EntityDistance(cam, entity) / range#			
-;        Local panvalue# = Sin(-DeltaYaw(cam,entity))
-;        
-;        Local vol# = volume# * (1 - dist#)*SFXVolume#
-;        If vol < 0 Then vol = 0
-;        ChannelVolume(Chn, vol)
+;Type CommandAlias
+;    Field Name$
+;    Field Command$
+;End Type
 ;
-;        CreateConsoleMsg(vol, 255, 0, 255)
+;Function CreateCommandAlias.CommandAlias(name$, command$)
+;    Local ret = New CommandAlias
 ;
-;        ChannelPan(Chn, panvalue)
-;	Else
-;		ChannelVolume(Chn, 0)
-;	EndIf
+;    ret\Name = name
+;    ret\Command = command
+;
+;    Return ret
 ;End Function
+;
+;Function RemoveCommandAlias(alias.CommandAlias)
+;    If alias = Null Then Return
+;
+;    Delete alias
+;End Function
+;
+;Function LoadFromFile
 
 ; ================================================================================================================
 
@@ -735,9 +787,71 @@ Function TakeScreenshot%(filename$)
     Return SaveBuffer(FrontBuffer(), filename)
 End Function
 
+Function LoadLoopedSound(filepath$)
+    If FileType(filepath) <> 1 Then RuntimeError "Can't find file " + Chr(34) + filepath + Chr(34) + "."
+
+    Local sound% = LoadSound(filepath)
+    If sound = 0 Then RuntimeError "Can't load sound from file " + Chr(34) + filepath + Chr(34) + "."
+    LoopSound sound
+
+    Return sound
+End Function
+
 ; ========================================================================================================================================================
 
-Function WaitKeyScan()
+Const LOG_CUSTOM% = -1
+Const LOG_INFO% = 0
+Const LOG_WARNING% = 1
+Const LOG_ERROR% = 2
+Const LOG_FATAL% = 3
+
+Global CurrentLogFile%
+
+Function InitLog(filename$ = "latest.log")
+    If Not DebugEnabled Then Return
+    If CurrentLogFile <> 0 Then RuntimeError "[LOG SYSTEM/InitLog] Log file already opened."
+
+    CurrentLogFile = WriteFile(filename)
+    If CurrentLogFile = 0 Then RuntimeError "[LOG SYSTEM/InitLog] Log file wasn't open."
+
+    WriteLine CurrentLogFile, CurrentTime() + " " + CurrentDate() + ": LOGGIN STARTED."
+End Function
+
+Function EndLog()
+    If (Not DebugEnabled) Or CurrentLogFile = 0 Then Return
+    ;If CurrentLogFile = 0 Then RuntimeError "[LOG SYSTEM/EndLog] Log file wasn't open."
+
+    WriteLine CurrentLogFile, CurrentTime() + " " + CurrentDate() + ": LOGGIN ENDED."
+    CloseFile CurrentLogFile
+    CurrentLogFile = 0
+End Function
+
+Function Log(location$, message$, errorlevel% = LOG_INFO, errorlevel_custom$ = "UNKNOWN")
+    If (Not DebugEnabled) Or CurrentLogFile = 0 Then Return
+    ;If CurrentLogFile = 0 Then RuntimeError "[LOG SYSTEM/Log] Log file wasn't open."
+
+    Local errorlevel_str$
+
+    Select errorlevel
+        Case LOG_INFO
+            errorlevel_str = "INFO"
+        Case LOG_WARNING
+            errorlevel_str = "WARN"
+        Case LOG_ERROR
+            errorlevel_str = "ERROR"
+        Case LOG_FATAL
+            errorlevel_str = "FATAL"
+        
+        Default
+            errorlevel_str = errorlevel_custom
+    End Select
+
+    WriteLine CurrentLogFile, CurrentTime() + " " + CurrentDate() + " " + errorlevel_str + " [" + location + "]: " + message
+End Function
+
+; ========================================================================================================================================================
+
+Function WaitKeyScan%()
     FlushKeys
     Repeat
         For i = 1 To 255

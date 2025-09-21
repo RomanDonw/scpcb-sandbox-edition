@@ -7,6 +7,8 @@
 
 ;    See Credits.txt for a list of contributors
 
+Const TEXTURE_FLAGS_PNG% = 1 Or 2
+
 Local InitErrorStr$ = ""
 ;If FileSize("bb_fmod.dll")=0 Then InitErrorStr=InitErrorStr+ "bb_fmod.dll"+Chr(13)+Chr(10)
 If FileSize("fmod.dll")=0 Then InitErrorStr=InitErrorStr+ "fmod.dll"+Chr(13)+Chr(10)
@@ -44,18 +46,27 @@ While FileType(ErrorFile+Str(ErrorFileInd)+".txt")<>0
 Wend
 ErrorFile = ErrorFile+Str(ErrorFileInd)+".txt"
 
+Global DebugEnabled% = GetINIInt(OptionFile, "debug", "enabled")
+
+OnStart()
+
 ; ======================== CUSTOM OPTIONS ==========================
 
 Global CheatGameControlEnabled% = GetINIInt(OptionFile, "gamectl", "cheat game control")
 
 Global NPCsUpdateEnabled% = GetINIInt(OptionFile, "gamectl", "npcs update")
 Global UpdateMTFEnabled% = GetINIInt(OptionFile, "gamectl", "mtf update")
-Global DestroyIntroSequence% = GetINIInt(OptionFile, "gamectl", "destroy intro sequence")
-Global DisableTeslaSequence% = GetINIInt(OptionFile, "gamectl", "disable tesla sequence")
-Global EnableSCP860Forest% = GetINIInt(OptionFile, "gamectl", "enable SCP-860 forest")
-Global SCP970StrangeEvent% = GetINIInt(OptionFile, "gamectl", "SCP-970 strange event")
-Global SCP066Spawn% = GetINIInt(OptionFile, "gamectl", "SCP-066 spawn")
-Global LightFlickering% = GetINIInt(OptionFile, "gamectl", "light flickering")
+
+Global DestroyIntroSequence% = GetINIInt(OptionFile, "gameplay", "destroy intro sequence")
+Global DisableTeslaSequence% = GetINIInt(OptionFile, "gameplay", "disable tesla sequence")
+Global EnableSCP860Forest% = GetINIInt(OptionFile, "gameplay", "enable SCP-860 forest")
+Global SCP970StrangeEvent% = GetINIInt(OptionFile, "gameplay", "SCP-970 strange event")
+Global SCP066Spawn% = GetINIInt(OptionFile, "gameplay", "SCP-066 spawn")
+Global LightFlickering% = GetINIInt(OptionFile, "gameplay", "light flickering")
+Global StopHidingEvent% = GetINIInt(OptionFile, "gameplay", "stop hiding")
+Global MaxwellCatNaturalSpawn% = GetINIInt(OptionFile, "gameplay", "Maxwell the Cat natural spawn")
+
+Global DebugShowWaypoints% = GetINIInt(OptionFile, "debug", "show waypoints")
 
 Global ConsoleBufferLimit% = GetINIInt(OptionFile, "console", "buffer limit")
 Global SendErrorsToConsole% = GetINIInt(OptionFile, "console", "receive errors")
@@ -75,7 +86,7 @@ Global PresetDisableSCP106% = GetINIInt(OptionFile, "SCP-106", "preset disabled"
 Global SCP079CanCloseDoors% = GetINIInt(OptionFile, "SCP-079", "can close doors")
 Global FacilityLightBlinkingBySCP079% = GetINIInt(OptionFile, "SCP-079", "facility light blinking")
 
-Global IntroSequenceMusic% = GetINIInt(OptionFile, "gamectl", "intro sequence music")
+Global IntroSequenceMusic% = GetINIInt(OptionFile, "sound", "intro sequence music")
 Global EnableMusic% = GetINIInt(OptionFile, "sound", "enable music")
 Global EnableAmbientSFX% = GetINIInt(OptionFile, "sound", "enable ambient sfx")
 Global EnableRoomAmbientSFX% = GetINIInt(OptionFile, "sound", "enable room ambient sfx")
@@ -107,6 +118,7 @@ Global PresetNoTarget% = GetINIInt(OptionFile, "player", "preset notarget")
 Global PresetNoclip% = GetINIInt(OptionFile, "player", "preset noclip")
 Global PresetDebugHUD% = GetINIInt(OptionFile, "player", "preset debughud")
 Global PresetNoBlinking% = GetINIInt(OptionFile, "player", "preset noblinking")
+Global PresetInfiniteStamina% = GetINIInt(OptionFile, "player", "preset infinite stamina")
 
 Global CustomIntro% = GetINIInt(OptionFile, "custom intro", "enabled")
 Global CustomIntroDuration# = GetINIFloat(OptionFile, "custom intro", "duration")
@@ -365,7 +377,7 @@ Font5% = AALoadFont("GFX\font\Journal\Journal.ttf", Int(58 * (GraphicHeight / 10
 Global CreditsFont%,CreditsFont2%
 
 ;ConsoleFont% = AALoadFont("Blitz", Int(20 * (GraphicHeight / 1024.0)), 0,0,0,1)
-ConsoleFont% = AALoadFont("Consolas", Int(20 * (GraphicHeight / 1024.0)), 0,0,0,1)
+ConsoleFont% = AALoadFont("Consolas", Int(16 * (GraphicHeight / 1024.0)), 0,0,0,1)
 ;Global ConsoleVeryLargeFont% = AALoadFont("Blitz", Int(100 * (GraphicHeight / 1024.0)), 0,0,0,1)
 Global ConsoleVeryLargeFont% = AALoadFont("Consolas", Int(100 * (GraphicHeight / 1024.0)), 0,0,0,1)
 
@@ -402,11 +414,12 @@ Global KEY_TOGGLE_HUD = GetINIInt(OptionFile, "binds", "Toggle HUD key")
 Global KEY_TOGGLE_DEBUGHUD = GetINIInt(OptionFile, "binds", "Toggle DebugHUD key")
 Global KEY_TOGGLE_NOBLINKING = GetINIInt(OptionFile, "binds", "Toggle no blinking key")
 Global KEY_TOGGLE_SHOWFPS = GetINIInt(OptionFile, "binds", "Toggle show FPS key")
+Global KEY_TOGGLE_TOGGLEINFSTAM = GetINIInt(OptionFile, "binds", "Toggle infinite stamina key")
 Global KEY_CALL_BIND = GetINIInt(OptionFile, "binds", "Call bind key")
 Global KEY_TAKE_SCREENSHOT = GetINIInt(OptionFile, "binds", "Screenshot key")
-Dim KEYS_SELECT_ITEM%(10)
+Global KEYS_SELECT_ITEM%[10]
 For keyi = 0 To 9
-	KEYS_SELECT_ITEM(keyi) = GetINIInt(OptionFile, "binds", "Select item " + (keyi + 1))
+	KEYS_SELECT_ITEM[keyi] = GetINIInt(OptionFile, "binds", "Select item " + (keyi + 1))
 	;CreateConsoleMsg(keyi + " " + GetINIInt(OptionFile, "binds", "Select item " + (keyi + 1)), 255, 0, 255)
 Next
 
@@ -524,9 +537,12 @@ Type ConsoleMsg
 	Field txt$
 	Field isCommand%
 	Field r%,g%,b%
+
+	Field RGBIridescence%
+	Field RGBIridescenceState%
 End Type
 
-Function CreateConsoleMsg(txt$ = "", r% = -1, g% = -1, b% = -1, isCommand% = False)
+Function CreateConsoleMsg.ConsoleMsg(txt$ = "", r% = -1, g% = -1, b% = -1, isCommand% = False, RGBIridescence% = False)
 	Local c.ConsoleMsg = New ConsoleMsg
 	Insert c Before First ConsoleMsg
 	
@@ -540,6 +556,13 @@ Function CreateConsoleMsg(txt$ = "", r% = -1, g% = -1, b% = -1, isCommand% = Fal
 	If (c\r<0) Then c\r = ConsoleR
 	If (c\g<0) Then c\g = ConsoleG
 	If (c\b<0) Then c\b = ConsoleB
+
+	If RGBIridescence Then
+		c\RGBIridescence = True
+		c\RGBIridescenceState = 0
+	End If
+
+	Return c
 End Function
 
 Function UpdateConsole(exec_command% = True)
@@ -787,7 +810,58 @@ Function UpdateConsole(exec_command% = True)
 						Color cm\r/4,cm\g/4,cm\b/4
 						Rect x,TempY-2*MenuScale,width-30*MenuScale,24*MenuScale,True
 					EndIf
+					
+					If cm\RGBIridescence Then
+						Select cm\RGBIridescenceState
+							Case 0
+								If cm\r < 255 Then
+									cm\r = cm\r + 1
+								Else
+									cm\RGBIridescenceState = 1
+								End If
+
+							Case 1
+								If cm\b > 0 Then
+									cm\b = cm\b - 1
+								Else
+									cm\RGBIridescenceState = 2
+								End If
+
+							Case 2
+								If cm\g < 255 Then
+									cm\g = cm\g + 1
+								Else
+									cm\RGBIridescenceState = 3
+								End If
+
+							Case 3
+								If cm\r > 0 Then
+									cm\r = cm\r - 1
+								Else
+									cm\RGBIridescenceState = 4
+								End If
+
+							Case 4
+								If cm\b < 255 Then
+									cm\b = cm\b + 1
+								Else
+									cm\RGBIridescenceState = 5
+								End If
+
+							Case 5
+								If cm\g > 0 Then
+									cm\g = cm\g - 1
+								Else
+									cm\RGBIridescenceState = 0
+								End If
+								
+							Default
+								cm\RGBIridescenceState = 0
+						End Select
+					End If
+
 					Color cm\r,cm\g,cm\b
+
 					If cm\isCommand Then
 						AAText(x + 20*MenuScale, TempY, "> "+cm\txt)
 					Else
@@ -923,7 +997,7 @@ Function ExecConsole(cin$, silent% = False)
 					CreateConsoleMsg("Should be set to a value between 0.0 and 2.0.")
 					CreateConsoleMsg("Default is 1.0.")
 					CreateConsoleMsg("******************************")
-				Case "noclip","fly"
+				Case "noclip", "fly", "nc"
 					CreateConsoleMsg("HELP - noclip")
 					CreateConsoleMsg("******************************")
 					CreateConsoleMsg("Toggles noclip, unless a valid parameter")
@@ -931,7 +1005,7 @@ Function ExecConsole(cin$, silent% = False)
 					CreateConsoleMsg("Allows the camera to move in any direction while")
 					CreateConsoleMsg("bypassing collision.")
 					CreateConsoleMsg("******************************")
-				Case "godmode","god"
+				Case "godmode", "god", "gm"
 					CreateConsoleMsg("HELP - godmode")
 					CreateConsoleMsg("******************************")
 					CreateConsoleMsg("Toggles godmode, unless a valid parameter")
@@ -1264,7 +1338,7 @@ Function ExecConsole(cin$, silent% = False)
 			Next
 			PlaySound_Strict LoadTempSound("SFX\Music\420J.ogg")
 			;[End Block]
-		Case "godmode", "god"
+		Case "godmode", "god", "gm"
 			;[Block]
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
@@ -1275,11 +1349,12 @@ Function ExecConsole(cin$, silent% = False)
 					GodMode = False
 				Default
 					GodMode = Not GodMode
-			End Select	
+			End Select
+
 			If GodMode Then
-				CreateConsoleMsg("GODMODE ON")
+				CreateConsoleMsg("GodMode enabled.", 0, 255, 0)
 			Else
-				CreateConsoleMsg("GODMODE OFF")	
+				CreateConsoleMsg("GodMode disabled.", 0, 255, 0)	
 			EndIf
 			;[End Block]
 		Case "revive","undead","resurrect"
@@ -1299,38 +1374,37 @@ Function ExecConsole(cin$, silent% = False)
 			FallTimer = 0
 			MenuOpen = False
 			
-			GodMode = 0
-			NoClip = 0
+			;GodMode = 0
+			;NoClip = 0
 			
 			ShowEntity Collider
 			
 			KillTimer = 0
 			KillAnim = 0
 			;[End Block]
-		Case "noclip","fly"
+		Case "noclip", "fly", "nc"
 			;[Block]
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
 				Case "on", "1", "true"
 					NoClip = True
-					Playable = True
+					
 				Case "off", "0", "false"
 					NoClip = False	
-					RotateEntity Collider, 0, EntityYaw(Collider), 0
+					
 				Default
 					NoClip = Not NoClip
-					If NoClip = False Then		
-						RotateEntity Collider, 0, EntityYaw(Collider), 0
-					Else
-						Playable = True
-					EndIf
 			End Select
 			
 			If NoClip Then
-				CreateConsoleMsg("NOCLIP ON")
+				Playable = True
+
+				CreateConsoleMsg("NoClip enabled.", 0, 255, 0)
 			Else
-				CreateConsoleMsg("NOCLIP OFF")
+				RotateEntity Collider, 0, EntityYaw(Collider), 0
+
+				CreateConsoleMsg("NoClip disabled.", 0, 255, 0)
 			EndIf
 			
 			DropSpeed = 0
@@ -1419,7 +1493,7 @@ Function ExecConsole(cin$, silent% = False)
 			EndIf
 			;[End Block]
 		;new Console Commands in SCP:CB 1.3 - ENDSHN
-		Case "infinitestamina","infstam"
+		Case "infinitestamina", "infstam", "st"
 			;[Block]
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
@@ -1433,9 +1507,9 @@ Function ExecConsole(cin$, silent% = False)
 			End Select
 			
 			If InfiniteStamina
-				CreateConsoleMsg("INFINITE STAMINA ON")
+				CreateConsoleMsg("InfiniteStamina enabled.", 0, 255, 0)
 			Else
-				CreateConsoleMsg("INFINITE STAMINA OFF")	
+				CreateConsoleMsg("InfiniteStamina disabled.", 0, 255, 0)	
 			EndIf
 			;[End Block]
 		Case "asd2"
@@ -1559,7 +1633,7 @@ Function ExecConsole(cin$, silent% = False)
 			ResetEntity Camera
 			CreateConsoleMsg("Teleported to coordinates (X|Y|Z): "+EntityX(Collider)+"|"+EntityY(Collider)+"|"+EntityZ(Collider))
 			;[End Block]
-		Case "notarget"
+		Case "notarget", "nt"
 			;[Block]
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
@@ -1572,10 +1646,10 @@ Function ExecConsole(cin$, silent% = False)
 					NoTarget% = Not NoTarget%
 			End Select
 			
-			If NoTarget% = False Then
-				CreateConsoleMsg("NOTARGET OFF")
+			If NoTarget Then
+				CreateConsoleMsg("NoTarget enabled.", 0, 255, 0)
 			Else
-				CreateConsoleMsg("NOTARGET ON")	
+				CreateConsoleMsg("NoTarget disabled.", 0, 255, 0)	
 			EndIf
 			;[End Block]
 		Case "spawnradio"
@@ -1727,6 +1801,16 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("unbind <id> - unbinds command from key by bind ID.")
 
 			CreateConsoleMsg(" ")
+			CreateConsoleMsg("- Commands aliases:", 255, 127, 0)
+			CreateConsoleMsg(" ")
+
+			CreateConsoleMsg("nc = noclip.")
+			CreateConsoleMsg("nt = notarget.")
+			CreateConsoleMsg("nb = noblinking.")
+			CreateConsoleMsg("gm = godmode.")
+			CreateConsoleMsg("st = infinitestamina.")
+
+			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Uncategorized commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
@@ -1746,6 +1830,9 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("displaymessage <timer:float> <message:string> - displays a message with text <message> for <timer> seconds.")
 			CreateConsoleMsg("setvomittimer <timer:float> - sets vomit timer to <timer> value.")
 			CreateConsoleMsg("lever.create <x> <y> <z> [locked:locked/true/1 unlocked/false/0 = false] - creates lever.")
+			CreateConsoleMsg("maxwellcat - spawns an instance of Maxwell the Cat.", 255, 0, 0, False, True)
+			CreateConsoleMsg("maxwellcat.clear - removes alls instances if Maxwell the Cat.", 255, 0, 0)
+			CreateConsoleMsg("settexturelodbias <texturelodbias:float> - sets value of TextureLodBias instruction.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Player control commands:", 255, 127, 0)
@@ -1940,7 +2027,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		; ====================
 
-		Case "noblinking"
+		Case "noblinking", "nb"
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			
 			Select StrTemp
@@ -1953,9 +2040,9 @@ Function ExecConsole(cin$, silent% = False)
 			End Select
 			
 			If NoBlinking Then
-				CreateConsoleMsg("NOBLINKING ON")
+				CreateConsoleMsg("NoBlinking enabled.", 0, 255, 0)
 			Else
-				CreateConsoleMsg("NOBLINKING OFF")	
+				CreateConsoleMsg("NoBlinking disabled.", 0, 255, 0)	
 			EndIf
 		
 
@@ -2012,9 +2099,9 @@ Function ExecConsole(cin$, silent% = False)
 			End Select
 			
 			If SecondaryLightOn Then
-				CreateConsoleMsg("SecondaryLight ON", 0, 255, 0)
+				CreateConsoleMsg("SecondaryLight enabled.", 0, 255, 0)
 			Else
-				CreateConsoleMsg("SecondaryLight OFF", 0, 255, 0)	
+				CreateConsoleMsg("SecondaryLight disabled.", 0, 255, 0)	
 			EndIf
 
 		Local prop% = 0
@@ -2154,6 +2241,58 @@ Function ExecConsole(cin$, silent% = False)
 			VomitTimer = Float(Right(cin, Len(cin) - Instr(cin, " ")))
 
 			CreateConsoleMsg("Set vomit timer to " + VomitTimer + ".", 0, 255, 0)
+
+		Case "maxwellcat"
+			;filepath$ = "sandbox\GFX\models\maxwell.b3d"
+			;
+			;If FileType(filepath) <> 1 Then CreateConsoleMsg("Can't find Maxwell Cat model.", 255, 0, 0) : Return
+			;
+			;maxwell% = LoadMesh_Strict(filepath)
+			;If maxwell = 0 Then CreateConsoleMsg("Can't load Maxwell Cat model.", 255, 0, 0) : Return
+			;
+			;ScaleEntity maxwell, 0.01, 0.01, 0.01
+			;PositionEntity maxwell, EntityX(Collider, True), EntityY(Collider, True), EntityZ(Collider, True), True
+			;EntityColor maxwell, 255, 255, 255
+			;EntityType maxwell, HIT_MAP
+			;EntityTexture maxwell, LoadTexture_Strict("sandbox\GFX\textures\maxwell\maxwell.png", TEXTURE_FLAGS_PNG)
+
+			CreateNPC(NPCtypeMaxwellCat, EntityX(Collider, True), EntityY(Collider, True), EntityZ(Collider, True))
+
+			CreateConsoleMsg("Hello, Maxwell the Cat.", 255, 0, 0, False, True)
+
+		Case "maxwellcat.clear"
+			For n.NPCs = Each NPCs
+				If n\NPCtype = NPCtypeMaxwellCat Then
+					RemoveNPC(n)
+				End If
+			Next
+
+			CreateConsoleMsg("Removed all Maxwell the Cats.", 0, 255, 0)
+
+		;Case "test.hsv"
+		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
+		;	StrTemp$ = Piece$(args$,1," ")
+		;	StrTemp2$ = Piece$(args$,2," ")
+		;	StrTemp3$ = Piece$(args$,3," ")
+		;
+		;	color.HSV = New HSV
+		;	color\Hue = Float(StrTemp) / 360
+		;	color\Saturation = 1
+		;	color\Value = 1
+		;
+		;	out.RGB = HSV2RGB(color)
+		;
+		;	CreateConsoleMsg("1234567890", out\R, out\G, out\B)
+		;
+		;	Delete out
+		;	Delete color
+
+		Case "settexturelodbias"
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			TextureLodBias Float(StrTemp)
+
+			CreateConsoleMsg("Set TextureLodBias to " + Float(StrTemp) + ".", 0, 255, 0)
 
 		; === CONTROLLABLE NPC ===
 
@@ -3256,6 +3395,33 @@ Function ExecConsole(cin$, silent% = False)
 		;
 		;		CreateConsoleMsg("Frame of selected door hid.", 0, 255, 0)
 		;
+		;	Else
+		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
+		;	End If
+
+		;Case "door.selected.button.position.set"
+		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
+		;	StrTemp$ = Piece$(args$,1," ")
+		;	StrTemp2$ = Piece$(args$,2," ")
+		;	StrTemp3$ = Piece$(args$,3," ")
+		;	StrTemp4$ = Piece$(args$,4," ")
+		;
+		;	btnindex% = Int(StrTemp)
+		;	x# = Float(StrTemp2)
+		;	y# = Float(StrTemp3)
+		;	z# = Float(StrTemp4)
+		;
+		;	If CurrDoor <> Null Then
+		;		If Not (btnindex < 0 Or btnindex > 1) Then
+		;			If CurrDoor\buttons[btnindex] <> 0 Then
+		;				PositionEntity CurrDoor\buttons[btnindex], x, y, z, True
+		;				CreateConsoleMsg("Set position of selected door button with index " + btnindex + " to (X|Y|Z) " + x + " " + y + " " + z + ".", 0, 255, 0)
+		;			Else
+		;				CreateConsoleMsg("Button with index " + btnindex + " doesn't exist.", 255, 0, 0)
+		;			End If
+		;		Else
+		;			CreateConsoleMsg("Incorrect button index.", 255, 0, 0)
+		;		End If
 		;	Else
 		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
 		;	End If
@@ -4695,6 +4861,7 @@ Repeat
 	
 	UpdateMusic()
 	If EnableSFXRelease Then AutoReleaseSounds()
+	UpdateSFX3Ds()
 	
 	If MainMenuOpen Then
 		If ShouldPlay = 21 Then
@@ -6033,9 +6200,13 @@ Function MovePlayer()
 		ShowFPS = Not ShowFPS
 	End If
 
+	If KeyHit(KEY_TOGGLE_TOGGLEINFSTAM) Then
+		InfiniteStamina = Not InfiniteStamina
+	End If
+
 	If Not DebugHUD Then
 		For keyi = 0 To 9
-			If KeyHit(KEYS_SELECT_ITEM(keyi)) SelectedItem = Inventory(keyi)
+			If KeyHit(KEYS_SELECT_ITEM[keyi]) SelectedItem = Inventory(keyi)
 		Next
 		;If KeyHit(2) SelectedItem = Inventory(0)
 	End If
@@ -6745,6 +6916,10 @@ Function DrawGUI()
 
 				AAText x - 50, 80, "KillTimer: " + f2s(KillTimer, 3)
 				AAText x - 50, 100, "PDCameraEffect: " + bool2s(PDCameraEffect)
+				AAText x - 50, 120, "Contained106: " + bool2s(Contained106)
+				AAText x - 50, 140, "SecondaryLightOn: " + bool2s(SecondaryLightOn)
+				AAText x - 50, 160, "RemoteDoorOn: " + bool2s(RemoteDoorOn)
+				AAText x - 50, 180, "flag_maxwellcatspawned: " + bool2s(flag_maxwellcatspawned)
 
 
 				AAText x + 350, 50, "EyeIrritation: " + f2s(EyeIrritation, 3)
@@ -6777,12 +6952,13 @@ Function DrawGUI()
 				AAText x + 350, 530, "Noclip: " + bool2s(Noclip)
 				AAText x + 350, 550, "NoTarget: " + bool2s(NoTarget)
 				AAText x + 350, 570, "NoBlinking: " + bool2s(NoBlinking)
+				AAText x + 350, 590, "InfiniteStamina: " + bool2s(InfiniteStamina)
 
-				AAText x + 350, 600, "SuperMan: " + bool2s(SuperMan)
-				AAText x + 350, 620, "SuperManTimer: " + f2s(SuperManTimer, 3)
+				AAText x + 350, 620, "SuperMan: " + bool2s(SuperMan)
+				AAText x + 350, 640, "SuperManTimer: " + f2s(SuperManTimer, 3)
 
-				AAText x + 350, 650, "BlurVolume: " + f2s(BlurVolume, 3)
-				AAText x + 350, 670, "BlurTimer: " + f2s(BlurTimer, 3)
+				AAText x + 350, 670, "BlurVolume: " + f2s(BlurVolume, 3)
+				AAText x + 350, 690, "BlurTimer: " + f2s(BlurTimer, 3)
 		End Select
 
 		AASetFont Font1
@@ -8959,7 +9135,7 @@ Function DrawGUI()
 					Msg = ""
 					
 					SelectedItem\state = 1
-					DrawImage(SelectedItem\itemtemplate\invimg, GraphicWidth / 2 - ImageWidth(SelectedItem\itemtemplate\invimg) / 2, GraphicHeight / 2 - ImageHeight(SelectedItem\itemtemplate\invimg) / 2)
+					;DrawImage(SelectedItem\itemtemplate\invimg, GraphicWidth / 2 - ImageWidth(SelectedItem\itemtemplate\invimg) / 2, GraphicHeight / 2 - ImageHeight(SelectedItem\itemtemplate\invimg) / 2)
 					;[End Block]
 				Case "scp427"
 					;[Block]
@@ -9100,7 +9276,7 @@ Function DrawMenu()
 		
 		;DebugLog AchievementsMenu+"|"+OptionsMenu+"|"+QuitMSG
 		
-		If PlayerRoom\RoomTemplate\Name$ <> "exit1" And PlayerRoom\RoomTemplate\Name$ <> "gatea"
+		If (PlayerRoom\RoomTemplate\Name$ <> "exit1" And PlayerRoom\RoomTemplate\Name$ <> "gatea") And StopHidingEvent Then
 			If StopHidingTimer = 0 Then
 				If EntityDistance(Curr173\Collider, Collider)<4.0 Or EntityDistance(Curr106\Collider, Collider)<4.0 Then 
 					StopHidingTimer = 1
@@ -10362,6 +10538,8 @@ Function LoadEntities()
 	HideEntity(Room2slCam)
 	
 	DrawLoading(30)
+
+	OnLoadEntities()
 	
 	;LoadRoomMeshes()
 	
@@ -12755,6 +12933,27 @@ End Function
 
 ;--------------------------------------- math -------------------------------------------------------
 
+Function ClampFloat#(value#, min#, max#)
+	If value < min Then
+		Return min
+	Else If value > max Then
+		Return max
+	End If
+
+	Return value
+End Function
+
+Function ClampInt%(value%, min%, max%)
+	If value < min Then
+		Return min
+	Else If value > max Then
+		Return max
+	End If
+	
+	Return value
+End Function
+
+
 Function GenerateSeedNumber(seed$)
  	Local temp% = 0
  	Local shift% = 0
@@ -14035,6 +14234,8 @@ Function PlayAnnouncement(file$) ;This function streams the announcement current
 End Function
 
 Function UpdateStreamSounds()
+	CatchErrors("Uncaught (UpdateStreamSounds)")
+
 	Local e.Events
 	
 	If FPSfactor > 0 Then
@@ -14077,6 +14278,7 @@ Function UpdateStreamSounds()
 		EndIf
 	EndIf
 	
+	CatchErrors("UpdateStreamSounds")
 End Function
 
 Function TeleportEntity(entity%,x#,y#,z#,customradius#=0.3,isglobal%=False,pickrange#=2.0,dir%=0)
