@@ -5655,7 +5655,15 @@ Function UpdateRooms()
 		;If hide Then
 		;	HideEntity r\obj
 		;Else
-		If (EntityInView(r\obj, Camera)) Or (Not hide) Then
+		Local renderroom% = False
+
+		If RoomRenderIfItInPlayerView Then
+			renderroom = (EntityInView(r\obj, Camera)) Or (Not hide)
+		Else
+			renderroom = Not hide
+		End If
+
+		If renderroom Then
 			ShowEntity r\obj
 			For i = 0 To MaxRoomLights-1
 				If r\Lights[i] <> 0 Then

@@ -96,6 +96,7 @@ Global EnableSFX% = GetINIInt(OptionFile, "sound", "enable sfx")
 Global EnableMenuPressAnyKeySound% = GetINIInt(OptionFile, "sound", "enable menu press any key sound")
 Global SaveSFX% = GetINIInt(OptionFile, "sound", "save sfx")
 
+Global RoomRenderIfItInPlayerView% = GetINIInt(OptionFile, "display", "render room if it in player view")
 Global ClsColorR% = GetINIInt(OptionFile, "display", "cls color r")
 Global ClsColorG% = GetINIInt(OptionFile, "display", "cls color g")
 Global ClsColorB% = GetINIInt(OptionFile, "display", "cls color b")
