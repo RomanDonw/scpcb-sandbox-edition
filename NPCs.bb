@@ -5120,7 +5120,7 @@ Function UpdateNPCs()
 											End If
 										End If
 										
-										If EntityDistance(n\Collider, n\Path[n\PathLocation]\obj) <= 0.3 Then
+										If EntityDistance(n\Collider, n\Path[n\PathLocation]\obj) < 0.3 Then
 											n\PathLocation = n\PathLocation + 1
 
 											Log("UpdateNPCs/Maxwell the Cat", "Switched to point #" + n\PathLocation)
@@ -5128,11 +5128,17 @@ Function UpdateNPCs()
 									EndIf
 
 									If n\PathEndPoint <> Null Then
-										If EntityDistance(n\Collider, n\PathEndPoint\obj) <= 0.3 Then
+										If EntityDistance(n\Collider, n\PathEndPoint\obj) < 0.3 Then
 											n\State = 0
 
 											Log("UpdateNPCs/Maxwell the Cat", "End of path. Idiling.")
 										End If
+									End If
+
+									If EntityDistance(n\Collider, Collider) < 1 Then
+										n\State = 0
+
+										Log("UpdateNPCs/Maxwell the Cat", "Player is too near. Idiling.")
 									End If
 
 								Case 2 ; player unreachable
