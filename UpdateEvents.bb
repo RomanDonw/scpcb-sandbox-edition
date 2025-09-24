@@ -13,8 +13,6 @@ Function UpdateEvents()
 	CurrStepSFX = 0
 	
 	UpdateRooms()
-
-	UpdateCustomEvents()
 	
 	For e.Events = Each Events
 		Select e\EventName
@@ -8754,6 +8752,8 @@ Function UpdateEvents()
 			CatchErrors("Deleted event")
 		EndIf
 	Next
+
+	OnUpdateEvents()
 	
 	;This here is necessary because the 294 drinks with explosion effect didn't worked anymore - ENDSHN
 	If ExplosionTimer > 0 Then

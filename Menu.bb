@@ -213,7 +213,7 @@ Function UpdateMainMenu()
 						FSOUND_Stream_Stop(CurrMusicStream)
 						;FSOUND_Close()
 
-						OnEnd()
+						OnGameEnd()
 						End
 					EndIf
 			End Select
@@ -1327,7 +1327,7 @@ Function UpdateLauncher()
 	FreeImage(LauncherIMG) : LauncherIMG = 0
 	
 	If quit Then
-		OnEnd()
+		OnGameEnd()
 		End
 	End If
 End Function

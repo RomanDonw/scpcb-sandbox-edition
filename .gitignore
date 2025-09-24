@@ -18,3 +18,4 @@ screenshots/*
 *-autosave.kra
 *.png~
 latest.log
+*.exe.Backup

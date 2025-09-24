@@ -48,7 +48,7 @@ ErrorFile = ErrorFile+Str(ErrorFileInd)+".txt"
 
 Global DebugEnabled% = GetINIInt(OptionFile, "debug", "enabled")
 
-OnStart()
+OnGameStart()
 
 ; ======================== CUSTOM OPTIONS ==========================
 
@@ -4806,7 +4806,7 @@ End Type
 
 Global I_Zone.MapZones = New MapZones
 
-Include "sandbox\CustomEvents.bb"
+Include "sandbox\Main.bb"
 
 ;----------------------------------------------------------------------------------------------------------------------------------------------------
 ;----------------------------------------------       		MAIN LOOP                 ---------------------------------------------------------------
@@ -4862,7 +4862,6 @@ Repeat
 	
 	UpdateMusic()
 	If EnableSFXRelease Then AutoReleaseSounds()
-	UpdateSFX3Ds()
 	
 	If MainMenuOpen Then
 		If ShouldPlay = 21 Then
@@ -5011,6 +5010,7 @@ Repeat
 				UpdateParticles_Time#=0
 			EndIf
 		EndIf
+		OnUpdate()
 		
 		If InfiniteStamina% Then Stamina = Min(100, Stamina + (100.0-Stamina)*0.01*FPSfactor)
 		
@@ -6778,7 +6778,7 @@ Function DrawGUI()
 		
 		FreeEntity (temp)
 		
-		If EnableDrawingInteractionImage DrawImage(HandIcon, GraphicWidth / 2 + Sin(yawvalue) * (GraphicWidth / 3) - 32, GraphicHeight / 2 - Sin(pitchvalue) * (GraphicHeight / 3) - 32)
+		If EnableDrawingInteractionImage And HUDenabled Then DrawImage(HandIcon, GraphicWidth / 2 + Sin(yawvalue) * (GraphicWidth / 3) - 32, GraphicHeight / 2 - Sin(pitchvalue) * (GraphicHeight / 3) - 32)
 
 		If MouseUp1 Then
 			MouseUp1 = False
@@ -6801,12 +6801,12 @@ Function DrawGUI()
 		If pitchvalue > 90 And pitchvalue <= 180 Then pitchvalue = 90
 		If pitchvalue > 180 And pitchvalue < 270 Then pitchvalue = 270
 		
-		If EnableDrawingInteractionImage DrawImage(HandIcon2, GraphicWidth / 2 + Sin(yawvalue) * (GraphicWidth / 3) - 32, GraphicHeight / 2 - Sin(pitchvalue) * (GraphicHeight / 3) - 32)
+		If EnableDrawingInteractionImage And HUDenabled Then DrawImage(HandIcon2, GraphicWidth / 2 + Sin(yawvalue) * (GraphicWidth / 3) - 32, GraphicHeight / 2 - Sin(pitchvalue) * (GraphicHeight / 3) - 32)
 	EndIf
 	
-	If DrawHandIcon And EnableDrawingInteractionImage Then DrawImage(HandIcon, GraphicWidth / 2 - 32, GraphicHeight / 2 - 32)
+	If DrawHandIcon And EnableDrawingInteractionImage And HUDenabled Then DrawImage(HandIcon, GraphicWidth / 2 - 32, GraphicHeight / 2 - 32)
 	For i = 0 To 3
-		If DrawArrowIcon(i) And EnableDrawingInteractionImage Then
+		If DrawArrowIcon(i) And EnableDrawingInteractionImage And HUDenabled Then
 			x = GraphicWidth / 2 - 32
 			y = GraphicHeight / 2 - 32		
 			Select i
@@ -6960,6 +6960,9 @@ Function DrawGUI()
 
 				AAText x + 350, 670, "BlurVolume: " + f2s(BlurVolume, 3)
 				AAText x + 350, 690, "BlurTimer: " + f2s(BlurTimer, 3)
+
+			Default
+				DebugHUDpage = 1
 		End Select
 
 		AASetFont Font1
@@ -7851,7 +7854,7 @@ Function DrawGUI()
 					;[End Block]
 				Case "key1", "key2", "key3", "key4", "key5", "key6", "keyomni", "scp860", "hand", "hand2", "25ct"
 					;[Block]
-					If EnableDrawingSelectedItemKeycard DrawImage(SelectedItem\itemtemplate\invimg, GraphicWidth / 2 - ImageWidth(SelectedItem\itemtemplate\invimg) / 2, GraphicHeight / 2 - ImageHeight(SelectedItem\itemtemplate\invimg) / 2)
+					If EnableDrawingSelectedItemKeycard And HUDenabled Then DrawImage(SelectedItem\itemtemplate\invimg, GraphicWidth / 2 - ImageWidth(SelectedItem\itemtemplate\invimg) / 2, GraphicHeight / 2 - ImageHeight(SelectedItem\itemtemplate\invimg) / 2)
 					;[End Block]
 				Case "scp513"
 					;[Block]
@@ -9136,7 +9139,7 @@ Function DrawGUI()
 					Msg = ""
 					
 					SelectedItem\state = 1
-					;DrawImage(SelectedItem\itemtemplate\invimg, GraphicWidth / 2 - ImageWidth(SelectedItem\itemtemplate\invimg) / 2, GraphicHeight / 2 - ImageHeight(SelectedItem\itemtemplate\invimg) / 2)
+					If HUDenabled Then DrawImage(SelectedItem\itemtemplate\invimg, GraphicWidth / 2 - ImageWidth(SelectedItem\itemtemplate\invimg) / 2, GraphicHeight / 2 - ImageHeight(SelectedItem\itemtemplate\invimg) / 2)
 					;[End Block]
 				Case "scp427"
 					;[Block]

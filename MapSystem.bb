@@ -6381,7 +6381,8 @@ Function CreateSecurityCam.SecurityCams(x#, y#, z#, r.Rooms, screen% = False, En
 		CameraViewport(sc\Cam, 0, 0, 512, 512)
 		CameraRange sc\Cam, 0.05, 8.0 ;6.0
 		CameraZoom(sc\Cam, 0.8)
-		HideEntity(sc\Cam)	
+		;HideEntity(sc\Cam)	
+		CameraProjMode sc\Cam, 0
 	End If
 	
 	PositionEntity(sc\obj, x, y, z)
@@ -6403,12 +6404,14 @@ Function UpdateSecurityCams()
 	For sc.SecurityCams = Each SecurityCams
 		Local close = False
 		If sc\room = Null Then
-			HideEntity sc\Cam
+			;HideEntity sc\Cam
+			CameraProjMode sc\Cam, 0
 		Else
 			If sc\room\dist < 6.0 Or PlayerRoom=sc\room Then 
 				close = True
 			ElseIf sc\Cam<>0
-				HideEntity sc\Cam
+				;HideEntity sc\Cam
+				CameraProjMode sc\Cam, 0
 			EndIf
 			
 			If sc\room <> Null
@@ -6509,8 +6512,10 @@ Function UpdateSecurityCams()
 							If EntityVisible(Camera,sc\ScrObj) Then
 								;sc\InSight = True
 								If CoffinCam = Null Or Rand(5)=5 Or sc\CoffinEffect <> 3 Then
-									HideEntity(Camera)
-									ShowEntity(sc\Cam)
+									;HideEntity(Camera)
+									CameraProjMode Camera, 0
+									;ShowEntity(sc\Cam)
+									CameraProjMode sc\Cam, 1
 									Cls
 									
 									UpdateRoomLights(sc\Cam)
@@ -6519,13 +6524,17 @@ Function UpdateSecurityCams()
 									RenderWorld
 									CopyRect 0,0,512,512,0,0,BackBuffer(),TextureBuffer(ScreenTexs[sc\ScrTexture])
 									
-									HideEntity(sc\Cam)
-									ShowEntity(Camera)										
+									;HideEntity(sc\Cam)
+									CameraProjMode sc\Cam, 0
+									;ShowEntity(Camera)
+									CameraProjMode Camera, 1
 								Else
-									HideEntity(Camera)
+									;HideEntity(Camera)
+									CameraProjMode Camera, 0
 									ShowEntity (CoffinCam\room\obj)
 									EntityAlpha(GetChild(CoffinCam\room\obj,2),1)
-									ShowEntity(CoffinCam\Cam)
+									;ShowEntity(CoffinCam\Cam)
+									CameraProjMode CoffinCam\Cam, 1
 									Cls
 									
 									UpdateRoomLights(CoffinCam\Cam)
@@ -6535,8 +6544,10 @@ Function UpdateSecurityCams()
 									CopyRect 0,0,512,512,0,0,BackBuffer(),TextureBuffer(ScreenTexs[sc\ScrTexture])
 									
 									HideEntity (CoffinCam\room\obj)
-									HideEntity(CoffinCam\Cam)
-									ShowEntity(Camera)										
+									;HideEntity(CoffinCam\Cam)
+									CameraProjMode CoffinCam\Cam, 0
+									;ShowEntity(Camera)
+									CameraProjMode Camera, 1
 								EndIf
 							EndIf
 						EndIf
