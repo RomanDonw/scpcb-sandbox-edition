@@ -1792,6 +1792,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("cls - clears console.")
 			CreateConsoleMsg("execfile <relative filepath> - executes commands in Console from file <relative filepath> (comments (starts by #) and empty lines ignores).")
 			CreateConsoleMsg("execwithdelay <delay> <command> - executes <command> with <delay> in seconds.")
+			CreateConsoleMsg("log.flush <relative filepath='dump.log'> - stops current loging session and saves it to file <relative filepath>, then restarts log system.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Console binds system control commands:", 255, 127, 0)
@@ -1963,6 +1964,8 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "execwithdelay"
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+			If CalculateCharCountInString(args, " ") < (2) - 1 Then CreateConsoleMsg("Too few args.", 255, 0, 0) : Return
+
 			StrTemp$ = Piece$(args$,1," ")
 			;StrTemp2$ = Piece$(args$,2," ")
 			StrTemp2$ = Right(args, Len(args) - Instr(args, " ", Instr(args, " ")))
@@ -1970,6 +1973,16 @@ Function ExecConsole(cin$, silent% = False)
 			CreateDelayedCommand(MilliSecs() / 1000 + Float(StrTemp), StrTemp2)
 
 			CreateConsoleMsg("Execution of command " + Chr(34) + StrTemp2 + Chr(34) + " delayed by " + Float(StrTemp) + " seconds.", 0, 255, 0)
+
+		Case "log.flush"
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+			If CalculateCharCountInString(args, " ") = 0 Then
+				StrTemp = "dump.log"
+			Else
+				StrTemp$ = Piece$(args$,1," ")
+			End If
+			FlushLog(StrTemp)
+			CreateConsoleMsg("Flushed log to file " + Chr(34) + StrTemp + Chr(34) + ".", 0, 255, 0)
 
 		; === BINDS SYSTEM ===
 
