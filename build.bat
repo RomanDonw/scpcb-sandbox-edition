@@ -12,7 +12,7 @@ if not %ERRORLEVEL% == 0 goto on_error
     set ERRORLEVEL=0
     goto end
 
-on_error:
+:on_error
     set ERRORLEVEL=-1
 
 :end

@@ -1944,7 +1944,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("door.selected.position.translate <x> <y> <z> - translates position of selected door.")
 			CreateConsoleMsg("door.selected.position.set <x> <y> <z> - sets position of selected door.")
 
-			CreateConsoleMsg("")
+			CreateConsoleMsg()
 
 			ConsoleR = oldcr : ConsoleG = oldcg : ConsoleB = oldcb
 
@@ -1954,6 +1954,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("", 0, 0, 0)
 
 		Case "execfile"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			If FileType(StrTemp) <> 1 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
@@ -1964,7 +1966,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "execwithdelay"
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
-			If CalculateCharCountInString(args, " ") < (2) - 1 Then CreateConsoleMsg("Too few args.", 255, 0, 0) : Return
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
 
 			StrTemp$ = Piece$(args$,1," ")
 			;StrTemp2$ = Piece$(args$,2," ")
@@ -1976,7 +1978,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "log.flush"
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
-			If CalculateCharCountInString(args, " ") = 0 Then
+			If CalculateCharCountInString(cin, " ") < 1 Then
 				StrTemp = "dump.log"
 			Else
 				StrTemp$ = Piece$(args$,1," ")
@@ -1988,6 +1990,8 @@ Function ExecConsole(cin$, silent% = False)
 
 		Local bnd.ConsoleBind = Null
 		Case "bind"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			;CreateConsoleMsg("Press key: ", 0, 255, 255)
@@ -2017,6 +2021,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Binded key " + KeyName(bnd\KeyCode) + " to command " + Chr(34) + bnd\Command + Chr(34) + " (to call, use " + KeyName(KEY_CALL_BIND) + " + " + KeyName(bnd\KeyCode) +").", 0, 255, 0)
 
 		Case "unbind"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			bnd = Null
 
@@ -2042,7 +2048,11 @@ Function ExecConsole(cin$, silent% = False)
 		; ====================
 
 		Case "noblinking", "nb"
-			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+			If CalculateCharCountInString(cin, " ") < 1 Then
+				StrTemp$ = ""
+			Else
+				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+			End If
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -2062,10 +2072,14 @@ Function ExecConsole(cin$, silent% = False)
 
 		Local rname$
 		Case "spawnroom"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			rname = Right(cin, Len(cin) - Instr(cin, " "))
 			PlayerRoom = CreateRoom(0, 0, EntityX(Collider), EntityY(Collider) - 0.25, EntityZ(Collider), rname, True)
 
 		Case "setcurrentroom"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			rname = Right(cin, Len(cin) - Instr(cin, " "))
 			For r.Rooms = Each Rooms
 				If r\RoomTemplate\Name = rname Then
@@ -2080,17 +2094,9 @@ Function ExecConsole(cin$, silent% = False)
 		Case "disablefog"
 			HideEntity Fog
 
-		;Case "teleport173to"
-		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
-		;	StrTemp$ = Piece$(args$,1," ")
-		;	StrTemp2$ = Piece$(args$,2," ")
-		;	StrTemp3$ = Piece$(args$,3," ")
-		;
-		;	If Curr173 <> Null Then
-		;		PositionEntity Curr173\Collider, Float(StrTemp), Float(StrTemp2), Float(StrTemp3)
-		;	End If
-
 		Case "addlight"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			Local lr%, lg%, lb%
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
@@ -2101,7 +2107,11 @@ Function ExecConsole(cin$, silent% = False)
 			AddLight(Null, EntityX(Collider), EntityY(Collider), EntityZ(Collider), 2, 10, Int(StrTemp), Int(StrTemp2), Int(StrTemp3))	
 			
 		Case "secondarylight"
-			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+			If CalculateCharCountInString(cin, " ") < 1 Then
+				StrTemp$ = ""
+			Else
+				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+			End If
 			
 			Select StrTemp
 				Case "on", "1", "true"
@@ -2121,6 +2131,8 @@ Function ExecConsole(cin$, silent% = False)
 		Local prop% = 0
 		Local t_ent_scale#
 		Case "props.create"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2158,6 +2170,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "camera.range"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2174,11 +2188,14 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Removed nearest item to player.", 0, 255, 0)
 
 		Case "sound.play"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 
-			If StrTemp2 = StrTemp Or StrTemp2 = "" Then StrTemp2 = SFXVolume
+			;If StrTemp2 = StrTemp Or StrTemp2 = "" Then StrTemp2 = SFXVolume
+			If CalculateCharCountInString(cin, " ") < 2 Then StrTemp2 = SFXVolume
 
 			If FileType(StrTemp) <> 1 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
 
@@ -2188,13 +2205,17 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Played file " + Chr(34) + StrTemp + Chr(34) + " with volume " + Float(StrTemp2) + ".", 0, 255, 0)
 
 		Case "lever.create"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
 			StrTemp3$ = Piece$(args$,3," ")
+
 			StrTemp4$ = Piece$(args$,4," ")
-		
-			If StrTemp4 = StrTemp3 Or StrTemp4 = "" Then StrTemp4 = "false"
+			If CalculateCharCountInString(cin, " ") < 4 Then StrTemp4 = ""
+			;If StrTemp4 = StrTemp3 Or StrTemp4 = "" Then StrTemp4 = "false"
+
 		
 			locked% = False
 		
@@ -2214,6 +2235,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Created new lever at (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " (locked: " + locked + ").", 0, 255, 0)
 
 		Case "set106state"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 		
 			Curr106\State = Float(StrTemp)
@@ -2235,6 +2258,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Closed all unlocked doors.", 0, 255, 0)
 
 		Case "displaymessage"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2252,24 +2277,13 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Resetted all SCP-1025 states.", 0, 255, 0)
 
 		Case "setvomittimer"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			VomitTimer = Float(Right(cin, Len(cin) - Instr(cin, " ")))
 
 			CreateConsoleMsg("Set vomit timer to " + VomitTimer + ".", 0, 255, 0)
 
 		Case "maxwellcat"
-			;filepath$ = "sandbox\GFX\models\maxwell.b3d"
-			;
-			;If FileType(filepath) <> 1 Then CreateConsoleMsg("Can't find Maxwell Cat model.", 255, 0, 0) : Return
-			;
-			;maxwell% = LoadMesh_Strict(filepath)
-			;If maxwell = 0 Then CreateConsoleMsg("Can't load Maxwell Cat model.", 255, 0, 0) : Return
-			;
-			;ScaleEntity maxwell, 0.01, 0.01, 0.01
-			;PositionEntity maxwell, EntityX(Collider, True), EntityY(Collider, True), EntityZ(Collider, True), True
-			;EntityColor maxwell, 255, 255, 255
-			;EntityType maxwell, HIT_MAP
-			;EntityTexture maxwell, LoadTexture_Strict("sandbox\GFX\textures\maxwell\maxwell.png", TEXTURE_FLAGS_PNG)
-
 			CreateNPC(NPCtypeMaxwellCat, EntityX(Collider, True), EntityY(Collider, True), EntityZ(Collider, True))
 
 			CreateConsoleMsg("Hello, Maxwell the Cat.", 255, 0, 0, False, True)
@@ -2283,25 +2297,9 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Removed all Maxwell the Cats.", 0, 255, 0)
 
-		;Case "test.hsv"
-		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
-		;	StrTemp$ = Piece$(args$,1," ")
-		;	StrTemp2$ = Piece$(args$,2," ")
-		;	StrTemp3$ = Piece$(args$,3," ")
-		;
-		;	color.HSV = New HSV
-		;	color\Hue = Float(StrTemp) / 360
-		;	color\Saturation = 1
-		;	color\Value = 1
-		;
-		;	out.RGB = HSV2RGB(color)
-		;
-		;	CreateConsoleMsg("1234567890", out\R, out\G, out\B)
-		;
-		;	Delete out
-		;	Delete color
-
 		Case "settexturelodbias"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			TextureLodBias Float(StrTemp)
@@ -2312,6 +2310,8 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "cnpc.spawn"
 			If ctrl_npc = Null Then
+				If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 				Select Right(cin, Len(cin) - Instr(cin, " "))
 
 					Case "gonzales"
@@ -2398,6 +2398,7 @@ Function ExecConsole(cin$, silent% = False)
 		Case "cnpc.follow"
 			If ctrl_npc <> Null Then
 				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+				If CalculateCharCountInString(cin, " ") < 1 Then Strtemp = ""
 		
 				Select StrTemp
 					Case "on", "1", "true"
@@ -2432,6 +2433,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "cnpc.follow.playerrotating"
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+			If CalculateCharCountInString(cin, " ") < 1 Then StrTemp = ""
 		
 			Select StrTemp
 				Case "on", "1", "true"
@@ -2465,6 +2467,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "cnpc.follow.followpoint.position.move"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2478,6 +2482,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "cnpc.follow.followpoint.position.translate"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2491,6 +2497,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "cnpc.follow.followpoint.position.set"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2516,6 +2524,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Access level of controllable NPC equals to " + ctrl_npc_access_level + ".", 0, 255, 0)
 
 		Case "cnpc.interaction.accesslevel.set"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			ctrl_npc_access_level = Int(StrTemp)
@@ -2528,6 +2538,7 @@ Function ExecConsole(cin$, silent% = False)
 		Local sc.SecurityCams
 		Case "sc.create"
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+			If CalculateCharCountInString(cin, " ") < 1 Then StrTemp = ""
 			
 			sc = CreateSecurityCam(EntityX(Collider), EntityY(Collider), EntityZ(Collider), PlayerRoom, True)
 			PositionEntity sc\ScrObj, EntityX(Collider), EntityY(Collider) + 0.5, EntityZ(Collider)
@@ -2560,6 +2571,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Nearest camera removed with monitor.", 0, 255, 0)
 
 		Case "sc.camera.nearest.position.translate"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			sc = GetNearestSCToEntity(Collider)
 
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
@@ -2572,6 +2585,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Nearest camera translated on offset (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "sc.camera.nearest.rotation.set"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			sc = GetNearestSCToEntity(Collider)
 
 			;CreateConsoleMsg(, 255, 0, 255)
@@ -2587,6 +2602,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Nearest camera rotation pitch (x) and yaw (y) set on angles (pitch|yaw) " + Float(StrTemp) + " " + Float(StrTemp2) + ".", 0, 255, 0)
 
 		Case "sc.camera.nearest.rotation.turn"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			sc = GetNearestSCToEntity(Collider)
 
 			;CreateConsoleMsg(, 255, 0, 255)
@@ -2602,6 +2619,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Nearest camera rotation pitch (x) and yaw (y) turned on angles (pitch|yaw) " + Float(StrTemp) + " " + Float(StrTemp2) + ".", 0, 255, 0)
 
 		Case "sc.camera.nearest.turnangle.set"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			sc = GetNearestSCToEntity(Collider)
 
 			;CreateConsoleMsg(, 255, 0, 255)
@@ -2633,6 +2652,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Nearest monitor removed with camera.", 0, 255, 0)
 
 		Case "sc.monitor.nearest.position.translate"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			sc = GetNearestSCToEntityByMonitor(Collider)
 
 			;CreateConsoleMsg(, 255, 0, 255)
@@ -2647,6 +2668,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Nearest camera monitor translated on offset (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "sc.monitor.nearest.rotation.set"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			sc = GetNearestSCToEntityByMonitor(Collider)
 
 			;CreateConsoleMsg(, 255, 0, 255)
@@ -2661,6 +2684,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Nearest camera monitor rotation set on angles (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "sc.monitor.nearest.rotation.turn"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			sc = GetNearestSCToEntityByMonitor(Collider)
 
 			;CreateConsoleMsg(, 255, 0, 255)
@@ -2678,6 +2703,8 @@ Function ExecConsole(cin$, silent% = False)
 
 		Local texScr079% = 0
 		Case "scp079.screen.image.set.fromdefault"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			Select Right(cin, Len(cin) - Instr(cin, " "))
 				Case "face", "0"
 					texScr079 = OldAiPics(0)
@@ -2694,6 +2721,8 @@ Function ExecConsole(cin$, silent% = False)
 			Console_SetTextureForAllSCP079Instances(texScr079)
 
 		Case "scp079.screen.image.set.fromfile"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp = Right(cin, Len(cin) - Instr(cin, " "))
 
 			If FileType(StrTemp) <> 1 Then CreateConsoleMsg("File not found.", 255, 0, 0) : Return
@@ -2718,6 +2747,7 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "scp173.idle"
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+			If CalculateCharCountInString(cin, " ") < 1 Then StrTemp = ""
 		
 			Select StrTemp
 				Case "enable", "on", "1", "true"
@@ -2735,6 +2765,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "scp173.position.translate"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2746,6 +2778,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 position translated on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " offset.", 0, 255, 0)
 
 		Case "scp173.position.move"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2757,6 +2791,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 position moved on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + " offset.", 0, 255, 0)
 
 		Case "scp173.position.set"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2768,6 +2804,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 position set on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "scp173.rotation.turn"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2779,6 +2817,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 rotation turned (rotated) on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "scp173.rotation.set"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2810,6 +2850,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Current SCP-173 enabled.", 0, 255, 0)
 
 		Case "scp173.speed.set"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 			Curr173\Speed = Float(StrTemp)
 
@@ -2843,6 +2885,8 @@ Function ExecConsole(cin$, silent% = False)
 		; === PLAYER CONTROL COMMADS ===
 
 		Case "player.position.translate"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2854,6 +2898,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player position translated on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.position.move"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2865,6 +2911,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player position moved on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.position.set"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2876,6 +2924,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player position set on (X|Y|Z) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.rotation.turn"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2887,6 +2937,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("Player rotation turned on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
 		Case "player.rotation.set"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -2916,6 +2968,8 @@ Function ExecConsole(cin$, silent% = False)
 			Next
 
 		Case "gfxdriver.current.set"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			index% = Int(StrTemp)
@@ -2930,14 +2984,18 @@ Function ExecConsole(cin$, silent% = False)
 		; === DOOR CONTROL ===
 
 		Case "door.create"
+			If CalculateCharCountInString(cin, " ") < 5 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ") ; x
 			StrTemp2$ = Piece$(args$,2," ") ; y
 			StrTemp3$ = Piece$(args$,3," ") ; z
 			StrTemp4$ = Piece$(args$,4," ") ; angle
 			StrTemp5$ = Piece$(args$,5," ") ; type
+
 			StrTemp6$ = Piece$(args$,6," ") ; access level
 			StrTemp7$ = Piece$(args$,7," ") ; access code
+
 
 			x# = Float(StrTemp)
 			y# = Float(StrTemp2)
@@ -2965,23 +3023,27 @@ Function ExecConsole(cin$, silent% = False)
 			End Select
 
 			access_level% = Int(StrTemp6)
-			If CalculateCharCountInString(args, " ") < 5 Then access_level = 0
+			If CalculateCharCountInString(cin, " ") < 6 Then access_level = 0
 			access_code$ = StrTemp7
-			If CalculateCharCountInString(args, " ") < 6 Then access_code = ""
+			If CalculateCharCountInString(cin, " ") < 7 Then access_code = ""
 
 			CreateDoor(0, x, y, z, angle, Null, False, dtype, access_level, access_code)
 
 			CreateConsoleMsg("Created door at (X|Y|Z) " + x + " " + y + " " + z + ", angle " + angle + ", type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
 
 		Case "door.createandselect"
+			If CalculateCharCountInString(cin, " ") < 5 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ") ; x
 			StrTemp2$ = Piece$(args$,2," ") ; y
 			StrTemp3$ = Piece$(args$,3," ") ; z
 			StrTemp4$ = Piece$(args$,4," ") ; angle
 			StrTemp5$ = Piece$(args$,5," ") ; type
+
 			StrTemp6$ = Piece$(args$,6," ") ; access level
 			StrTemp7$ = Piece$(args$,7," ") ; access code
+
 
 			x# = Float(StrTemp)
 			y# = Float(StrTemp2)
@@ -3009,19 +3071,23 @@ Function ExecConsole(cin$, silent% = False)
 			End Select
 
 			access_level% = Int(StrTemp6)
-			If CalculateCharCountInString(args, " ") < 5 Then access_level = 0
+			If CalculateCharCountInString(cin, " ") < 6 Then access_level = 0
 			access_code$ = StrTemp7
-			If CalculateCharCountInString(args, " ") < 6 Then access_code = ""
+			If CalculateCharCountInString(cin, " ") < 7 Then access_code = ""
 
 			CurrDoor = CreateDoor(0, x, y, z, angle, Null, False, dtype, access_level, access_code)
 
 			CreateConsoleMsg("Created and selected door at (X|Y|Z) " + x + " " + y + " " + z + ", angle " + angle + ", type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
 
 		Case "door.create.atplayer"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ") ; type
+
 			StrTemp2$ = Piece$(args$,2," ") ; access level
 			StrTemp3$ = Piece$(args$,3," ") ; access code
+
 
 			x# = EntityX(Collider)
 			y# = EntityY(Collider) - 0.3
@@ -3049,19 +3115,23 @@ Function ExecConsole(cin$, silent% = False)
 			End Select
 
 			access_level% = Int(StrTemp2)
-			If CalculateCharCountInString(args, " ") < 1 Then access_level = 0
+			If CalculateCharCountInString(cin, " ") < 2 Then access_level = 0
 			access_code$ = StrTemp3
-			If CalculateCharCountInString(args, " ") < 2 Then access_code = ""
+			If CalculateCharCountInString(cin, " ") < 3 Then access_code = ""
 
 			CreateDoor(0, x, y, z, angle, Null, False, dtype, access_level, access_code)
 
 			CreateConsoleMsg("Created door at player position & yaw (y) angle type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
 
 		Case "door.createandselect.atplayer"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ") ; type
+
 			StrTemp2$ = Piece$(args$,2," ") ; access level
 			StrTemp3$ = Piece$(args$,3," ") ; access code
+
 
 			x# = EntityX(Collider)
 			y# = EntityY(Collider) - 0.3
@@ -3089,15 +3159,17 @@ Function ExecConsole(cin$, silent% = False)
 			End Select
 
 			access_level% = Int(StrTemp2)
-			If CalculateCharCountInString(args, " ") < 1 Then access_level = 0
+			If CalculateCharCountInString(cin, " ") < 2 Then access_level = 0
 			access_code$ = StrTemp3
-			If CalculateCharCountInString(args, " ") < 2 Then access_code = ""
+			If CalculateCharCountInString(cin, " ") < 3 Then access_code = ""
 
 			CurrDoor = CreateDoor(0, x, y, z, angle, Null, False, dtype, access_level, access_code)
 
 			CreateConsoleMsg("Created and selected door at player position & yaw (y) angle type " + dtype + ", access level " + access_level + " and access code " + Chr(34) + access_code + Chr(34) + ".", 0, 255, 0)
 
 		Case "door.select.nearesttopoint"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -3138,6 +3210,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.position.set"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -3158,6 +3232,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.position.translate"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -3178,6 +3254,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.position.move"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			args$ = Right(cin, Len(cin) - Instr(cin, " "))
 			StrTemp$ = Piece$(args$,1," ")
 			StrTemp2$ = Piece$(args$,2," ")
@@ -3257,7 +3335,7 @@ Function ExecConsole(cin$, silent% = False)
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			access_level% = Int(StrTemp)
-			If CalculateCharCountInString(cin, " ") = 0 Then access_level = 0
+			If CalculateCharCountInString(cin, " ") < 1 Then access_level = 0
 
 			If CurrDoor <> Null Then
 				UseDoor(CurrDoor, False, True, access_level)
@@ -3343,6 +3421,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.accesslevel.set"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			access_level% = Int(StrTemp)
@@ -3369,6 +3449,8 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 
 		Case "door.selected.accesscode.set"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
 
 			If CurrDoor <> Null Then
