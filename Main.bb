@@ -65,6 +65,8 @@ Global SCP066Spawn% = GetINIInt(OptionFile, "gameplay", "SCP-066 spawn")
 Global LightFlickering% = GetINIInt(OptionFile, "gameplay", "light flickering")
 Global StopHidingEvent% = GetINIInt(OptionFile, "gameplay", "stop hiding")
 Global MaxwellCatNaturalSpawn% = GetINIInt(OptionFile, "gameplay", "Maxwell the Cat natural spawn")
+Global WaitKeyOrMouseInDrawLoading% = GetINIInt(OptionFile, "gameplay", "wait key or mouse in DrawLoading")
+Global KeycardFastUsage% = GetINIInt(OptionFile, "gameplay", "keycard fast usage")
 
 Global DebugShowWaypoints% = GetINIInt(OptionFile, "debug", "show waypoints")
 
@@ -2306,6 +2308,10 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Set TextureLodBias to " + Float(StrTemp) + ".", 0, 255, 0)
 
+		;Case "test.camerashake"
+		;	CameraShake = 2.5
+		;	CameraShakeTimer = 1000
+
 		; === CONTROLLABLE NPC ===
 
 		Case "cnpc.spawn"
@@ -4328,7 +4334,7 @@ Function UseDoor(d.Doors, showmsg%=True, playsfx%=True, access_level% = -1000)
 
 	Local temp% = 0
 	If d\KeyCard > 0 Then
-		If SelectedItem = Null And access_level < -999 Then
+		If SelectedItem = Null And (Not KeycardFastUsage) And access_level < -999 Then
 			If showmsg = True And EnableDoorUsingMessage Then
 				If (Instr(Msg,"The keycard")=0 And Instr(Msg,"A keycard with")=0) Or (MsgTimer<70*3) Then
 					Msg = "A keycard is required to operate this door."
@@ -4338,22 +4344,47 @@ Function UseDoor(d.Doors, showmsg%=True, playsfx%=True, access_level% = -1000)
 			Return
 		Else
 			If access_level < -999 Then
-				Select SelectedItem\itemtemplate\tempname
-					Case "key1"
-						temp = 1
-					Case "key2"
-						temp = 2
-					Case "key3"
-						temp = 3
-					Case "key4"
-						temp = 4
-					Case "key5"
-						temp = 5
-					Case "key6"
-						temp = 6
-					Default 
-						temp = -1
-				End Select
+				If SelectedItem <> Null Then
+					Select SelectedItem\itemtemplate\tempname
+						Case "key1"
+							temp = 1
+						Case "key2"
+							temp = 2
+						Case "key3"
+							temp = 3
+						Case "key4"
+							temp = 4
+						Case "key5"
+							temp = 5
+						Case "key6"
+							temp = 6
+						Default 
+							temp = -1
+					End Select
+				Else
+					temp = -1
+				End If
+
+				If KeycardFastUsage And temp = -1 Then
+					Local it.Items = FindItemInInventoryByTemplateName("key1")
+					If it <> Null Then temp = 1
+
+					it = FindItemInInventoryByTemplateName("key2")
+					If it <> Null Then temp = 2
+
+					it = FindItemInInventoryByTemplateName("key3")
+					If it <> Null Then temp = 3
+
+					it = FindItemInInventoryByTemplateName("key4")
+					If it <> Null Then temp = 4
+
+					it = FindItemInInventoryByTemplateName("key5")
+					If it <> Null Then temp = 5
+
+					it = FindItemInInventoryByTemplateName("key6")
+					;If it <> Null And temp < d\KeyCard Then temp = 6
+					If it <> Null Then temp = 6
+				End If
 			Else
 				temp = access_level
 			End If 

@@ -37,6 +37,7 @@ Function UpdateSFX3Ds()
 
     For sfx.SFX3D = Each SFX3D
         If (Not ChannelPlaying(sfx\Channel)) And (Not sfx\Paused) Then RemoveSFX3D(sfx)
+        If Not IsEntityExists(sfx\EmitterEntity) Then RemoveSFX3D(sfx)
 
         If Not (sfx\Paused Or MenuOpen Or ConsoleOpen) Then
             ResumeChannel sfx\Channel

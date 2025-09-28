@@ -2,7 +2,7 @@ Global BurntNote%
 
 Const MaxItemAmount% = 10
 Global ItemAmount%
-Dim Inventory.Items(MaxItemAmount + 1)
+Dim Inventory.Items(MaxItemAmount - 1)
 Global InvSelect%, SelectedItem.Items
 
 Global ClosestItem.Items

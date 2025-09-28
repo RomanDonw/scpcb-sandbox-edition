@@ -247,3 +247,59 @@ Function IsEntityExists%(entity%)
     EntityName(entity)
     Return Len(ErrorLog()) = 0
 End Function
+
+Function FindItemInInventoryByName.Items(name$, deep_recursive_search% = True)
+    For i% = 0 To MaxItemAmount - 1
+        Local it.Items = Inventory(i)
+        If it <> Null Then
+            If it\itemtemplate\name = name Then Return it
+            If deep_recursive_search And it\invSlots > 0 Then
+                Local it2.Items = FindItemInSecondInventoryByName(it, name)
+                If it2 <> Null Then Return it2
+            End If
+        End If
+    Next
+    Return Null
+End Function
+
+Function FindItemInSecondInventoryByName.Items(item.Items, name$, deep_recursive_search% = True)
+    For i% = 0 To item\invSlots - 1
+        Local it.Items = item\SecondInv[i]
+        If it <> Null Then
+            If it\itemtemplate\name = name Then Return it
+            If deep_recursive_search And it\invSlots > 0 Then
+                Local it2.Items = FindItemInSecondInventoryByName(it, name)
+                If it2 <> Null Then Return it2
+            End If
+        End If
+    Next
+    Return Null
+End Function
+
+Function FindItemInInventoryByTemplateName.Items(tempname$, deep_recursive_search% = True)
+    For i% = 0 To MaxItemAmount - 1
+        Local it.Items = Inventory(i)
+        If it <> Null Then
+            If it\itemtemplate\tempname = tempname Then Return it
+            If deep_recursive_search And it\invSlots > 0 Then
+                Local it2.Items = FindItemInSecondInventoryByTemplateName(it, tempname)
+                if it2 <> Null Then Return it2
+            End If
+        End If
+    Next
+    Return Null
+End Function
+
+Function FindItemInSecondInventoryByTemplateName.Items(item.Items, tempname$, deep_recursive_search% = True)
+    For i% = 0 To item\invSlots - 1
+        Local it.Items = item\SecondInv[i]
+        If it <> Null Then
+            If it\itemtemplate\tempname = tempname Then Return it
+            If deep_recursive_search And it\invSlots > 0 Then
+                Local it2.Items = FindItemInSecondInventoryByTemplateName(it, tempname)
+                If it2 <> Null Then Return it2
+            End If
+        End If
+    Next
+    Return Null
+End Function

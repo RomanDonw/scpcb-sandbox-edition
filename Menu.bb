@@ -1626,7 +1626,7 @@ Function DrawLoading(percent%, shortloading=False)
 		firstloop = False
 		If percent <> 100 Then Exit
 		
-	Until (GetKey()<>0 Or MouseHit(1))
+	Until (GetKey()<>0 Or MouseHit(1)) Or (Not WaitKeyOrMouseInDrawLoading)
 End Function
 
 
