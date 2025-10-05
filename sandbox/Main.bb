@@ -3,6 +3,7 @@ Include "sandbox\Misc.bb"
 Include "sandbox\SFX3D.bb"
 Include "sandbox\Lever.bb"
 Include "sandbox\DelayedCommands.bb"
+;Include "sandbox\Skybox.bb"
 
 Const NUMPAD_KEY_1% = 79, NUMPAD_KEY_2% = 80, NUMPAD_KEY_3% = 81
 Const NUMPAD_KEY_4% = 75, NUMPAD_KEY_5% = 76, NUMPAD_KEY_6% = 77
@@ -103,6 +104,7 @@ Function OnUpdate()
     UpdateSFX3Ds()
     UpdateDelayedCommands()
     UpdateLevers()
+    ;PositionEntity SkyboxMesh, EntityX(Camera, True), EntityY(Camera, True), EntityZ(Camera, True), True
 
     If KeyDown(KEY_CALL_BIND) Then ; Custom keybinds system.
         For b.ConsoleBind = Each ConsoleBind
@@ -120,6 +122,19 @@ Function OnUpdate()
         Next
     End If
 
+    ;If LayingAnimationEndPointEntity <> 0 Then
+    ;    If EntityDistance(Camera, LayingAnimationEndPointEntity) > 0.01 Then
+    ;        TurnEntity Camera, DeltaPitch(Camera, LayingAnimationEndPointEntity), DeltaYaw(Camera, LayingAnimationEndPointEntity), 0
+    ;        MoveEntity Camera, 0, 0, 0.01
+    ;    Else
+    ;        FreeEntity LayingAnimationEndPointEntity : LayingAnimationEndPointEntity = 0
+    ;        If LayingStandUp Then
+    ;            ShowEntity Collider
+    ;            Laying = False
+    ;        End If
+    ;    End If
+    ;End If
+
     CatchErrors("OnUpdate")
 End Function
 
@@ -130,6 +145,19 @@ Function OnUpdateEvents()
         ExecConsole("maxwellcat", True)
         flag_maxwellcatspawned = True
     End If
+
+    ;If PlayerRoom\RoomTemplate\Name = "gatea" Or (PlayerRoom\RoomTemplate\Name = "exit1" And EntityY(Collider) > 1040.0 * RoomScale) Then
+    ;    CreateConsoleMsg("AT GATE A/B", 255, 0, 255)
+    ;    SetSkybox(SkyboxSky)
+    ;    ShowEntity SkyboxMesh
+    ;
+    ;Else If PlayerRoom\RoomTemplate\Name = "dimension1499" Then
+    ;    SetSkybox(SkyboxSky1499)
+    ;    ShowEntity SkyboxMesh
+    ;
+    ;Else
+    ;    ;HideEntity SkyboxMesh
+    ;End If
 
     CatchErrors("OnUpdateEvents (before cheat functions)")
     If Not CheatGameControlEnabled Return
@@ -163,8 +191,19 @@ End Function
 Global MaxwellCatOBJ%
 Global MaxwellCatLoopedThemeSound%
 
+Global CenterPointerImage%
+
+;Global SkyboxSky.Skybox, SkyboxSky1499.Skybox
+
 Function OnLoadEntities()
     CatchErrors("Uncaught (OnLoadEntities)")
+
+    ;InitSkyboxMesh()
+
+    ;SkyboxSky = CreateSkybox("sandbox\GFX\skybox_sky.ini", "Sky")
+    ;SkyboxSky1499 = CreateSkybox("sandbox\GFX\skybox_1499sky.ini", "Sky 1499")
+
+    ; ===================
 
     MaxwellCatOBJ = LoadMesh_Strict("sandbox\GFX\NPC\MaxwellCat\models\maxwell.b3d")
     HideEntity MaxwellCatOBJ
@@ -172,9 +211,79 @@ Function OnLoadEntities()
     EntityTexture MaxwellCatOBJ, LoadTexture_Strict("sandbox\GFX\NPC\MaxwellCat\textures\maxwell.png", TEXTURE_FLAGS_PNG)
 
     MaxwellCatLoopedThemeSound = LoadLoopedSound("sandbox\SFX\NPC\MaxwellCat\theme.ogg")
+
+    ; ===================
+
+    CenterPointerImage = LoadImage_Strict("sandbox\GFX\center_pointer.png")
     
     CatchErrors("OnLoadEntities")
 End Function
+
+Global EntTextUI% = False
+
+Function OnDrawGUI()
+    CatchErrors("Uncaught (OnDrawGUI)")
+
+    If EntTextUI Then
+        Local cx% = GraphicsWidth() / 2
+        Local cy% = GraphicsHeight() / 2
+
+        DrawImage CenterPointerImage, cx - ImageWidth(CenterPointerImage) / 2, cy - ImageHeight(CenterPointerImage) / 2
+
+        Local ent% = CameraPick(Camera, cx, cy)
+        If ent <> 0 Then
+            Color 255, 255, 255
+            AASetFont ConsoleFont
+
+            ent = PickedEntity()
+
+            AAText cx + 5, cy + 10, "Entity Name: " + Chr(34) + EntityName(ent) + Chr(34)
+            AAText cx + 5, cy + 30, "Entity Class: " + EntityClass(ent)
+
+            AAText cx + 5, cy + 50, "Entity X: " + Chr(34) + f2s(EntityX(ent), 3) + Chr(34)
+            AAText cx + 5, cy + 70, "Entity Y: " + Chr(34) + f2s(EntityY(ent), 3) + Chr(34)
+            AAText cx + 5, cy + 90, "Entity Z: " + Chr(34) + f2s(EntityZ(ent), 3) + Chr(34)
+
+            AAText cx + 205, cy + 50, "Entity Pitch: " + Chr(34) + f2s(EntityPitch(ent), 3) + Chr(34)
+            AAText cx + 205, cy + 70, "Entity Yaw: " + Chr(34) + f2s(EntityYaw(ent), 3) + Chr(34)
+            AAText cx + 205, cy + 90, "Entity Roll: " + Chr(34) + f2s(EntityRoll(ent), 3) + Chr(34)
+        End If
+    End If
+
+    ;If KeyHit(64) Then EntTextUI = Not EntTextUI
+
+    CatchErrors("OnDrawGUI")
+End Function
+
+; ===========================================================================================================================================================
+
+;Global Laying% = False, LayingStandUp% = False, LayingAnimationEndPointEntity% = 0
+;Global XBeforeLay#, YBeforeLay#, ZBeforeLay#, YawBeforeLay#
+;
+;Function Lay(x#, y#, z#, yaw#)
+;    If Laying Then Return
+;
+;    XBeforeLay = EntityX(Camera)
+;    YBeforeLay = EntityY(Camera)
+;    ZBeforeLay = EntityZ(Camera)
+;    YawBeforeLay = EntityYaw(Camera)
+;
+;    Laying = True
+;    LayingStandUp = False
+;    HideEntity Collider
+;    LayingAnimationEndPointEntity = CreatePivot()
+;    PositionEntity LayingAnimationEndPointEntity, x, y, z
+;    RotateEntity LayingAnimationEndPointEntity, 0, yaw, 0
+;End Function
+;
+;Function StandUp()
+;    If Not Laying Then Return
+;
+;    LayingStandUp = True
+;    LayingAnimationEndPointEntity = CreatePivot()
+;    PositionEntity LayingAnimationEndPointEntity, XBeforeLay, YBeforeLay, ZBeforeLay
+;    RotateEntity LayingAnimationEndPointEntity, 0, YawBeforeLay, 0
+;End Function
 
 ; ===========================================================================================================================================================
 

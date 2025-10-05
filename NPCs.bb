@@ -9,15 +9,12 @@ Const NPCtype966% = 18, NPCtype1048a = 19, NPCtype1499% = 20, NPCtype008% = 21, 
 Const NPCtypeMaxwellCat% = 23
 ;[End Block]
 
-Type NPCs
-	;Field name$ = ""
-	
+Type NPCs	
 	Field obj%, obj2%, obj3%, obj4%, Collider%
 	Field NPCtype%, ID%
 	Field DropSpeed#, Gravity%
 	Field State#, State2#, State3#, PrevState%
 	Field MakingNoise%
-	;Field Camera%
 	
 	Field Frame#
 	
@@ -626,6 +623,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#)
 			EntityType n\Collider, HIT_PLAYER
 			n\obj = CopyEntity(MaxwellCatOBJ, n\Collider)
 			n\TeleportObjToSpawnPositionOnCreate = False
+			;EntityColor n\obj, Rand(0, 255), Rand(0, 255), Rand(0, 255)
 			
 			;n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
 			n\Speed = 0.05

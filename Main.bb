@@ -88,6 +88,9 @@ Global PresetDisableSCP106% = GetINIInt(OptionFile, "SCP-106", "preset disabled"
 Global SCP079CanCloseDoors% = GetINIInt(OptionFile, "SCP-079", "can close doors")
 Global FacilityLightBlinkingBySCP079% = GetINIInt(OptionFile, "SCP-079", "facility light blinking")
 
+Global SCP1162CanSummonSCP% = GetINIInt(OptionFile, "SCP-1162", "can summon SCP")
+Global SCP1162SummonSCPChance# = GetINIFloat(OptionFile, "SCP-1162", "summon SCP chance") / 100
+
 Global IntroSequenceMusic% = GetINIInt(OptionFile, "sound", "intro sequence music")
 Global EnableMusic% = GetINIInt(OptionFile, "sound", "enable music")
 Global EnableAmbientSFX% = GetINIInt(OptionFile, "sound", "enable ambient sfx")
@@ -99,9 +102,6 @@ Global EnableMenuPressAnyKeySound% = GetINIInt(OptionFile, "sound", "enable menu
 Global SaveSFX% = GetINIInt(OptionFile, "sound", "save sfx")
 
 Global RoomRenderIfItInPlayerView% = GetINIInt(OptionFile, "display", "render room if it in player view")
-Global ClsColorR% = GetINIInt(OptionFile, "display", "cls color r")
-Global ClsColorG% = GetINIInt(OptionFile, "display", "cls color g")
-Global ClsColorB% = GetINIInt(OptionFile, "display", "cls color b")
 Global RMeshLightmapPixelColorModifing% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel color modifing")
 Global RMeshLightmapPixelRModifer% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel r modifer")
 Global RMeshLightmapPixelGModifer% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel g modifer")
@@ -114,6 +114,18 @@ Global EnableDrawingSelectedItemKeycard% = GetINIInt(OptionFile, "display", "ena
 Global EnableSCP079PicOnScreens% = GetINIInt(OptionFile, "display", "enable scp079 picture on screens")
 Global DisableCoffinEffect% = GetINIInt(OptionFile, "display", "disable coffin effect")
 Global PocketDimensionCameraEffect% = GetINIInt(OptionFile, "display", "pocket dimension camera effect")
+
+Global ClsColorR% = GetINIInt(OptionFile, "camera", "cls color r")
+Global ClsColorG% = GetINIInt(OptionFile, "camera", "cls color g")
+Global ClsColorB% = GetINIInt(OptionFile, "camera", "cls color b")
+Global ForceCameraFogColor% = GetINIInt(OptionFile, "camera", "force fog color")
+Global CameraFogColorR% = GetINIInt(OptionFile, "camera", "fog color r")
+Global CameraFogColorG% = GetINIInt(OptionFile, "camera", "fog color g")
+Global CameraFogColorB% = GetINIInt(OptionFile, "camera", "fog color b")
+Global ForceAmbientLightColor% = GetINIInt(OptionFile, "camera", "force ambient light color")
+Global AmbientLightColorR% = GetINIInt(OptionFile, "camera", "ambient light color r")
+Global AmbientLightColorG% = GetINIInt(OptionFile, "camera", "ambient light color g")
+Global AmbientLightColorB% = GetINIInt(OptionFile, "camera", "ambient light color b")
 
 Global BypassSave% = GetINIInt(OptionFile, "player", "bypass save")
 Global PresetGodMode% = GetINIInt(OptionFile, "player", "preset godmode")
@@ -2312,6 +2324,31 @@ Function ExecConsole(cin$, silent% = False)
 		;	CameraShake = 2.5
 		;	CameraShakeTimer = 1000
 
+		;Case "lay"
+		;	If CalculateCharCountInString(cin, " ") < 4 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+		;
+		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
+		;	StrTemp$ = Piece$(args$,1," ")
+		;	StrTemp2$ = Piece$(args$,2," ")
+		;	StrTemp3$ = Piece$(args$,3," ")
+		;	StrTemp4$ = Piece$(args$,4," ")
+		;
+		;	Lay(EntityX(Collider) + Float(StrTemp), EntityY(Collider) + Float(StrTemp2), EntityZ(Collider) + Float(StrTemp3), EntityYaw(Collider) + Float(StrTemp4))
+		;
+		;Case "standup"
+		;	StandUp()
+
+		;Case "skybox.create"
+		;	If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+		;
+		;	StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+		;
+		;	skybox.Skybox = CreateSkybox(StrTemp, "con")
+		;	SetSkybox(skybox)
+		;	ShowEntity SkyboxMesh
+		;
+		;	CreateConsoleMsg("Created new skybox from declaration file " + Chr(34) + StrTemp + Chr(34) + ".", 0, 255, 0)
+
 		; === CONTROLLABLE NPC ===
 
 		Case "cnpc.spawn"
@@ -3599,7 +3636,7 @@ End If
 ;---------------------------------------------------------------------------------------------------
 
 Const DEBUG_HUD_PAGES_COUNT% = 2
-Global DebugHUD%, DebugHUDpage% = 1
+Global DebugHUD%, DebugHUDpage% = 0
 
 Global BlurVolume#, BlurTimer#
 
@@ -3614,8 +3651,8 @@ Global Brightness% = GetINIFloat("options.ini", "options", "brightness")
 Global CameraFogNear# = GetINIFloat("options.ini", "options", "camera fog near")
 Global CameraFogFar# = GetINIFloat("options.ini", "options", "camera fog far")
 
-Global CameraRangeNear# = GetINIFloat(OptionFile, "display", "camera range near")
-Global CameraRangeFar# = GetINIFloat(OptionFile, "display", "camera range far")
+Global CameraRangeNear# = GetINIFloat(OptionFile, "camera", "camera range near")
+Global CameraRangeFar# = GetINIFloat(OptionFile, "camera", "camera range far")
 
 Global StoredCameraFogFar# = CameraFogFar
 
@@ -6314,9 +6351,7 @@ Function MovePlayer()
 		DebugHUD = Not DebugHUD
 	End If
 	If DebugHUD Then
-		For i% = 1 To DEBUG_HUD_PAGES_COUNT
-			If KeyHit(i + 1) Then DebugHUDpage = i
-		Next
+		DebugHUDpage = Abs(MouseZ() Mod DEBUG_HUD_PAGES_COUNT)
 	End If
 
 	If KeyHit(KEY_TOGGLE_NOBLINKING) Then
@@ -6331,12 +6366,9 @@ Function MovePlayer()
 		InfiniteStamina = Not InfiniteStamina
 	End If
 
-	If Not DebugHUD Then
-		For keyi = 0 To 9
-			If KeyHit(KEYS_SELECT_ITEM[keyi]) SelectedItem = Inventory(keyi)
-		Next
-		;If KeyHit(2) SelectedItem = Inventory(0)
-	End If
+	For keyi = 0 To 9
+		If KeyHit(KEYS_SELECT_ITEM[keyi]) SelectedItem = Inventory(keyi)
+	Next
 
 	;If PlayerRoom\RoomTemplate\Name = "roompj" CustomPJEvent()
 	;If PlayerRoom\RoomTemplate\Name = "room079" Custom079EventUpdate()
@@ -6834,7 +6866,9 @@ Function DrawGUI()
 		ShowPointer()
 	Else
 		HidePointer()
-	EndIf 	
+	EndIf
+	
+	OnDrawGUI() 	
 	
 	If PlayerRoom\RoomTemplate\Name = "pocketdimension" and EnableSCP106PocketDimensionBlinkingScreamer Then
 		For e.Events = Each Events
@@ -6963,7 +6997,7 @@ Function DrawGUI()
 		AASetFont ConsoleFont
 
 		Select DebugHUDpage
-			Case 1
+			Case 0
 				AAText x + 800, 50, "Zone: " + (EntityZ(Collider)/8.0)
 				AAText x - 50, 50, "Player Position: (" + f2s(EntityX(Collider), 3) + ", " + f2s(EntityY(Collider), 3) + ", " + f2s(EntityZ(Collider), 3) + ")"
 				AAText x - 50, 70, "Camera Position: (" + f2s(EntityX(Camera), 3)+ ", " + f2s(EntityY(Camera), 3) +", " + f2s(EntityZ(Camera), 3) + ")"
@@ -7037,16 +7071,36 @@ Function DrawGUI()
 					AAText x + 350, 310, "Current monitor: NULL"
 				EndIf
 
-			Case 2
+			Case 1
 				;player stats
 				AAText x - 50, 50, "MsgTimer: " + f2s(MsgTimer, 3)
+				AAText x - 50, 70, "KillTimer: " + f2s(KillTimer, 3)
 
-				AAText x - 50, 80, "KillTimer: " + f2s(KillTimer, 3)
 				AAText x - 50, 100, "PDCameraEffect: " + bool2s(PDCameraEffect)
 				AAText x - 50, 120, "Contained106: " + bool2s(Contained106)
 				AAText x - 50, 140, "SecondaryLightOn: " + bool2s(SecondaryLightOn)
 				AAText x - 50, 160, "RemoteDoorOn: " + bool2s(RemoteDoorOn)
 				AAText x - 50, 180, "flag_maxwellcatspawned: " + bool2s(flag_maxwellcatspawned)
+				displaystr$ = "CheckForPlayerInFacility: "
+				Select CheckForPlayerInFacility()
+					Case 0
+						displaystr = displaystr + "False (0)"
+					Case 1
+						displaystr = displaystr + "True (Facility; 1)"
+					Case 2
+						displaystr = displaystr + "True (Tunnels; 2)"
+				End Select
+				AAText x - 50, 200, displaystr
+				AAText x - 50, 220, "SFX3Ds count: " + SFX3DsCount
+				
+				AAText x - 50, 400, "DeafPlayer: " + bool2s(DeafPlayer)
+				AAText x - 50, 420, "DeafTimer: " + f2s(DeafTimer, 3)
+
+				AAText x - 50, 450, "SuperMan: " + bool2s(SuperMan)
+				AAText x - 50, 470, "SuperManTimer: " + f2s(SuperManTimer, 3)
+
+				AAText x - 50, 500, "BlurVolume: " + f2s(BlurVolume, 3)
+				AAText x - 50, 520, "BlurTimer: " + f2s(BlurTimer, 3)
 
 
 				AAText x + 350, 50, "EyeIrritation: " + f2s(EyeIrritation, 3)
@@ -7081,14 +7135,8 @@ Function DrawGUI()
 				AAText x + 350, 570, "NoBlinking: " + bool2s(NoBlinking)
 				AAText x + 350, 590, "InfiniteStamina: " + bool2s(InfiniteStamina)
 
-				AAText x + 350, 620, "SuperMan: " + bool2s(SuperMan)
-				AAText x + 350, 640, "SuperManTimer: " + f2s(SuperManTimer, 3)
-
-				AAText x + 350, 670, "BlurVolume: " + f2s(BlurVolume, 3)
-				AAText x + 350, 690, "BlurTimer: " + f2s(BlurTimer, 3)
-
 			Default
-				DebugHUDpage = 1
+				DebugHUDpage = 0
 		End Select
 
 		AASetFont Font1
@@ -9387,7 +9435,7 @@ Function DrawGUI()
 	Next
 	
 	If PrevInvOpen And (Not InvOpen) Then MoveMouse viewport_center_x, viewport_center_y
-	
+
 	CatchErrors("DrawGUI")
 End Function
 
@@ -13063,27 +13111,6 @@ End Function
 
 ;--------------------------------------- math -------------------------------------------------------
 
-Function ClampFloat#(value#, min#, max#)
-	If value < min Then
-		Return min
-	Else If value > max Then
-		Return max
-	End If
-
-	Return value
-End Function
-
-Function ClampInt%(value%, min%, max%)
-	If value < min Then
-		Return min
-	Else If value > max Then
-		Return max
-	End If
-	
-	Return value
-End Function
-
-
 Function GenerateSeedNumber(seed$)
  	Local temp% = 0
  	Local shift% = 0
@@ -13856,6 +13883,7 @@ Function RenderWorld2()
 	CameraProjMode ark_blur_cam,0
 	CameraProjMode Camera,1
 	CameraRange Camera, CameraRangeNear, CameraRangeFar
+	If ForceCameraFogColor Then CameraFogColor Camera, CameraFogColorR, CameraFogColorG, CameraFogColorB
 	
 	If WearingNightVision>0 And WearingNightVision<3 Then
 		AmbientLight Min(Brightness*2,255), Min(Brightness*2,255), Min(Brightness*2,255)
@@ -13864,7 +13892,6 @@ Function RenderWorld2()
 	ElseIf PlayerRoom<>Null
 		If (PlayerRoom\RoomTemplate\Name<>"173") And (PlayerRoom\RoomTemplate\Name<>"exit1") And (PlayerRoom\RoomTemplate\Name<>"gatea") Then
 			AmbientLight Brightness, Brightness, Brightness
-			;AmbientLight 255, 255, 255
 		EndIf
 	EndIf
 	
@@ -13872,7 +13899,7 @@ Function RenderWorld2()
 	HideEntity NVBlink
 	
 	CameraViewport Camera,0,0,GraphicWidth,GraphicHeight
-	AmbientLight 64, 64, 64
+	If ForceAmbientLightColor Then AmbientLight AmbientLightColorR, AmbientLightColorG, AmbientLightColorB
 	
 	Local hasBattery% = 2
 	Local power% = 0

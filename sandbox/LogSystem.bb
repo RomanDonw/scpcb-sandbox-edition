@@ -14,14 +14,14 @@ Function InitLog(filename$ = "latest.log")
     If CurrentLogFile = 0 Then RuntimeError "[LOG SYSTEM/InitLog] Log file wasn't open."
 
     CurrentLogFileName = filename
-    WriteLine CurrentLogFile, CurrentTime() + " " + CurrentDate() + ": LOGGIN STARTED."
+    WriteLine CurrentLogFile, CurrentTime() + " " + CurrentDate() + ": LOGGING STARTED."
 End Function
 
 Function EndLog%()
     If (Not DebugEnabled) Or CurrentLogFile = 0 Then Return False
     ;If CurrentLogFile = 0 Then RuntimeError "[LOG SYSTEM/EndLog] Log file wasn't open."
 
-    WriteLine CurrentLogFile, CurrentTime() + " " + CurrentDate() + ": LOGGIN ENDED."
+    WriteLine CurrentLogFile, CurrentTime() + " " + CurrentDate() + ": LOGGING ENDED."
     CloseFile CurrentLogFile
     CurrentLogFile = 0
     CurrentLogFileName = ""

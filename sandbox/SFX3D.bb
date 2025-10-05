@@ -32,33 +32,44 @@ Function RemoveSFX3D(sound.SFX3D)
     Delete sound
 End Function
 
+Global SFX3DsCount%
+
 Function UpdateSFX3Ds()
     CatchErrors("Uncaught (UpdateSFX3Ds)")
 
+    SFX3DsCount = 0
+
     For sfx.SFX3D = Each SFX3D
-        If (Not ChannelPlaying(sfx\Channel)) And (Not sfx\Paused) Then RemoveSFX3D(sfx)
-        If Not IsEntityExists(sfx\EmitterEntity) Then RemoveSFX3D(sfx)
+        Local removed% = False
+        If (Not ChannelPlaying(sfx\Channel)) And (Not sfx\Paused) Then RemoveSFX3D(sfx) : removed = True
+        If Not removed Then
+            If Not IsEntityExists(sfx\EmitterEntity) Then RemoveSFX3D(sfx) : removed = True
+        End If
 
-        If Not (sfx\Paused Or MenuOpen Or ConsoleOpen) Then
-            ResumeChannel sfx\Channel
-            If sfx\Radius > 0 Then
-                Local dist# = EntityDistance(Camera, sfx\EmitterEntity) / sfx\Radius
-                
-                If sfx\Volume > 0 And dist <= sfx\Radius Then
-                    Local pan# = Sin(-DeltaYaw(Camera, sfx\EmitterEntity))
-                    Local vol# = sfx\Volume * (1 - dist) * SFXVolume
+        If Not removed Then
+            If Not (sfx\Paused Or MenuOpen Or ConsoleOpen) Then
+                ResumeChannel sfx\Channel
+                If sfx\Radius > 0 Then
+                    Local dist# = EntityDistance(Camera, sfx\EmitterEntity) / sfx\Radius
+                    
+                    If sfx\Volume > 0 And dist <= sfx\Radius Then
+                        Local pan# = Sin(-DeltaYaw(Camera, sfx\EmitterEntity))
+                        Local vol# = sfx\Volume * (1 - dist) * SFXVolume
 
-                    ChannelVolume sfx\Channel, vol
-                    ChannelPan sfx\Channel, pan
+                        ChannelVolume sfx\Channel, vol
+                        ChannelPan sfx\Channel, pan
+                    Else
+                        ChannelVolume sfx\Channel, 0
+                    End If
                 Else
                     ChannelVolume sfx\Channel, 0
                 End If
             Else
-                ChannelVolume sfx\Channel, 0
+                PauseChannel sfx\Channel
             End If
-        Else
-            PauseChannel sfx\Channel
-        End If   
+
+            SFX3DsCount = SFX3DsCount + 1
+        End If
     Next
 
     CatchErrors("UpdateSFX3Ds")

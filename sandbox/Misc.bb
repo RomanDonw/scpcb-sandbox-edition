@@ -303,3 +303,23 @@ Function FindItemInSecondInventoryByTemplateName.Items(item.Items, tempname$, de
     Next
     Return Null
 End Function
+
+Function ClampFloat#(value#, min#, max#)
+	If value < min Then
+		Return min
+	Else If value > max Then
+		Return max
+	End If
+
+	Return value
+End Function
+
+Function ClampInt%(value%, min%, max%)
+	If value < min Then
+		Return min
+	Else If value > max Then
+		Return max
+	End If
+	
+	Return value
+End Function
