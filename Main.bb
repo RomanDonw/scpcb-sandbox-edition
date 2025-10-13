@@ -134,6 +134,7 @@ Global PresetNoclip% = GetINIInt(OptionFile, "player", "preset noclip")
 Global PresetDebugHUD% = GetINIInt(OptionFile, "player", "preset debughud")
 Global PresetNoBlinking% = GetINIInt(OptionFile, "player", "preset noblinking")
 Global PresetInfiniteStamina% = GetINIInt(OptionFile, "player", "preset infinite stamina")
+Global DefaultNoClipSpeed# = GetINIFloat(OptionFile, "player", "default noclip speed")
 
 Global CustomIntro% = GetINIInt(OptionFile, "custom intro", "enabled")
 Global CustomIntroDuration# = GetINIFloat(OptionFile, "custom intro", "duration")
@@ -487,7 +488,7 @@ Global GrabbedEntity%
 Global InvertMouse% = GetINIInt(OptionFile, "options", "invert mouse y")
 Global MouseHit1%, MouseDown1%, MouseHit2%, DoubleClick%, LastMouseHit1%, MouseUp1%
 
-Global GodMode%, NoClip%, NoBlinking%, NoClipSpeed# = 2.0
+Global GodMode%, NoClip%, NoBlinking%, NoClipSpeed# = DefaultNoClipSpeed
 
 Global CoffinDistance# = 100.0
 
@@ -1843,12 +1844,14 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("doors.all.open/doors.all.close - closes or opens all unlocked doors in Facility.")
 			CreateConsoleMsg("set106state <state:float> - sets state of current SCP-106.")
 			CreateConsoleMsg("reset1025 - resets all SCP-1025 states.")
-			CreateConsoleMsg("displaymessage <timer:float> <message:string> - displays a message with text <message> for <timer> seconds.")
-			CreateConsoleMsg("setvomittimer <timer:float> - sets vomit timer to <timer> value.")
+			CreateConsoleMsg("displaymessage <time:float> <message:string> - displays a message with text <message> for <time> seconds.")
+			CreateConsoleMsg("setvomittimer <time:float> - sets vomit timer to <time> value.")
 			CreateConsoleMsg("lever.create <x> <y> <z> [locked:locked/true/1 unlocked/false/0 = false] - creates lever.")
 			CreateConsoleMsg("maxwellcat - spawns an instance of Maxwell the Cat.", 255, 0, 0, False, True)
 			CreateConsoleMsg("maxwellcat.clear - removes alls instances if Maxwell the Cat.", 255, 0, 0)
 			CreateConsoleMsg("settexturelodbias <texturelodbias:float> - sets value of TextureLodBias instruction.")
+			CreateConsoleMsg("setlightflashtimer <time:float> - sets light flash timer to <time> value (in seconds).")
+			CreateConsoleMsg("setlightblinktimer <time:float> - sets light blink timer to <time> value (in seconds).")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Player control commands:", 255, 127, 0)
@@ -2348,6 +2351,24 @@ Function ExecConsole(cin$, silent% = False)
 		;	ShowEntity SkyboxMesh
 		;
 		;	CreateConsoleMsg("Created new skybox from declaration file " + Chr(34) + StrTemp + Chr(34) + ".", 0, 255, 0)
+
+		Case "setlightflashtimer"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			LightFlash = Float(StrTemp)
+
+			CreateConsoleMsg("Set light flash timer to " + Float(StrTemp) + " seconds.", 0, 255, 0)
+
+		Case "setlightblinktimer"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			LightBlink = Float(StrTemp)
+
+			CreateConsoleMsg("Set light blink timer to " + Float(StrTemp) + " seconds.", 0, 255, 0)
 
 		; === CONTROLLABLE NPC ===
 
@@ -5175,7 +5196,7 @@ Repeat
 		EndIf
 		OnUpdate()
 		
-		If InfiniteStamina% Then Stamina = Min(100, Stamina + (100.0-Stamina)*0.01*FPSfactor)
+		;If InfiniteStamina% Then Stamina = Min(100, Stamina + (100.0-Stamina)*0.01*FPSfactor)
 		
 		If FPSfactor=0
 			UpdateWorld(0)
@@ -5437,6 +5458,8 @@ Repeat
 					EndIf
 				EndIf
 			EndIf
+
+			AASetFont Font1
 			
 			If (Not temp%)
 				Color 0,0,0
@@ -5459,7 +5482,12 @@ Repeat
 		End If
 		
 		Color 255, 255, 255
-		If ShowFPS Then AASetFont ConsoleFont : AAText 20, 20, "FPS: " + FPS : AASetFont Font1
+		AASetFont ConsoleFont
+
+		If ShowFPS Then AAText 20, 20, "FPS: " + FPS
+		If DebugHUD Then AAText 120, 20, "Debug HUD page: " + (DebugHUDpage + 1)
+
+		AASetFont Font1
 		
 		If EndingTimer < 0 Then
 			If SelectedEnding <> "" Then DrawEnding()
@@ -6279,11 +6307,15 @@ Function MovePlayer()
 		Kill()
 	EndIf
 	
-	If CurrSpeed > 0 Then
-        Stamina = Min(Stamina + 0.15 * FPSfactor/1.25, 100.0)
-    Else
-        Stamina = Min(Stamina + 0.15 * FPSfactor*1.25, 100.0)
-    EndIf
+	If InfiniteStamina Then
+		Stamina = 100
+	Else
+		If CurrSpeed > 0 Then
+			Stamina = Min(Stamina + 0.15 * FPSfactor/1.25, 100.0)
+		Else
+			Stamina = Min(Stamina + 0.15 * FPSfactor*1.25, 100.0)
+		EndIf
+	End If
 	
 	If StaminaEffectTimer > 0 Then
 		StaminaEffectTimer = StaminaEffectTimer - (FPSfactor/70)
@@ -6347,11 +6379,30 @@ Function MovePlayer()
 		HUDenabled = Not HUDenabled
 	End If
 
+	;If KeyHit(KEY_TOGGLE_DEBUGHUD) Then
+	;	DebugHUD = Not DebugHUD
+	;End If
+	;If DebugHUD Then
+	;	DebugHUDpage = DebugHUDpage + MouseZSpeed()
+	;	If DebugHUDpage < 0 Then
+	;		DebugHUDpage = DEBUG_HUD_PAGES_COUNT - 1
+	;	Else If DebugHUDpage >= DEBUG_HUD_PAGES_COUNT Then
+	;		DebugHUDpage = 0
+	;	End If
+	;End If
 	If KeyHit(KEY_TOGGLE_DEBUGHUD) Then
-		DebugHUD = Not DebugHUD
-	End If
-	If DebugHUD Then
-		DebugHUDpage = Abs(MouseZ() Mod DEBUG_HUD_PAGES_COUNT)
+		If DebugHUD Then
+			If KeyDown(KEY_LEFT_SHIFT) Then
+				DebugHUDpage = DebugHUDpage - 1
+			Else
+				DebugHUDpage = DebugHUDpage + 1
+			End If
+
+			If DebugHUDpage < 0 Or DebugHUDpage >= DEBUG_HUD_PAGES_COUNT Then DebugHUD = False
+		Else
+			DebugHUD = True
+			DebugHUDpage = 0
+		End If
 	End If
 
 	If KeyHit(KEY_TOGGLE_NOBLINKING) Then
@@ -6369,9 +6420,6 @@ Function MovePlayer()
 	For keyi = 0 To 9
 		If KeyHit(KEYS_SELECT_ITEM[keyi]) SelectedItem = Inventory(keyi)
 	Next
-
-	;If PlayerRoom\RoomTemplate\Name = "roompj" CustomPJEvent()
-	;If PlayerRoom\RoomTemplate\Name = "room079" Custom079EventUpdate()
 	
 	If (Not NoClip) Then 
 		If ((KeyDown(KEY_DOWN) Or KeyDown(KEY_UP)) Or (KeyDown(KEY_RIGHT) Or KeyDown(KEY_LEFT)) And Playable) Or ForceMove>0 Then
@@ -6448,6 +6496,10 @@ Function MovePlayer()
 		
 		RotateEntity Collider, WrapAngle(EntityPitch(Camera)), WrapAngle(EntityYaw(Camera)), 0
 		
+		NoClipSpeed = NoClipSpeed + Float(MouseZSpeed()) / 5
+		If MouseDown(MOUSE_BUTTON_MIDDLE) Then NoClipSpeed = DefaultNoClipSpeed
+		If NoClipSpeed < 0 Then NoClipSpeed = 0
+
 		temp2 = temp2 * NoClipSpeed
 		
 		If KeyDown(KEY_DOWN) Then MoveEntity Collider, 0, 0, -temp2*FPSfactor
@@ -7075,12 +7127,13 @@ Function DrawGUI()
 				;player stats
 				AAText x - 50, 50, "MsgTimer: " + f2s(MsgTimer, 3)
 				AAText x - 50, 70, "KillTimer: " + f2s(KillTimer, 3)
+				AAText x - 50, 90, "NoClipSpeed: " + f2s(NoClipSpeed, 3)
 
-				AAText x - 50, 100, "PDCameraEffect: " + bool2s(PDCameraEffect)
-				AAText x - 50, 120, "Contained106: " + bool2s(Contained106)
-				AAText x - 50, 140, "SecondaryLightOn: " + bool2s(SecondaryLightOn)
-				AAText x - 50, 160, "RemoteDoorOn: " + bool2s(RemoteDoorOn)
-				AAText x - 50, 180, "flag_maxwellcatspawned: " + bool2s(flag_maxwellcatspawned)
+				AAText x - 50, 120, "PDCameraEffect: " + bool2s(PDCameraEffect)
+				AAText x - 50, 140, "Contained106: " + bool2s(Contained106)
+				AAText x - 50, 160, "SecondaryLightOn: " + bool2s(SecondaryLightOn)
+				AAText x - 50, 180, "RemoteDoorOn: " + bool2s(RemoteDoorOn)
+				AAText x - 50, 200, "flag_maxwellcatspawned: " + bool2s(flag_maxwellcatspawned)
 				displaystr$ = "CheckForPlayerInFacility: "
 				Select CheckForPlayerInFacility()
 					Case 0
@@ -7090,8 +7143,8 @@ Function DrawGUI()
 					Case 2
 						displaystr = displaystr + "True (Tunnels; 2)"
 				End Select
-				AAText x - 50, 200, displaystr
-				AAText x - 50, 220, "SFX3Ds count: " + SFX3DsCount
+				AAText x - 50, 220, displaystr
+				AAText x - 50, 240, "SFX3Ds count: " + SFX3DsCount
 				
 				AAText x - 50, 400, "DeafPlayer: " + bool2s(DeafPlayer)
 				AAText x - 50, 420, "DeafTimer: " + f2s(DeafTimer, 3)
@@ -7101,6 +7154,9 @@ Function DrawGUI()
 
 				AAText x - 50, 500, "BlurVolume: " + f2s(BlurVolume, 3)
 				AAText x - 50, 520, "BlurTimer: " + f2s(BlurTimer, 3)
+
+				AAText x - 50, 550, "LightBlink: " + f2s(LightBlink, 3)
+				AAText x - 50, 570, "LightFlash: " + f2s(LightFlash, 3)
 
 
 				AAText x + 350, 50, "EyeIrritation: " + f2s(EyeIrritation, 3)

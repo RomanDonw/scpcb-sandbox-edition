@@ -5,12 +5,15 @@ Include "sandbox\Lever.bb"
 Include "sandbox\DelayedCommands.bb"
 ;Include "sandbox\Skybox.bb"
 
+Const MOUSE_BUTTON_MIDDLE% = 3
+
 Const NUMPAD_KEY_1% = 79, NUMPAD_KEY_2% = 80, NUMPAD_KEY_3% = 81
 Const NUMPAD_KEY_4% = 75, NUMPAD_KEY_5% = 76, NUMPAD_KEY_6% = 77
 Const NUMPAD_KEY_7% = 71, NUMPAD_KEY_8% = 72, NUMPAD_KEY_9% = 73
 
 Const KEY_UP_ARROW% = 200, KEY_LEFT_ARROW% = 203, KEY_RIGHT_ARROW% = 205, KEY_DOWN_ARROW% = 208
 
+Const KEY_LEFT_SHIFT% = 42
 Const KEY_LEFT_ALT% = 56
 Const KEY_LEFT_CONTROL% = 29
 Const KEY_RIGHT_ALT% = 184
