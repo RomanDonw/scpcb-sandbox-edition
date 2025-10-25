@@ -626,7 +626,8 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#)
 			;EntityColor n\obj, Rand(0, 255), Rand(0, 255), Rand(0, 255)
 			
 			;n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
-			n\Speed = 0.05
+			;n\Speed = 0.05
+			n\Speed = MaxwellCatDefaultSpeed
 	End Select
 	
 	PositionEntity(n\Collider, x, y, z, True)

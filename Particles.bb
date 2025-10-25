@@ -22,7 +22,7 @@ Function CreateParticle.Particles(x#, y#, z#, image%, size#, gravity# = 1.0, lif
 	PositionEntity(p\obj, x, y, z, True)
 	EntityTexture(p\obj, ParticleTextures(image))
 	RotateEntity(p\obj, 0, 0, Rnd(360))
-	EntityFX(p\obj, 1 + 8)
+	EntityFX(p\obj, 1 + (8 * ParticleFXNoFog))
 	
 	SpriteViewMode (p\obj, 3)
 	
@@ -106,7 +106,7 @@ End Type
 Function UpdateEmitters()
 	InSmoke = False
 	For e.emitters = Each Emitters
-		If FPSfactor > 0 And (PlayerRoom = e\room Or e\room\dist < 8) Then
+		If FPSfactor > 0 And (PlayerRoom = e\room Or ((ParticleEmitterHideDistance > 0 And e\room\dist < ParticleEmitterHideDistance) Or (ParticleEmitterHideDistance <= 0 And e\room\dist < CameraRangeFar))) Then
 			;If ParticleAmount = 2 Or SmokeDelay#=0.0
 			Local p.Particles = CreateParticle(EntityX(e\obj, True), EntityY(e\obj, True), EntityZ(e\obj, True), Rand(e\minimage, e\maximage), e\size, e\gravity, e\lifetime)
 			p\speed = e\speed
@@ -140,7 +140,7 @@ Function UpdateEmitters()
 		EndIf
 	Next
 	
-	If InSmoke Then
+	If ((Not IgnoreSmokeInGodMode) And InSmoke) Or (IgnoreSmokeInGodMode And (Not GodMode) And InSmoke) Then
 		If EyeIrritation > (70 * 6) Then BlurVolume = Max(BlurVolume, (EyeIrritation - (70 * 6)) / (70.0 * 24.0))
 		If EyeIrritation > (70 * 24) Then 
 			DeathMSG = "Subject D-9341 found dead in [DATA REDACTED]. Cause of death: Suffocation due to decontamination gas."
@@ -207,6 +207,8 @@ End Function
 
 Function RemoveEmitter(em.Emitters)
 	If em = Null Then Return
+
+	FreeEntity em\Obj
 
 	If em\Sound3D <> Null Then RemoveSFX3D(em\Sound3D)
 

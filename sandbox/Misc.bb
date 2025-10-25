@@ -323,3 +323,164 @@ Function ClampInt%(value%, min%, max%)
 	
 	Return value
 End Function
+
+Function int2bool%(value%)
+    If value <> 0 Then Return True
+    Return False
+End Function
+
+Function GetINIBool%(file$, section$, parameter$, defaultvalue% = False)
+    Return int2bool(GetINIInt(file, section, parameter, defaultvalue))
+End Function
+
+Function GetINIBool2%(file$, start%, parameter$, defaultvalue% = False)
+    Return int2bool(GetINIInt2(file, start, parameter, defaultvalue))
+End Function
+
+Function IsINIParameterExist%(file$, section$, parameter$)
+	Local TemporaryString$ = ""
+	
+	Local lfile.INIFile = Null
+	For k.INIFile = Each INIFile
+		If k\name = Lower(file) Then
+			lfile = k
+			Exit
+		EndIf
+	Next
+	
+	If lfile = Null Then
+		DebugLog "CREATE BANK FOR "+file
+		lfile = New INIFile
+		lfile\name = Lower(file)
+		lfile\bank = 0
+		UpdateINIFile(lfile\name)
+	EndIf
+	
+	lfile\bankOffset = 0
+	
+	section = Lower(section)
+	
+	;While Not Eof(f)
+	While lfile\bankOffset<lfile\size
+		Local strtemp$ = ReadINILine(lfile)
+		If Left(strtemp,1) = "[" Then
+			strtemp$ = Lower(strtemp)
+			If Mid(strtemp, 2, Len(strtemp)-2)=section Then
+				Repeat
+					TemporaryString = ReadINILine(lfile)
+					If Lower(Trim(Left(TemporaryString, Max(Instr(TemporaryString, "=") - 1, 0)))) = Lower(parameter) Then
+						;CloseFile f
+						Return True
+					EndIf
+				Until (Left(TemporaryString, 1) = "[") Or (lfile\bankOffset>=lfile\size)
+				
+				;CloseFile f
+				Return False
+			EndIf
+		EndIf
+	Wend
+	
+	Return False
+End Function
+
+Function IsINIParameterExist2%(file$, start%, parameter$)
+	Local TemporaryString$ = ""
+	Local f% = ReadFile(file)
+	
+	Local n%=0
+	While Not Eof(f)
+		Local strtemp$ = ReadLine(f)
+		n=n+1
+		If n=start Then 
+			Repeat
+				TemporaryString = ReadLine(f)
+				If Lower(Trim(Left(TemporaryString, Max(Instr(TemporaryString, "=") - 1, 0)))) = Lower(parameter) Then
+					CloseFile f
+					Return True
+				EndIf
+			Until Left(TemporaryString, 1) = "[" Or Eof(f)
+			CloseFile f
+			Return False
+		EndIf
+	Wend
+	
+	CloseFile f
+	
+	Return False
+End Function
+
+Function Vec3Length#(x#, y#, z#)
+    Return Sqr(x * x + y * y + z * z)
+End Function
+
+Function InsertStr$(dest$, src$, index%)
+    If index < 0 Then index = 0
+
+    Local sbefore$ = Left(dest, index)
+    Local safter$ = Right(dest, Len(dest) - Len(sbefore))
+
+    Return sbefore + src + safter
+End Function
+
+;Function AdvReadInput$(aString$)
+;	If KeyHit(211) Then
+;		Return ""
+;	End If
+;
+;	Local value% = GetKey()
+;	Local length% = Len(aString$)
+;
+;	;If last_bksp_press_time < 0 Then last_bksp_press_time = MilliSecs()
+;	
+;	If value = 8 Then
+;	;CreateConsoleMsg(MilliSecs(), 255, 0, 255)
+;	;CreateConsoleMsg(last_bksp_press_time)
+;	;CreateConsoleMsg(MilliSecs() - last_bksp_press_time, 255, 127, 0)
+;	;If KeyDown(14) And MilliSecs() - last_bksp_press_time >= 200 Then ; Backspace
+;		;last_bksp_press_time = MilliSecs()
+;		value = 0
+;		If length > 0 Then aString$ = Left(aString, length - 1)
+;	;Else
+;	;	value = GetKey()
+;	EndIf
+;
+;	;If Not KeyDown(14) Then value = GetKey()
+;	
+;	If value = 13 Or value = 0 Then
+;		Return aString$
+;	ElseIf value > 0 And value < 7 Or value > 26 And value < 32 Or value = 9
+;		Return aString$
+;	Else
+;		aString$ = aString$ + Chr(value)
+;		Return aString$
+;	End If
+;End Function
+;
+;Function AdvInputBox$(x%, y%, width%, height%, Txt$, ID% = 0)
+;	;TextBox(x,y,width,height,Txt$)
+;	Color (255, 255, 255)
+;	DrawTiledImageRect(MenuWhite, (x Mod 256), (y Mod 256), 512, 512, x, y, width, height)
+;	;Rect(x, y, width, height)
+;	Color (0, 0, 0)
+;	
+;	Local MouseOnBox% = False
+;	If MouseOn(x, y, width, height) Then
+;		Color(50, 50, 50)
+;		MouseOnBox = True
+;		If MouseHit1 Then SelectedInputBox = ID : FlushKeys
+;	EndIf
+;	
+;	Rect(x + 2, y + 2, width - 4, height - 4)
+;	Color (255, 255, 255)	
+;	
+;	If (Not MouseOnBox) And MouseHit1 And SelectedInputBox = ID Then SelectedInputBox = 0
+;	
+;	If SelectedInputBox = ID Then
+;		Txt = AdvReadInput(Txt)
+;		If (MilliSecs2() Mod 800) < 400 Then Rect (x + width / 2 + AAStringWidth(Txt) / 2 + 2, y + height / 2 - 5, 2, 12)
+;	EndIf	
+;	
+;	AAText(x + width / 2, y + height / 2, Txt, True, True)
+;	
+;	Return Txt
+;End Function

@@ -740,9 +740,13 @@ Function LoadRMesh(file$,rt.RoomTemplates)
 	AddMesh Alpha,Opaque
 	FreeEntity Alpha
 	
-	EntityFX Opaque,3
+	;EntityFX Opaque,3
+	;EntityFX Opaque, 16
+	EntityFX Opaque, (2 * RMeshFXUseVertexColor) Or (1 * RMeshFXFullBright)
 	
 	EntityAlpha hiddenMesh,0.0
+	;EntityAlpha hiddenMesh, 0.5
+	;EntityColor hiddenMesh, 192, 0, 192
 	EntityAlpha Opaque,1.0
 	
 	;EntityType Opaque,HIT_MAP
@@ -2579,7 +2583,12 @@ Function FillRoom(r.Rooms)
 			r\Objects[1] = CreateSprite(r\Objects[0])
 			SpriteViewMode(r\Objects[1],2)
 			PositionEntity(r\Objects[1], 0.082, 0.119, 0.010)
-			ScaleSprite(r\Objects[1],0.18*0.5,0.145*0.5)
+
+
+			;ScaleSprite(r\Objects[1],0.18*0.5,0.145*0.5)
+			;ScaleSprite(r\Objects[1],0.18*0.5 - 0.0001,0.145*0.5 - 0.01)
+			ScaleSprite(r\Objects[1], SCP079ScreenSpriteScaleX, SCP079ScreenSpriteScaleY)
+			
 			TurnEntity(r\Objects[1],0,13.0,0)
 			MoveEntity r\Objects[1], 0,0,-0.022
 			EntityTexture (r\Objects[1],OldAiPics(0))
@@ -5676,17 +5685,19 @@ Function UpdateRooms()
 					Exit
 				EndIf
 			Next
-			If DebugHUD And ShowRoomTriggerbox
+			If DebugHUD And ShowRoomTriggerboxInDebugHUD
 				If r\TriggerboxAmount>0
 					For i=0 To r\TriggerboxAmount-1
-						EntityColor r\Triggerbox[i],255,255,0
-						EntityAlpha r\Triggerbox[i],0.2
+						;EntityColor r\Triggerbox[i],255,255,0
+						;EntityAlpha r\Triggerbox[i],0.2
+						EntityColor r\Triggerbox[i], RoomTriggerboxColorR, RoomTriggerboxColorG, RoomTriggerboxColorB
+						EntityAlpha r\Triggerbox[i], RoomTriggerboxAlpha
 					Next
 				EndIf
 			Else
 				If r\TriggerboxAmount>0
 					For i=0 To r\TriggerboxAmount-1
-						EntityColor r\Triggerbox[i],255,255,255
+						;EntityColor r\Triggerbox[i],255,255,255
 						EntityAlpha r\Triggerbox[i],0.0
 					Next
 				EndIf
@@ -5761,6 +5772,7 @@ Function AddLight%(room.Rooms, x#, y#, z#, ltype%, range#, r%, g%, b%, ltextype%
 				ScaleSprite(room\LightSprites[i], 0.13 , 0.13)
 				EntityTexture(room\LightSprites[i], LightSpriteTex(0))
 				EntityBlend (room\LightSprites[i], 3)
+				EntityFX room\LightSprites[i], 8 * LightSpriteFXNoFog
 				
 				EntityParent(room\LightSprites[i], room\obj)
 				
@@ -5777,7 +5789,7 @@ Function AddLight%(room.Rooms, x#, y#, z#, ltype%, range#, r%, g%, b%, ltextype%
 				EntityOrder(room\LightSprites2[i], -1)
 				EntityColor(room\LightSprites2[i], r%, g%, b%)
 				EntityParent(room\LightSprites2[i], room\obj)
-				EntityFX(room\LightSprites2[i],1)
+				EntityFX(room\LightSprites2[i],1 Or (8 * LightSpriteFXNoFog))
 				RotateEntity(room\LightSprites2[i],0,0,Rand(360))
 				SpriteViewMode(room\LightSprites2[i],1)
 				room\LightSpriteHidden%[i] = True
@@ -5806,6 +5818,7 @@ Function AddLight%(room.Rooms, x#, y#, z#, ltype%, range#, r%, g%, b%, ltextype%
 		ScaleSprite(sprite, 0.13 , 0.13)
 		EntityTexture(sprite, LightSpriteTex(ltextype))
 		EntityBlend (sprite, 3)
+		EntityFX sprite, 8 * LightSpriteFXNoFog
 		Return light
 	EndIf
 End Function

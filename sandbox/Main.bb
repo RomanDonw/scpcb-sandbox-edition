@@ -22,6 +22,8 @@ Const KEY_RIGHT_CONTROL% = 157
 Const KEY_ENTER% = 28
 Const KEY_SLASH% = 53
 
+Global FreeCam% = False
+
 ; ===========================================================================================================================================================
 
 Function OnGameStart()
@@ -59,6 +61,8 @@ Function OnLoad(f%)
     PDCameraEffect = ReadByte(f)
 
     flag_maxwellcatspawned = ReadByte(f)
+
+    ;ShowPlayerCrowbar = False
 End Function
 
 Function OnSave(f%)
@@ -82,11 +86,15 @@ Function OnInitNewGame()
 
     PDCameraEffect = False
     flag_maxwellcatspawned = False
+
+    ;ShowPlayerCrowbar = False
 End Function
 
 Function OnNullGame()
     PDCameraEffect = False
     flag_maxwellcatspawned = False
+
+    ;ShowPlayerCrowbar = False
 End Function
 
 ; ===========================================================================================================================================================
@@ -138,13 +146,44 @@ Function OnUpdate()
     ;    End If
     ;End If
 
+    If PlayerCrowbar <> 0 Then
+        Local d# = Vec3Length(EntityX(Collider, True), EntityY(Collider, True), EntityZ(Collider, True))
+
+        ;RotateEntity PlayerCrowbar, Sin(d * PlayerCrowbarSwingXCoefficient), EntityYaw(PlayerCrowbar, False), Sin(d * PlayerCrowbarSwingZCoefficient), False
+        Local up# = (Sin(Shake) / (20.0+CrouchState*20.0))*0.6
+
+        ;MoveEntity PlayerCrowbar, 0, up + 0.6 + CrouchState * -0.3, 0
+
+        ;If KeyHit(64) Then ShowPlayerCrowbar = Not ShowPlayerCrowbar
+
+        If SelectedItem <> Null Then
+            If Not SelectedItem\itemtemplate\tempname = "crowbar" Then HideEntity PlayerCrowbar
+        Else
+            HideEntity PlayerCrowbar
+        End If
+
+        ;If ShowPlayerCrowbar then
+        ;    ShowEntity PlayerCrowbar
+        ;Else
+        ;    HideEntity PlayerCrowbar
+        ;End If
+    End If
+
+    ;If SelectedItem <> Null Then
+    ;    If SelectedItem\itemtemplate\tempname = "scp513" Then
+    ;        If CountCollisions(SelectedItem\collider) > 0 And SelectedItem\state = 0 Then
+    ;            SelectedItem\state = 1
+    ;            CreateSFX3D(LoadTempSound("SFX\SCP\513\Bell1.ogg"), SelectedItem\collider, 5)
+    ;    End If
+    ;End If
+
     CatchErrors("OnUpdate")
 End Function
 
 Global flag_maxwellcatspawned%
 
 Function OnUpdateEvents()
-    If PlayerRoom\RoomTemplate\Name = "start" And MaxwellCatNaturalSpawn And (Not flag_maxwellcatspawned) Then
+    If PlayerRoom\RoomTemplate\Name = MaxwellCatNaturalSpawnRoom And MaxwellCatNaturalSpawn And (Not flag_maxwellcatspawned) Then
         ExecConsole("maxwellcat", True)
         flag_maxwellcatspawned = True
     End If
@@ -160,6 +199,18 @@ Function OnUpdateEvents()
     ;
     ;Else
     ;    ;HideEntity SkyboxMesh
+    ;End If
+
+    ;If PlayerCrowbar <> 0 Then
+    ;    ;TurnEntity PlayerCrowbar, 0, 0.5, 0
+    ;    ;CreateConsoleMsg("Player crowbar yaw: " + EntityYaw(PlayerCrowbar), 255, 0, 255)
+    ;    If KeyDown(KEY_UP_ARROW) Then TranslateEntity PlayerCrowbar, 0, 0.001, 0
+    ;    If KeyDown(KEY_DOWN_ARROW) Then TranslateEntity PlayerCrowbar, 0, -0.001, 0
+    ;    If KeyDown(KEY_RIGHT_ARROW) Then TranslateEntity PlayerCrowbar, 0.001, 0, 0
+    ;    If KeyDown(KEY_LEFT_ARROW) Then TranslateEntity PlayerCrowbar, -0.001, 0, 0
+    ;    If KeyDown(78) Then TranslateEntity PlayerCrowbar, 0, 0, 0.001
+    ;    If KeyDown(74) Then TranslateEntity PlayerCrowbar, 0, 0, -0.001
+    ;    If KeyHit(82) Then CreateConsoleMsg("Rel Pos: X = " + EntityX(PlayerCrowbar, False) + ", Y = " + EntityY(PlayerCrowbar, False) + ", Z = " + EntityZ(PlayerCrowbar, False), 255, 0, 255)
     ;End If
 
     CatchErrors("OnUpdateEvents (before cheat functions)")
@@ -198,6 +249,10 @@ Global CenterPointerImage%
 
 ;Global SkyboxSky.Skybox, SkyboxSky1499.Skybox
 
+Global CrowbarOBJ%
+
+Global PlayerCrowbar%   ;, ShowPlayerCrowbar% = False
+
 Function OnLoadEntities()
     CatchErrors("Uncaught (OnLoadEntities)")
 
@@ -218,6 +273,60 @@ Function OnLoadEntities()
     ; ===================
 
     CenterPointerImage = LoadImage_Strict("sandbox\GFX\center_pointer.png")
+
+    ; ===================
+
+    CrowbarOBJ = LoadMesh_Strict("sandbox\GFX\crowbar\crowbar.b3d")
+    HideEntity CrowbarOBJ
+    ScaleMesh CrowbarOBJ, 0.1, 0.1, 0.1
+    EntityFX CrowbarOBJ, 2
+
+    Local cwbrush_head = CreateBrush()
+    Local cwtex_head = LoadTexture_Strict("sandbox\GFX\crowbar\head.png")
+    BrushTexture cwbrush_head, cwtex_head
+    PaintSurface GetSurface(CrowbarOBJ, 1), cwbrush_head
+    FreeTexture cwtex_head
+    FreeBrush cwbrush_head
+
+    Local cwbrush_cyl = CreateBrush()
+    Local cwtex_cyl = LoadTexture_Strict("sandbox\GFX\crowbar\cyl.png")
+    BrushTexture cwbrush_cyl, cwtex_cyl
+    PaintSurface GetSurface(CrowbarOBJ, 2), cwbrush_cyl
+    FreeTexture cwtex_cyl
+    FreeBrush cwbrush_cyl
+
+    ; ===================
+
+    PlayerCrowbar = CopyEntity(CrowbarOBJ)
+    EntityParent PlayerCrowbar, Camera, False
+    ;TranslateEntity PlayerCrowbar, 0.1, 0, 0.2
+    TranslateEntity PlayerCrowbar, PlayerCrowbarOffsetX, PlayerCrowbarOffsetY, PlayerCrowbarOffsetZ
+    ;RotateEntity PlayerCrowbar, 0, 42, 0
+    RotateEntity PlayerCrowbar, PlayerCrowbarPitch, PlayerCrowbarYaw, PlayerCrowbarRoll
+    ;ScaleEntity PlayerCrowbar, 0.05, 0.05, 0.05
+    ScaleEntity PlayerCrowbar, PlayerCrowbarScaleX, PlayerCrowbarScaleY, PlayerCrowbarScaleZ
+    EntityOrder PlayerCrowbar, -500
+
+    ; ===================
+
+    Local cwit.ItemTemplates = New ItemTemplates
+    
+    cwit\obj = CopyEntity(CrowbarOBJ)
+    HideEntity cwit\obj
+
+    RotateEntity cwit\obj, 90, 0, 0
+
+    cwit\scale = 0.15
+    ScaleEntity cwit\obj, cwit\scale, cwit\scale, cwit\scale
+
+    cwit\tempname = "crowbar"
+	cwit\name = "Crowbar"
+	cwit\sound = 1
+
+    ;cwit\invimg = LoadImage_Strict("sandbox\GFX\crowbar\invimg.png")
+    cwit\invimg = LoadImage_Strict(PlayerCrowbarInvImgPath)
+	
+    ; ===================
     
     CatchErrors("OnLoadEntities")
 End Function
@@ -256,6 +365,28 @@ Function OnDrawGUI()
     ;If KeyHit(64) Then EntTextUI = Not EntTextUI
 
     CatchErrors("OnDrawGUI")
+End Function
+
+Const SandboxConfigMain$ = "sandbox\config\main.ini"
+Const SandboxConfigDebug$ = "sandbox\config\debug.ini"
+Const SandboxConfigBinds$ = "sandbox\config\binds.ini"
+Const SandboxConfigAudio$ = "sandbox\config\audio.ini"
+Const SandboxConfigVisual$ = "sandbox\config\visual.ini"
+Const SandboxConfigScreenshot$ = "sandbox\config\screenshot.ini"
+Const SandboxConfigSCPs$ = "sandbox\config\scps.ini"
+Const SandboxConfigEvents$ = "sandbox\config\events.ini"
+Const SandboxConfigPlayer$ = "sandbox\config\player.ini"
+
+Function CheckSandboxConfigFiles()
+    If FileType(SandboxConfigMain) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigMain + Chr(34) + "."
+    If FileType(SandboxConfigDebug) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigDebug + Chr(34) + "."
+    If FileType(SandboxConfigBinds) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigBinds + Chr(34) + "."
+    If FileType(SandboxConfigAudio) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigAudio + Chr(34) + "."
+    If FileType(SandboxConfigVisual) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigVisual + Chr(34) + "."
+    If FileType(SandboxConfigScreenshot) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigScreenshot + Chr(34) + "."
+    If FileType(SandboxConfigSCPs) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigSCPs + Chr(34) + "."
+    If FileType(SandboxConfigEvents) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigEvents + Chr(34) + "."
+    If FileType(SandboxConfigPlayer) <> 1 Then RuntimeError "Can't find config file " + Chr(34) + SandboxConfigPlayer + Chr(34) + "."
 End Function
 
 ; ===========================================================================================================================================================

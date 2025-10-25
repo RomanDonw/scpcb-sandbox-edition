@@ -315,8 +315,11 @@ Function InitItemTemplates()
 	
 	it = CreateItemTemplate("Document SCP-427", "paper", "GFX\items\paper.x", "GFX\items\INVpaper.jpg", "GFX\items\doc427.jpg", 0.003) : it\sound = 0
 
-	items_count% = GetINIInt(OptionFile, "items", "count")
-	register_file_path$ = GetINIString(OptionFile, "items", "register file path")
+	; ==================
+
+	items_count% = GetINIInt(SandboxConfigMain, "items", "count")
+	register_file_path$ = GetINIString(SandboxConfigMain, "items", "register file path")
+
 	If items_count > 0 Then
 		For i% = 0 To items_count - 1
 			name_$ = GetINIString(register_file_path, i, "caption")
@@ -577,6 +580,15 @@ Function UpdateItems()
 							i\xspeed = 0.0
 							i\zspeed = 0.0
 						EndIf
+						;If Not LinePick(EntityX(i\collider),EntityY(i\collider),EntityZ(i\collider),0,-0.01,0) Then
+						;	i\DropSpeed = i\DropSpeed - 0.0004 * FPSfactor
+						;	TranslateEntity i\collider, i\xspeed*FPSfactor, i\DropSpeed * FPSfactor, i\zspeed*FPSfactor
+						;	If i\WontColl Then ResetEntity(i\collider)
+						;Else
+						;	i\DropSpeed = 0
+						;	i\xspeed = 0.0
+						;	i\zspeed = 0.0
+						;End If
 					Else
 						i\DropSpeed = 0
 						i\xspeed = 0.0

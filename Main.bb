@@ -18,11 +18,11 @@ If Len(InitErrorStr)>0 Then
 	RuntimeError "The following DLLs were not found in the game directory:"+Chr(13)+Chr(10)+Chr(13)+Chr(10)+InitErrorStr
 EndIf
 
-Global OptionFile$ = "options.ini"
+Const OptionFile$ = "options.ini"
 
 If FileSize(OptionFile) = 0 Then RuntimeError "Config file " + Chr(34) + OptionFile + Chr(34) + " doesn`t exist."
 
-
+CheckSandboxConfigFiles()
 
 Include "FMod.bb"
 
@@ -46,115 +46,209 @@ While FileType(ErrorFile+Str(ErrorFileInd)+".txt")<>0
 Wend
 ErrorFile = ErrorFile+Str(ErrorFileInd)+".txt"
 
-Global DebugEnabled% = GetINIInt(OptionFile, "debug", "enabled")
+Global DebugEnabled% = GetINIInt(SandboxConfigDebug, "debug", "enabled")
 
 OnGameStart()
 
 ; ======================== CUSTOM OPTIONS ==========================
 
-Global CheatGameControlEnabled% = GetINIInt(OptionFile, "gamectl", "cheat game control")
+; [gamectl]
 
-Global NPCsUpdateEnabled% = GetINIInt(OptionFile, "gamectl", "npcs update")
-Global UpdateMTFEnabled% = GetINIInt(OptionFile, "gamectl", "mtf update")
+Global CheatGameControlEnabled% = GetINIBool(SandboxConfigMain, "gamectl", "cheat game control")
 
-Global DestroyIntroSequence% = GetINIInt(OptionFile, "gameplay", "destroy intro sequence")
-Global DisableTeslaSequence% = GetINIInt(OptionFile, "gameplay", "disable tesla sequence")
-Global EnableSCP860Forest% = GetINIInt(OptionFile, "gameplay", "enable SCP-860 forest")
-Global SCP970StrangeEvent% = GetINIInt(OptionFile, "gameplay", "SCP-970 strange event")
-Global SCP066Spawn% = GetINIInt(OptionFile, "gameplay", "SCP-066 spawn")
-Global LightFlickering% = GetINIInt(OptionFile, "gameplay", "light flickering")
-Global StopHidingEvent% = GetINIInt(OptionFile, "gameplay", "stop hiding")
-Global MaxwellCatNaturalSpawn% = GetINIInt(OptionFile, "gameplay", "Maxwell the Cat natural spawn")
-Global WaitKeyOrMouseInDrawLoading% = GetINIInt(OptionFile, "gameplay", "wait key or mouse in DrawLoading")
-Global KeycardFastUsage% = GetINIInt(OptionFile, "gameplay", "keycard fast usage")
+Global NPCsUpdateEnabled% = GetINIBool(SandboxConfigMain, "gamectl", "npcs update")
+Global UpdateMTFEnabled% = GetINIBool(SandboxConfigMain, "gamectl", "mtf update")
 
-Global DebugShowWaypoints% = GetINIInt(OptionFile, "debug", "show waypoints")
+; [gameplay]
 
-Global ConsoleBufferLimit% = GetINIInt(OptionFile, "console", "buffer limit")
-Global SendErrorsToConsole% = GetINIInt(OptionFile, "console", "receive errors")
-Global ConsoleX% = GetINIInt(OptionFile, "console", "x")
-Global ConsoleY% = GetINIInt(OptionFile, "console", "y")
-Global ConsoleWidth% = GetINIInt(OptionFile, "console", "width")
-Global ConsoleHeight% = GetINIInt(OptionFile, "console", "height")
-Global BypassOpeningConsole% = GetINIInt(OptionFile, "console", "bypass opening")
-Global ConsoleInputLimit% = GetINIInt(OptionFile, "console", "input limit")
+Global DestroyIntroSequence% = GetINIBool(SandboxConfigMain, "gameplay", "destroy intro sequence")
+Global DisableTeslaSequence% = GetINIBool(SandboxConfigMain, "gameplay", "disable tesla sequence")
+Global EnableSCP860Forest% = GetINIBool(SandboxConfigMain, "gameplay", "enable SCP-860 forest")
+Global SCP970StrangeEvent% = GetINIBool(SandboxConfigMain, "gameplay", "SCP-970 strange event")
+Global SCP066Spawn% = GetINIBool(SandboxConfigMain, "gameplay", "SCP-066 spawn")
+Global LightFlickering% = GetINIBool(SandboxConfigMain, "gameplay", "light flickering")
+Global StopHidingEvent% = GetINIBool(SandboxConfigMain, "gameplay", "stop hiding")
+Global WaitKeyOrMouseInDrawLoading% = GetINIBool(SandboxConfigMain, "gameplay", "wait key or mouse in DrawLoading")
+Global CanSpawnSCP5131% = GetINIBool(SandboxConfigMain, "gameplay", "can spawn SCP-513-1")
 
-Global EnableSCP173Teleporting% = GetINIInt(OptionFile, "SCP-173", "teleporting")
-Global EnableSCP173HorrorEffects% = GetINIInt(OptionFile, "SCP-173", "horror effects")
-Global SCP173RandomMovingWhenPlayerUnseen% = GetINIInt(OptionFile, "SCP-173", "random moving when player unseen")
+; [debug]
 
-Global PresetDisableSCP106% = GetINIInt(OptionFile, "SCP-106", "preset disabled")
+Global DebugShowWaypoints% = GetINIBool(SandboxConfigDebug, "debug", "show waypoints")
 
-Global SCP079CanCloseDoors% = GetINIInt(OptionFile, "SCP-079", "can close doors")
-Global FacilityLightBlinkingBySCP079% = GetINIInt(OptionFile, "SCP-079", "facility light blinking")
+; [console]
 
-Global SCP1162CanSummonSCP% = GetINIInt(OptionFile, "SCP-1162", "can summon SCP")
-Global SCP1162SummonSCPChance# = GetINIFloat(OptionFile, "SCP-1162", "summon SCP chance") / 100
+Global ConsoleBufferLimit% = GetINIInt(SandboxConfigDebug, "console", "buffer limit")
+Global SendErrorsToConsole% = GetINIBool(SandboxConfigDebug, "console", "receive errors")
+Global ConsoleDefaultX% = GetINIInt(SandboxConfigDebug, "console", "x")
+Global ConsoleDefaultY% = GetINIInt(SandboxConfigDebug, "console", "y")
+Global ConsoleDefaultWidth% = GetINIInt(SandboxConfigDebug, "console", "width")
+Global ConsoleDefaultHeight% = GetINIInt(SandboxConfigDebug, "console", "height")
+Global BypassOpeningConsole% = GetINIBool(SandboxConfigDebug, "console", "bypass opening")
+Global ConsoleInputLimit% = GetINIInt(SandboxConfigDebug, "console", "input limit")
 
-Global IntroSequenceMusic% = GetINIInt(OptionFile, "sound", "intro sequence music")
-Global EnableMusic% = GetINIInt(OptionFile, "sound", "enable music")
-Global EnableAmbientSFX% = GetINIInt(OptionFile, "sound", "enable ambient sfx")
-Global EnableRoomAmbientSFX% = GetINIInt(OptionFile, "sound", "enable room ambient sfx")
-Global EnableSecurityCamerasBasicSFX% = GetINIInt(OptionFile, "sound", "enable security cameras basic sfx")
-Global EnableSecurityCamerasHorrorSFX% = GetINIInt(OptionFile, "sound", "enable security cameras horror sfx")
-Global EnableSFX% = GetINIInt(OptionFile, "sound", "enable sfx")
-Global EnableMenuPressAnyKeySound% = GetINIInt(OptionFile, "sound", "enable menu press any key sound")
-Global SaveSFX% = GetINIInt(OptionFile, "sound", "save sfx")
+; [debug HUD]
 
-Global RoomRenderIfItInPlayerView% = GetINIInt(OptionFile, "display", "render room if it in player view")
-Global RMeshLightmapPixelColorModifing% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel color modifing")
-Global RMeshLightmapPixelRModifer% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel r modifer")
-Global RMeshLightmapPixelGModifer% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel g modifer")
-Global RMeshLightmapPixelBModifer% = GetINIInt(OptionFile, "display", "RMesh lightmap pixel b modifer")
-Global EnableSCP106PocketDimensionBlinkingScreamer% = GetINIInt(OptionFile, "display", "enable scp106 pocketdimension blinking screamer")
-Global EnableDoorUsingMessage% = GetINIInt(OptionFile, "display", "enable door using message")
-Global EnableLoadingScreens% = GetINIInt(OptionFile, "display", "enable loading screens")
-Global EnableDrawingInteractionImage% = GetINIInt(OptionFile, "display", "enable drawing interaction image")
-Global EnableDrawingSelectedItemKeycard% = GetINIInt(OptionFile, "display", "enable drawing selected item keycard")
-Global EnableSCP079PicOnScreens% = GetINIInt(OptionFile, "display", "enable scp079 picture on screens")
-Global DisableCoffinEffect% = GetINIInt(OptionFile, "display", "disable coffin effect")
-Global PocketDimensionCameraEffect% = GetINIInt(OptionFile, "display", "pocket dimension camera effect")
+Global ShowRoomTriggerboxInDebugHUD% = GetINIBool(SandboxConfigDebug, "debug HUD", "show room trigger box")
+Global RoomTriggerboxColorR% = GetINIInt(SandboxConfigDebug, "debug HUD", "room trigger box color r")
+Global RoomTriggerboxColorG% = GetINIInt(SandboxConfigDebug, "debug HUD", "room trigger box color g")
+Global RoomTriggerboxColorB% = GetINIInt(SandboxConfigDebug, "debug HUD", "room trigger box color b")
+Global RoomTriggerboxAlpha# = GetINIFloat(SandboxConfigDebug, "debug HUD", "room trigger box alpha")
 
-Global ClsColorR% = GetINIInt(OptionFile, "camera", "cls color r")
-Global ClsColorG% = GetINIInt(OptionFile, "camera", "cls color g")
-Global ClsColorB% = GetINIInt(OptionFile, "camera", "cls color b")
-Global ForceCameraFogColor% = GetINIInt(OptionFile, "camera", "force fog color")
-Global CameraFogColorR% = GetINIInt(OptionFile, "camera", "fog color r")
-Global CameraFogColorG% = GetINIInt(OptionFile, "camera", "fog color g")
-Global CameraFogColorB% = GetINIInt(OptionFile, "camera", "fog color b")
-Global ForceAmbientLightColor% = GetINIInt(OptionFile, "camera", "force ambient light color")
-Global AmbientLightColorR% = GetINIInt(OptionFile, "camera", "ambient light color r")
-Global AmbientLightColorG% = GetINIInt(OptionFile, "camera", "ambient light color g")
-Global AmbientLightColorB% = GetINIInt(OptionFile, "camera", "ambient light color b")
+; [SCP-173]
 
-Global BypassSave% = GetINIInt(OptionFile, "player", "bypass save")
-Global PresetGodMode% = GetINIInt(OptionFile, "player", "preset godmode")
-Global PresetNoTarget% = GetINIInt(OptionFile, "player", "preset notarget")
-Global PresetNoclip% = GetINIInt(OptionFile, "player", "preset noclip")
-Global PresetDebugHUD% = GetINIInt(OptionFile, "player", "preset debughud")
-Global PresetNoBlinking% = GetINIInt(OptionFile, "player", "preset noblinking")
-Global PresetInfiniteStamina% = GetINIInt(OptionFile, "player", "preset infinite stamina")
-Global DefaultNoClipSpeed# = GetINIFloat(OptionFile, "player", "default noclip speed")
+Global EnableSCP173Teleporting% = GetINIBool(SandboxConfigSCPs, "SCP-173", "teleporting")
+Global EnableSCP173HorrorEffects% = GetINIBool(SandboxConfigSCPs, "SCP-173", "horror effects")
+Global SCP173RandomMovingWhenPlayerUnseen% = GetINIBool(SandboxConfigSCPs, "SCP-173", "random moving when player unseen")
 
-Global CustomIntro% = GetINIInt(OptionFile, "custom intro", "enabled")
-Global CustomIntroDuration# = GetINIFloat(OptionFile, "custom intro", "duration")
-Global CustomIntroClsColorR% = GetINIInt(OptionFile, "custom intro", "cls color r")
-Global CustomIntroClsColorG% = GetINIInt(OptionFile, "custom intro", "cls color g")
-Global CustomIntroClsColorB% = GetINIInt(OptionFile, "custom intro", "cls color b")
-Global CustomIntroImagePath$ = GetINIString(OptionFile, "custom intro", "image")
-Global CustomIntroSoundPath$ = GetINIString(OptionFile, "custom intro", "sound")
-Global CustomIntroSoundVolume# = GetINIFloat(OptionFile, "custom intro", "sound volume")
-Global CustomIntroSoundFedingStart# = GetINIFloat(OptionFile, "custom intro", "sound feding start")
-Global CustomIntroSoundFedingEnd# = GetINIFloat(OptionFile, "custom intro", "sound feding end")
+; [SCP-106]
 
-Global ScreenshotFolder$ = GetINIString(OptionFile, "screenshot", "folder path to save")
-Global ScreenshotNextID% = GetINIInt(OptionFile, "screenshot", "next id")
+Global PresetDisableSCP106% = GetINIBool(SandboxConfigSCPs, "SCP-106", "preset disabled")
+Global EnableSCP106PocketDimensionBlinkingScreamer% = GetINIBool(SandboxConfigSCPs, "SCP-106", "pocketdimension blinking screamer")
 
-Global EnableDecals% = GetINIInt(OptionFile, "decals", "enable")
+; [SCP-079]
+
+Global SCP079CanCloseDoors% = GetINIBool(SandboxConfigSCPs, "SCP-079", "can close doors")
+Global FacilityLightBlinkingBySCP079% = GetINIBool(SandboxConfigSCPs, "SCP-079", "facility light blinking")
+Global EnableSCP079PicOnScreens% = GetINIBool(SandboxConfigSCPs, "SCP-079", "picture on screens")
+Global SCP079ScreenSpriteScaleX# = GetINIFloat(SandboxConfigSCPs, "SCP-079", "screen sprite x scale")
+Global SCP079ScreenSpriteScaleY# = GetINIFloat(SandboxConfigSCPs, "SCP-079", "screen sprite y scale")
+
+; [SCP-1162]
+
+Global SCP1162CanSummonSCP% = GetINIBool(SandboxConfigSCPs, "SCP-1162", "can summon SCP")
+Global SCP1162SummonSCPChance# = GetINIFloat(SandboxConfigSCPs, "SCP-1162", "summon SCP chance") / 100
+
+; [sound]
+
+Global IntroSequenceMusic% = GetINIBool(SandboxConfigAudio, "sound", "intro sequence music")
+Global EnableMusic% = GetINIBool(SandboxConfigAudio, "sound", "enable music")
+Global EnableAmbientSFX% = GetINIBool(SandboxConfigAudio, "sound", "enable ambient sfx")
+Global EnableRoomAmbientSFX% = GetINIBool(SandboxConfigAudio, "sound", "enable room ambient sfx")
+Global EnableSecurityCamerasBasicSFX% = GetINIBool(SandboxConfigAudio, "sound", "enable security cameras basic sfx")
+Global EnableSecurityCamerasHorrorSFX% = GetINIBool(SandboxConfigAudio, "sound", "enable security cameras horror sfx")
+Global EnableSFX% = GetINIBool(SandboxConfigAudio, "sound", "enable sfx")
+Global EnableMenuPressAnyKeySound% = GetINIBool(SandboxConfigAudio, "sound", "enable menu press any key sound")
+Global SaveSFX% = GetINIBool(SandboxConfigAudio, "sound", "save sfx")
+
+; [display]
+
+Global EnableDoorUsingMessage% = GetINIBool(SandboxConfigVisual, "display", "enable door using message")
+Global EnableLoadingScreens% = GetINIBool(SandboxConfigVisual, "display", "enable loading screens")
+Global EnableDrawingInteractionImage% = GetINIBool(SandboxConfigVisual, "display", "enable drawing interaction image")
+Global EnableDrawingSelectedItemKeycard% = GetINIBool(SandboxConfigVisual, "display", "enable drawing selected item keycard")
+Global DisableCoffinEffect% = GetINIBool(SandboxConfigVisual, "display", "disable coffin effect")
+Global LightSpriteFXNoFog% = GetINIBool(SandboxConfigVisual, "display", "light sprite fx no fog")
+Global ParticleFXNoFog% = GetINIBool(SandboxConfigVisual, "display", "particle fx no fog")
+Global ParticleEmitterHideDistance# = GetINIFloat(SandboxConfigVisual, "display", "particle emitter hide distance")
+Global EnableDustParticlesSpawn% = GetINIBool(SandboxConfigVisual, "display", "dust particles spawn")
+
+; [camera]
+
+Global CameraClsColorR% = GetINIInt(SandboxConfigVisual, "camera", "cls color r")
+Global CameraClsColorG% = GetINIInt(SandboxConfigVisual, "camera", "cls color g")
+Global CameraClsColorB% = GetINIInt(SandboxConfigVisual, "camera", "cls color b")
+Global CameraRangeNear# = GetINIFloat(SandboxConfigVisual, "camera", "near")
+Global CameraRangeFar# = GetINIFloat(SandboxConfigVisual, "camera", "far")
+Global ForceCameraFogColor% = GetINIBool(SandboxConfigVisual, "camera", "force fog color")
+Global CameraFogColorR% = GetINIInt(SandboxConfigVisual, "camera", "fog color r")
+Global CameraFogColorG% = GetINIInt(SandboxConfigVisual, "camera", "fog color g")
+Global CameraFogColorB% = GetINIInt(SandboxConfigVisual, "camera", "fog color b")
+Global ForceAmbientLightColor% = GetINIBool(SandboxConfigVisual, "camera", "force ambient light color")
+Global AmbientLightColorR% = GetINIInt(SandboxConfigVisual, "camera", "ambient light color r")
+Global AmbientLightColorG% = GetINIInt(SandboxConfigVisual, "camera", "ambient light color g")
+Global AmbientLightColorB% = GetINIInt(SandboxConfigVisual, "camera", "ambient light color b")
+Global PocketDimensionCameraEffect% = GetINIBool(SandboxConfigVisual, "camera", "pocket dimension effect")
+
+; [render]
+Global RoomRenderIfItInPlayerView% = GetINIBool(SandboxConfigVisual, "render", "render room if it in player view")
+
+; [RMesh]
+
+Global RMeshLightmapPixelColorModifing% = GetINIBool(SandboxConfigMain, "RMesh", "lightmap pixel color modifing")
+Global RMeshLightmapPixelRModifer% = GetINIInt(SandboxConfigMain, "RMesh", "lightmap pixel r modifer")
+Global RMeshLightmapPixelGModifer% = GetINIInt(SandboxConfigMain, "RMesh", "lightmap pixel g modifer")
+Global RMeshLightmapPixelBModifer% = GetINIInt(SandboxConfigMain, "RMesh", "lightmap pixel b modifer")
+Global RMeshFXFullBright% = GetINIBool(SandboxConfigMain, "RMesh", "fx full bright")
+Global RMeshFXUseVertexColor% = GetINIBool(SandboxConfigMain, "RMesh", "fx use vertex color")
+
+; [player]
+
+Global BypassSave% = GetINIBool(SandboxConfigPlayer, "player", "bypass save")
+Global PresetGodMode% = GetINIBool(SandboxConfigPlayer, "player", "preset godmode")
+Global PresetNoTarget% = GetINIBool(SandboxConfigPlayer, "player", "preset notarget")
+Global PresetNoclip% = GetINIBool(SandboxConfigPlayer, "player", "preset noclip")
+Global PresetDebugHUD% = GetINIBool(SandboxConfigPlayer, "player", "preset debughud")
+Global PresetNoBlinking% = GetINIBool(SandboxConfigPlayer, "player", "preset noblinking")
+Global PresetInfiniteStamina% = GetINIBool(SandboxConfigPlayer, "player", "preset infinite stamina")
+Global DefaultNoClipSpeed# = GetINIFloat(SandboxConfigPlayer, "player", "default noclip speed")
+Global IgnoreSmokeInGodMode% = GetINIBool(SandboxConfigPlayer, "player", "ignore smoke in godmode")
+Global KeycardFastUsage% = GetINIBool(SandboxConfigPlayer, "player", "keycard fast usage")
+Global PlayerCanFastDropItems% = GetINIBool(SandboxConfigPlayer, "player", "fast dropping items")
+Global DeselectItemOnKeycardReaderInteraction% = GetINIBool(SandboxConfigPlayer, "player", "deselect item on keycard reader interaction")
+
+; [crowbar]
+
+Global PlayerCrowbarInvImgPath$ = GetINIString(SandboxConfigPlayer, "crowbar", "inventory image")
+Global PlayerCrowbarOffsetX# = GetINIFloat(SandboxConfigPlayer, "crowbar", "offset x")
+Global PlayerCrowbarOffsetY# = GetINIFloat(SandboxConfigPlayer, "crowbar", "offset y")
+Global PlayerCrowbarOffsetZ# = GetINIFloat(SandboxConfigPlayer, "crowbar", "offset z")
+Global PlayerCrowbarPitch# = GetINIFloat(SandboxConfigPlayer, "crowbar", "pitch")
+Global PlayerCrowbarYaw# = GetINIFloat(SandboxConfigPlayer, "crowbar", "yaw")
+Global PlayerCrowbarRoll# = GetINIFloat(SandboxConfigPlayer, "crowbar", "roll")
+Global PlayerCrowbarScaleX# = GetINIFloat(SandboxConfigPlayer, "crowbar", "scale x")
+Global PlayerCrowbarScaleY# = GetINIFloat(SandboxConfigPlayer, "crowbar", "scale y")
+Global PlayerCrowbarScaleZ# = GetINIFloat(SandboxConfigPlayer, "crowbar", "scale z")
+;Global PlayerCrowbarSwingXCoefficient# = GetINIFloat(SandboxConfigPlayer, "crowbar", "swing x coefficient")
+;Global PlayerCrowbarSwingZCoefficient# = GetINIFloat(SandboxConfigPlayer, "crowbar", "swing z coefficient")
+
+; [custom intro]
+
+Global CustomIntro% = GetINIBool(SandboxConfigMain, "custom intro", "enabled")
+Global CustomIntroDuration# = GetINIFloat(SandboxConfigMain, "custom intro", "duration")
+Global CustomIntroClsColorR% = GetINIInt(SandboxConfigMain, "custom intro", "cls color r")
+Global CustomIntroClsColorG% = GetINIInt(SandboxConfigMain, "custom intro", "cls color g")
+Global CustomIntroClsColorB% = GetINIInt(SandboxConfigMain, "custom intro", "cls color b")
+Global CustomIntroImagePath$ = GetINIString(SandboxConfigMain, "custom intro", "image")
+Global CustomIntroSoundPath$ = GetINIString(SandboxConfigMain, "custom intro", "sound")
+Global CustomIntroSoundVolume# = GetINIFloat(SandboxConfigMain, "custom intro", "sound volume")
+Global CustomIntroSoundFedingStart# = GetINIFloat(SandboxConfigMain, "custom intro", "sound feding start")
+Global CustomIntroSoundFedingEnd# = GetINIFloat(SandboxConfigMain, "custom intro", "sound feding end")
+
+; [screenshot]
+
+Global ScreenshotFolder$ = GetINIString(SandboxConfigScreenshot, "screenshot", "folder path to save")
+Global ScreenshotNextID% = GetINIInt(SandboxConfigScreenshot, "screenshot", "next id")
+
+; [decals]
+
+Global EnableDecals% = GetINIBool(SandboxConfigVisual, "decals", "enable")
 Dim EnabledDecalTextures%(20)
 For i% = 0 To 20
-	EnabledDecalTextures(i) = GetINIInt(OptionFile, "decals", "display decal type " + Str(i))
+	EnabledDecalTextures(i) = GetINIBool(SandboxConfigVisual, "decals", "display decal type " + Str(i))
 Next
+
+; [binds]
+
+Global KEY_TOGGLE_NOCLIP = GetINIInt(SandboxConfigBinds, "binds", "Toggle Noclip key")
+Global KEY_TOGGLE_HUD = GetINIInt(SandboxConfigBinds, "binds", "Toggle HUD key")
+Global KEY_TOGGLE_DEBUGHUD = GetINIInt(SandboxConfigBinds, "binds", "Toggle DebugHUD key")
+Global KEY_TOGGLE_NOBLINKING = GetINIInt(SandboxConfigBinds, "binds", "Toggle no blinking key")
+Global KEY_TOGGLE_SHOWFPS = GetINIInt(SandboxConfigBinds, "binds", "Toggle show FPS key")
+Global KEY_TOGGLE_TOGGLEINFSTAM = GetINIInt(SandboxConfigBinds, "binds", "Toggle infinite stamina key")
+Global KEY_CALL_BIND = GetINIInt(SandboxConfigBinds, "binds", "Call bind key")
+Global KEY_TAKE_SCREENSHOT = GetINIInt(SandboxConfigBinds, "binds", "Screenshot key")
+Global KEYS_SELECT_ITEM%[10]
+For keyi = 0 To 9
+	KEYS_SELECT_ITEM[keyi] = GetINIInt(SandboxConfigBinds, "binds", "Select item " + (keyi + 1))
+	;CreateConsoleMsg(keyi + " " + GetINIInt(SandboxConfigBinds, "binds", "Select item " + (keyi + 1)), 255, 0, 255)
+Next
+Global KEY_DROP_ITEM% = GetINIInt(SandboxConfigBinds, "binds", "Drop selected item key")
+
+; [Maxwell the Cat]
+
+Global MaxwellCatDefaultSpeed% = GetINIFloat(SandboxConfigMain, "Maxwell the Cat", "default speed")
+Global MaxwellCatNaturalSpawn% = GetINIBool(SandboxConfigMain, "Maxwell the Cat", "can natural spawn")
+Global MaxwellCatNaturalSpawnRoom$ = GetINIString(SandboxConfigMain, "Maxwell the Cat", "natural spawn room")
 
 ; ===================================================================
 
@@ -165,8 +259,8 @@ Global Font1%, Font2%, Font3%, Font4%, Font5%
 Global ConsoleFont%
 
 ;Global VersionNumber$ = "1.3.11"
-Global VersionNumber$ = GetINIString(OptionFile, "gamectl", "version")
-Global CompatibleNumber$ = GetINIString(OptionFile, "gamectl", "compatible version") ;Only change this if the version given isn't working with the current build version - ENDSHN
+Global VersionNumber$ = GetINIString(SandboxConfigMain, "gamectl", "version")
+Global CompatibleNumber$ = GetINIString(SandboxConfigMain, "gamectl", "compatible version") ;Only change this if the version given isn't working with the current build version - ENDSHN
 
 Global MenuWhite%, MenuBlack%
 Global ButtonSFX% = LoadSound_Strict("SFX\Interact\Button.ogg")
@@ -174,7 +268,7 @@ Global ButtonSFX% = LoadSound_Strict("SFX\Interact\Button.ogg")
 Global EnableSFXRelease% = GetINIInt(OptionFile, "audio", "sfx release")
 Global EnableSFXRelease_Prev% = EnableSFXRelease%
 
-Global CanOpenConsole% = GetINIInt(OptionFile, "console", "enabled")
+Global CanOpenConsole% = GetINIInt(SandboxConfigDebug, "console", "enabled")
 
 Dim ArrowIMG(4)
 
@@ -222,7 +316,7 @@ Select TextureDetails%
 	Case 4
 		TextureFloat# = -0.8
 End Select
-Global ConsoleOpening% = GetINIInt(OptionFile, "console", "auto opening")
+Global ConsoleOpening% = GetINIInt(SandboxConfigMain, "console", "auto opening")
 Global SFXVolume# = GetINIFloat(OptionFile, "audio", "sound volume")
 
 Global Bit16Mode = GetINIInt(OptionFile, "options", "16bit")
@@ -425,19 +519,6 @@ Global KEY_INV = GetINIInt(OptionFile, "binds", "Inventory key")
 Global KEY_CROUCH = GetINIInt(OptionFile, "binds", "Crouch key")
 Global KEY_SAVE = GetINIInt(OptionFile, "binds", "Save key")
 Global KEY_CONSOLE = GetINIInt(OptionFile, "binds", "Console key")
-Global KEY_TOGGLE_NOCLIP = GetINIInt(OptionFile, "binds", "Toggle Noclip key")
-Global KEY_TOGGLE_HUD = GetINIInt(OptionFile, "binds", "Toggle HUD key")
-Global KEY_TOGGLE_DEBUGHUD = GetINIInt(OptionFile, "binds", "Toggle DebugHUD key")
-Global KEY_TOGGLE_NOBLINKING = GetINIInt(OptionFile, "binds", "Toggle no blinking key")
-Global KEY_TOGGLE_SHOWFPS = GetINIInt(OptionFile, "binds", "Toggle show FPS key")
-Global KEY_TOGGLE_TOGGLEINFSTAM = GetINIInt(OptionFile, "binds", "Toggle infinite stamina key")
-Global KEY_CALL_BIND = GetINIInt(OptionFile, "binds", "Call bind key")
-Global KEY_TAKE_SCREENSHOT = GetINIInt(OptionFile, "binds", "Screenshot key")
-Global KEYS_SELECT_ITEM%[10]
-For keyi = 0 To 9
-	KEYS_SELECT_ITEM[keyi] = GetINIInt(OptionFile, "binds", "Select item " + (keyi + 1))
-	;CreateConsoleMsg(keyi + " " + GetINIInt(OptionFile, "binds", "Select item " + (keyi + 1)), 255, 0, 255)
-Next
 
 Global MouseSmooth# = GetINIFloat(OptionFile,"options", "mouse smoothing", 1.0)
 
@@ -581,6 +662,11 @@ Function CreateConsoleMsg.ConsoleMsg(txt$ = "", r% = -1, g% = -1, b% = -1, isCom
 	Return c
 End Function
 
+Global ConsoleCurX% = ConsoleDefaultX
+Global ConsoleCurY% = ConsoleDefaultY
+Global ConsoleCurWidth% = ConsoleDefaultWidth
+Global ConsoleCurHeight% = ConsoleDefaultHeight
+
 Function UpdateConsole(exec_command% = True)
 	Local e.Events
 	
@@ -597,15 +683,17 @@ Function UpdateConsole(exec_command% = True)
 		ConsoleR = 255 : ConsoleG = 255 : ConsoleB = 255
 		
 		;Local x% = 0, y% = GraphicHeight-300*MenuScale, width% = GraphicWidth, height% = 300*MenuScale-30*MenuScale
-		Local x% = ConsoleX * MenuScale, y% = ConsoleY * MenuScale, width% = ConsoleWidth * MenuScale, height = ConsoleHeight * MenuScale
+		;Local x% = ConsoleX * MenuScale, y% = ConsoleY * MenuScale, width% = ConsoleWidth * MenuScale, height = ConsoleHeight * MenuScale
 
-		;CreateConsoleMsg("bfrX: " + Str(x), 255, 0, 255)
-		If x < 0 Then x = GraphicsWidth() + x
-		;CreateConsoleMsg(GraphicsHeight() + y)
-		If y < 0 Then y = GraphicsHeight() + y
-		If width <= 0 Then width = GraphicsWidth()
-		If height <= 0 Then height = GraphicsHeight()
-		;CreateConsoleMsg("aftWidth: " + Str(width), 255, 0, 255)
+		Local x% = ConsoleCurX
+		Local y% = ConsoleCurY
+		Local width% = ConsoleCurWidth
+		Local height% = ConsoleCurHeight
+
+		If x < 0 Then x = (GraphicWidth + x) ;* MenuScale
+		If y < 0 Then y = (GraphicHeight + y) ;* MenuScale
+		If width <= 0 Then width = GraphicWidth ;* MenuScale
+		If height <= 0 Then height = GraphicHeight ;* MenuScale
 
 		Local StrTemp$, temp%,  i%
 		Local ev.Events, r.Rooms, it.Items
@@ -981,7 +1069,6 @@ Function ExecConsole(cin$, silent% = False)
 					CreateConsoleMsg("- showfps")
 					CreateConsoleMsg("- 096state")
 					CreateConsoleMsg("- debughud")
-					CreateConsoleMsg("- camerafog [near] [far]")
 					CreateConsoleMsg("- gamma [value]")
 					CreateConsoleMsg("- infinitestamina")
 					CreateConsoleMsg("******************************")
@@ -997,15 +1084,15 @@ Function ExecConsole(cin$, silent% = False)
 					CreateConsoleMsg("Actives godmode, noclip, wireframe and")
 					CreateConsoleMsg("sets fog distance to 20 near, 30 far")
 					CreateConsoleMsg("******************************")
-				Case "camerafog"
-					CreateConsoleMsg("HELP - camerafog")
-					CreateConsoleMsg("******************************")
-					CreateConsoleMsg("Sets the draw distance of the fog.")
-					CreateConsoleMsg("The fog begins generating at 'CameraFogNear' units")
-					CreateConsoleMsg("away from the camera and becomes completely opaque")
-					CreateConsoleMsg("at 'CameraFogFar' units away from the camera.")
-					CreateConsoleMsg("Example: camerafog 20 40")
-					CreateConsoleMsg("******************************")
+				;Case "camerafog"
+				;	CreateConsoleMsg("HELP - camerafog")
+				;	CreateConsoleMsg("******************************")
+				;	CreateConsoleMsg("Sets the draw distance of the fog.")
+				;	CreateConsoleMsg("The fog begins generating at 'CameraFogNear' units")
+				;	CreateConsoleMsg("away from the camera and becomes completely opaque")
+				;	CreateConsoleMsg("at 'CameraFogFar' units away from the camera.")
+				;	CreateConsoleMsg("Example: camerafog 20 40")
+				;	CreateConsoleMsg("******************************")
 				Case "gamma"
 					CreateConsoleMsg("HELP - gamma")
 					CreateConsoleMsg("******************************")
@@ -1482,13 +1569,6 @@ Function ExecConsole(cin$, silent% = False)
 			Next
 			CreateConsoleMsg("Stopped all sounds.")
 			;[End Block]
-		Case "camerafog"
-			;[Block]
-			args$ = Right(cin, Len(cin) - Instr(cin, " "))
-			CameraFogNear = Float(Left(args, Len(args) - Instr(args, " ")))
-			CameraFogFar = Float(Right(args, Len(args) - Instr(args, " ")))
-			CreateConsoleMsg("Near set to: " + CameraFogNear + ", far set to: " + CameraFogFar)
-			;[End Block]
 		Case "gamma"
 			;[Block]
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
@@ -1808,6 +1888,12 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("execfile <relative filepath> - executes commands in Console from file <relative filepath> (comments (starts by #) and empty lines ignores).")
 			CreateConsoleMsg("execwithdelay <delay> <command> - executes <command> with <delay> in seconds.")
 			CreateConsoleMsg("log.flush <relative filepath='dump.log'> - stops current loging session and saves it to file <relative filepath>, then restarts log system.")
+			CreateConsoleMsg("console.pos.move <x offset:int> <y offset:int> - moves console on <x offset> and <y offset> offsets.")
+			CreateConsoleMsg("console.pos.set <x:int> <y:int> - sets position of console to <x> and <y>.")
+			CreateConsoleMsg("console.pos.reset - resets console position to default values (from config).")
+			CreateConsoleMsg("console.size.add <width offset:int> <height offset:int> - adds <width offset> and <height offset> to current size.")
+			CreateConsoleMsg("console.size.set <width:int> <height:int> - sets console size to <width> and <height>.")
+			CreateConsoleMsg("console.size.reset - resets console size to default values (from config).")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Console binds system control commands:", 255, 127, 0)
@@ -1838,7 +1924,6 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("addlight <r:0-255> <g:0-255> <b:0-255> - spawns light at current player position width RGB-color <r> <g> <b>.")
 			CreateConsoleMsg("secondarylight [on/true/1 off/false/0] - toggles (or sets) state of secondary light.")
 			CreateConsoleMsg("props.create <propname:cabinet.a/cabinet.b/keyboard> [scale=1] - spawns prop <propname> with scale <scale> at current player position.")
-			CreateConsoleMsg("camera.range <near> <far> - sets camera range to near <near> and far <far>.")
 			CreateConsoleMsg("item.nearest.remove - removes nearest item to player.")
 			CreateConsoleMsg("sound.play <relative filepath> [volume=SFX volume] - plays strict sound from file <relative filepath> with volume [volume] or you SFX volume if [volume] not set.")
 			CreateConsoleMsg("doors.all.open/doors.all.close - closes or opens all unlocked doors in Facility.")
@@ -1852,6 +1937,8 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("settexturelodbias <texturelodbias:float> - sets value of TextureLodBias instruction.")
 			CreateConsoleMsg("setlightflashtimer <time:float> - sets light flash timer to <time> value (in seconds).")
 			CreateConsoleMsg("setlightblinktimer <time:float> - sets light blink timer to <time> value (in seconds).")
+			CreateConsoleMsg("setmousesmoothing <modifer:float [0; +INF]> - sets mouse smoothing coeffcient <modifer>.")
+			CreateConsoleMsg("clearscp5131 - removes all instances of SCP-513-1.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Player control commands:", 255, 127, 0)
@@ -1862,7 +1949,22 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("player.position.set <x> <y> <z> - sets player position on <x>, <y> and <z>.")
 			CreateConsoleMsg("player.rotation.turn <pitch/x> <yaw/y> <roll/z> - moves player rotation on <pitch/x>, <yaw/y> and <roll/z> offset.")
 			CreateConsoleMsg("player.rotation.set <pitch/x> <yaw/y> <roll/z> - sets player rotation on <pitch/x>, <yaw/y> and <roll/z>.")
-			CreateConsoleMsg("player.camera.effect.pocketdimension.enable/player.camera.effect.pocketdimension.disable - enables or disables Pocket Dimension camera effect.")
+
+			CreateConsoleMsg(" ")
+			CreateConsoleMsg("- Camera control commands:", 255, 127, 0)
+			CreateConsoleMsg(" ")
+
+			;"effect.pocketdimension.give""camera.fog.range""camera.fog.color.reset""camera.fog.color"camera.clscolor"camera.range
+
+			CreateConsoleMsg("camera.range <near:float> <far:float> - sets camera <near> and <far> render range.")
+			CreateConsoleMsg("camera.clscolor <r:0-255> <g:0-255> <b:0-255> - sets camera CLS color to <r>, <g> and <b>.")
+			CreateConsoleMsg("camera.fog.color <r:0-255> <g:0-255> <b:0-255> - sets color of forced fog to <r>, <g>, <b> and enables it.")
+			CreateConsoleMsg("camera.fog.color.reset - disables forced fog.")
+			CreateConsoleMsg("camera.fog.range <near:float> <far:float> - sets camera fog range to <near> and <far>.")
+			CreateConsoleMsg("camera.pocketdimension-effect.give - gives Pocket Dimension camera effect to player.")
+			CreateConsoleMsg("camera.pocketdimension-effect.clear - clears Pocket Dimension camera effect from player.")
+			CreateConsoleMsg("camera.pocketdimension-effect.display.enable - enables display of Pocket Dimension camera effect.")
+			CreateConsoleMsg("camera.pocketdimension-effect.display.disable - disables display of Pocket Dimension camera effect.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Controllable NPC control commands:", 255, 127, 0)
@@ -2002,6 +2104,70 @@ Function ExecConsole(cin$, silent% = False)
 			End If
 			FlushLog(StrTemp)
 			CreateConsoleMsg("Flushed log to file " + Chr(34) + StrTemp + Chr(34) + ".", 0, 255, 0)
+
+		Case "console.pos.move"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			ConsoleCurX = ConsoleCurX + Int(StrTemp)
+			ConsoleCurY = ConsoleCurY + Int(StrTemp2)
+
+			CreateConsoleMsg("Moved position of console on (X|Y) " + Int(StrTemp) + ", " + Int(StrTemp2) + ".", 0, 255, 0)
+
+		Case "console.pos.set"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			ConsoleCurX = Int(StrTemp)
+			ConsoleCurY = Int(StrTemp2)
+
+			CreateConsoleMsg("Set position of console to (X|Y) " + Int(StrTemp) + ", " + Int(StrTemp2) + ".", 0, 255, 0)
+
+		Case "console.pos.reset"
+			ConsoleCurX = ConsoleDefaultX
+			ConsoleCurY = ConsoleDefaultY
+
+			CreateConsoleMsg("Resetted position of console.", 0, 255, 0)
+
+		Case "console.size.add"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			ConsoleCurWidth = ConsoleCurWidth + Int(StrTemp)
+			ConsoleCurHeight = ConsoleCurHeight + Int(StrTemp2)
+
+			CreateConsoleMsg("Add (width|height) " + ConsoleCurWidth + ", " + ConsoleCurHeight + " to current console size.", 0, 255, 0)
+
+		Case "console.size.set"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			ConsoleCurWidth = Int(StrTemp)
+			ConsoleCurHeight = Int(StrTemp2)
+
+			CreateConsoleMsg("Set size of console to (width|height) " + ConsoleCurWidth + ", " + ConsoleCurHeight + ".", 0, 255, 0)
+
+		Case "console.size.reset"
+			ConsoleCurWidth = ConsoleDefaultWidth
+			ConsoleCurHeight = ConsoleDefaultHeight
+
+			CreateConsoleMsg("Resetted size of console.", 0, 255, 0)
 
 		; === BINDS SYSTEM ===
 
@@ -2186,19 +2352,6 @@ Function ExecConsole(cin$, silent% = False)
 				CreateConsoleMsg("Created " + Chr(34) + StrTemp + Chr(34) + " prop.", 0, 255, 0)
 			End If
 
-		Case "camera.range"
-			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
-
-			args$ = Right(cin, Len(cin) - Instr(cin, " "))
-			StrTemp$ = Piece$(args$,1," ")
-			StrTemp2$ = Piece$(args$,2," ")
-
-			;CameraRange Camera, , Float(StrTemp2)
-			CameraRangeNear = Float(StrTemp)
-			CameraRangeFar = Float(StrTemp2)
-
-			CreateConsoleMsg("Set camera range to near " + Float(StrTemp) + " and far " + Float(StrTemp2) + ".", 0, 255, 0)
-
 		Case "item.nearest.remove"
 			it.Items = GetNearestItemToEntity(Collider)
 			RemoveItem(it)
@@ -2369,6 +2522,28 @@ Function ExecConsole(cin$, silent% = False)
 			LightBlink = Float(StrTemp)
 
 			CreateConsoleMsg("Set light blink timer to " + Float(StrTemp) + " seconds.", 0, 255, 0)
+
+		Case "setmousesmoothing"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			MouseSmooth = ClampFloat(Float(StrTemp), 0, INFINITY)
+
+			CreateConsoleMsg("Set mouse smoothing to " + MouseSmooth + ".", 0, 255, 0)
+
+		Case "clearscp5131"
+			Local find% = False
+			For n.NPCs = Each NPCs
+				If n\npctype = NPCtype5131 Then RemoveNPC(n) : find = True
+			Next
+			Curr5131 = Null
+
+			If find Then
+				CreateConsoleMsg("Removed all instances of SCP-513-1.", 0, 255, 0)
+			Else
+				CreateConsoleMsg("No instances of SCP-513-1 have been found.", 255, 0, 0)
+			End If
 
 		; === CONTROLLABLE NPC ===
 
@@ -3013,18 +3188,87 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Player rotation set on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
-		Case "player.camera.effect.pocketdimension.enable"
+		; === CAMERA CONTROL ===
+
+		Case "camera.range"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			CameraRangeNear = Float(StrTemp)
+			CameraRangeFar = Float(StrTemp2)
+
+			CreateConsoleMsg("Set camera range to near " + Float(StrTemp) + " and far " + Float(StrTemp2) + ".", 0, 255, 0)
+
+		Case "camera.clscolor"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			CameraClsColorR = ClampInt(Int(StrTemp), 0, 255)
+			CameraClsColorG = ClampInt(Int(StrTemp2), 0, 255)
+			CameraClsColorB = ClampInt(Int(StrTemp3), 0, 255)
+
+			CreateConsoleMsg("Set camera CLS color to (R|G|B) " + CameraClsColorR + ", " + CameraClsColorG + ", " + CameraClsColorB + ".", 0, 255, 0)
+
+		Case "camera.fog.color"
+			If CalculateCharCountInString(cin, " ") < 3 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+
+			CameraFogColorR = ClampInt(Int(StrTemp), 0, 255)
+			CameraFogColorG = ClampInt(Int(StrTemp2), 0, 255)
+			CameraFogColorB = ClampInt(Int(StrTemp3), 0, 255)
+			ForceCameraFogColor = True
+
+			CreateConsoleMsg("Set camera fog color to (R|G|B) " + CameraFogColorR + ", " + CameraFogColorG + ", " + CameraFogColorB + ".", 0, 255, 0)
+
+		Case "camera.fog.color.reset"
+			ForceCameraFogColor = False
+
+			CreateConsoleMsg("Resetted camera fog color.", 0, 255, 0)
+
+		Case "camera.fog.range"
+			If CalculateCharCountInString(cin, " ") < 2 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+
+			CameraFogNear = Float(StrTemp)
+			CameraFogFar = Float(StrTemp2)
+
+			CreateConsoleMsg("Set camera fog range to near " + Float(StrTemp) + " and far " + Float(StrTemp2) + ".", 0, 255, 0)
+
+		Case "camera.pocketdimension-effect.give"
 			PDCameraEffect = True
 
-			CreateConsoleMsg("Enabled Pocket Dimension camera effect.", 0, 255, 0)
+			CreateConsoleMsg("Gave Pocket Dimension camera effect.", 0, 255, 0)
 
-		Case "player.camera.effect.pocketdimension.disable"
+		Case "camera.pocketdimension-effect.clear"
 			PDCameraEffect = False
 
-			CreateConsoleMsg("Disabled Pocket Dimension camera effect.", 0, 255, 0)
+			CreateConsoleMsg("Cleared Pocket Dimension camera effect.", 0, 255, 0)
+
+		Case "camera.pocketdimension-effect.display.enable"
+			PocketDimensionCameraEffect = True
+
+			CreateConsoleMsg("Enabled display of Pocket Dimension camera effect.", 0, 255, 0)
+
+		Case "camera.pocketdimension-effect.display.disable"
+			PocketDimensionCameraEffect = False
+
+			CreateConsoleMsg("Disabled display of Pocket Dimension camera effect.", 0, 255, 0)
 
 		; === GFX DRIVER CONTROL ===
-
 
 		Case "gfxdriver.list"
 			For i = 1 To CountGfxDrivers()
@@ -3626,7 +3870,6 @@ CreateConsoleMsg("")
 ;CreateConsoleMsg("  - noclipspeed [x] (default = 2.0)")
 ;CreateConsoleMsg("  - wireframe [on/off]")
 ;CreateConsoleMsg("  - debughud [on/off]")
-;CreateConsoleMsg("  - camerafog [near] [far]")
 ;CreateConsoleMsg(" ")
 ;CreateConsoleMsg("  - status")
 ;CreateConsoleMsg("  - heal")
@@ -3671,9 +3914,6 @@ Global Camera%, CameraShake#, CurrCameraZoom#
 Global Brightness% = GetINIFloat("options.ini", "options", "brightness")
 Global CameraFogNear# = GetINIFloat("options.ini", "options", "camera fog near")
 Global CameraFogFar# = GetINIFloat("options.ini", "options", "camera fog far")
-
-Global CameraRangeNear# = GetINIFloat(OptionFile, "camera", "camera range near")
-Global CameraRangeFar# = GetINIFloat(OptionFile, "camera", "camera range far")
 
 Global StoredCameraFogFar# = CameraFogFar
 
@@ -4456,7 +4696,7 @@ Function UseDoor(d.Doors, showmsg%=True, playsfx%=True, access_level% = -1000)
 				EndIf
 				Return				
 			ElseIf temp >= d\KeyCard 
-				If access_level < -999 Then SelectedItem = Null
+				If access_level < -999 And DeselectItemOnKeycardReaderInteraction Then SelectedItem = Null
 				If showmsg = True Then
 					If d\locked Then
 						PlaySound_Strict KeyCardSFX2
@@ -4632,7 +4872,7 @@ Type Events
 End Type 
 
 Function CreateEvent.Events(eventname$, roomname$, id%, prob# = 0.0)
-	If Not GetINIInt(OptionFile, "events", eventname) Return
+	If Not GetINIInt(SandboxConfigEvents, "events", eventname) Return
 
 	;If eventname = "pj" CreateConsoleMsg("PJ event created.", 255, 0, 255)
 
@@ -5566,7 +5806,7 @@ Repeat
 	EntityAlpha fresize_image,1.0
 
 	If KeyHit(KEY_TAKE_SCREENSHOT) Then
-		If Not IsINIParameterExist(OptionFile, "screenshot", "next id") Then
+		If Not IsINIParameterExist(SandboxConfigScreenshot, "screenshot", "next id") Then
 			ScreenshotNextID = 0
 		End If
 		
@@ -5580,7 +5820,7 @@ Repeat
 
 		If TakeScreenshot(path) Then
 			ScreenshotNextID = ScreenshotNextID + 1
-			PutINIValue(OptionFile, "screenshot", "next id", ScreenshotNextID)
+			PutINIValue(SandboxConfigScreenshot, "screenshot", "next id", ScreenshotNextID)
 
 			CreateConsoleMsg("Saved screenshot at " + Chr(34) + path + Chr(34) + ".", 0, 127, 0)
 		Else
@@ -6420,6 +6660,11 @@ Function MovePlayer()
 	For keyi = 0 To 9
 		If KeyHit(KEYS_SELECT_ITEM[keyi]) SelectedItem = Inventory(keyi)
 	Next
+
+	If KeyHit(KEY_DROP_ITEM) And SelectedItem <> Null And PlayerCanFastDropItems Then
+		DropItem(SelectedItem)
+		SelectedItem = Null
+	End If
 	
 	If (Not NoClip) Then 
 		If ((KeyDown(KEY_DOWN) Or KeyDown(KEY_UP)) Or (KeyDown(KEY_RIGHT) Or KeyDown(KEY_LEFT)) And Playable) Or ForceMove>0 Then
@@ -6510,6 +6755,8 @@ Function MovePlayer()
 		
 		ResetEntity Collider
 	Else
+		MouseZSpeed() ; flush mouse z speed
+
 		temp2# = temp2 / Max((Injuries+3.0)/3.0,1.0)
 		If Injuries > 0.5 Then 
 			temp2 = temp2*Min((Sin(Shake/2)+1.2),1.0)
@@ -6580,6 +6827,11 @@ Function MovePlayer()
 			Else
 				DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
 			EndIf
+			;If Not LinePick(EntityX(Collider), EntityY(Collider), EntityZ(Collider), 0, -0.01, 0) Then
+			;	DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
+			;Else
+			;	DropSpeed# = 0
+			;End If
 		EndIf
 		PlayerFallingPickDistance# = 10.0
 		
@@ -6687,11 +6939,30 @@ Function MouseLook()
 		EndIf
 		;EndIf
 		
-		Local up# = (Sin(Shake) / (20.0+CrouchState*20.0))*0.6;, side# = Cos(Shake / 2.0) / 35.0		
+		Local up# = (Sin(Shake) / (20.0+CrouchState*20.0))*0.6  ;, side# = Cos(Shake / 2.0) / 35.0		
 		Local roll# = Max(Min(Sin(Shake/2)*2.5*Min(Injuries+0.25,3.0),8.0),-8.0)
 		
 		;k?�?�nnet?�?�n kameraa sivulle jos pelaaja on vammautunut
 		;RotateEntity Collider, EntityPitch(Collider), EntityYaw(Collider), Max(Min(up*30*Injuries,50),-50)
+		;If KeyHit(64) Then FreeCam = Not FreeCam
+		;If FreeCam Then
+		;	If KeyDown(KEY_UP_ARROW) Then MoveEntity Camera, 0, 0, 0.05
+		;	If KeyDown(KEY_DOWN_ARROW) Then MoveEntity Camera, 0, 0, -0.05
+		;	If KeyDown(KEY_RIGHT_ARROW) Then MoveEntity Camera, 0.05, 0, 0
+		;	If KeyDown(KEY_LEFT_ARROW) Then MoveEntity Camera, -0.05, 0, 0
+		;
+		;	RotateEntity Collider, 0, EntityYaw(Collider), 0
+		;	EntityAlpha Collider, 0.5
+		;Else
+		;	EntityAlpha Collider, 0
+		;
+		;	PositionEntity Camera, EntityX(Collider), EntityY(Collider), EntityZ(Collider)
+		;	RotateEntity Camera, 0, EntityYaw(Collider), roll*0.5
+		;	
+		;	MoveEntity Camera, side, up + 0.6 + CrouchState * -0.3, 0
+		;	;MoveEntity Camera, side, 0.6 + CrouchState * -0.3, 0
+		;End If
+
 		PositionEntity Camera, EntityX(Collider), EntityY(Collider), EntityZ(Collider)
 		RotateEntity Camera, 0, EntityYaw(Collider), roll*0.5
 		
@@ -6767,7 +7038,7 @@ Function MouseLook()
 	EndIf
 	
 	;p?�lyhiukkasia
-	If ParticleAmount=2
+	If ParticleAmount=2 And EnableDustParticlesSpawn
 		If Rand(35) = 1 Then
 			Local pvt% = CreatePivot()
 			PositionEntity(pvt, EntityX(Camera, True), EntityY(Camera, True), EntityZ(Camera, True))
@@ -7145,6 +7416,8 @@ Function DrawGUI()
 				End Select
 				AAText x - 50, 220, displaystr
 				AAText x - 50, 240, "SFX3Ds count: " + SFX3DsCount
+				AAText x - 50, 280, "FPSFactor: " + f2s(FPSFactor, 3)
+				AAText x - 50, 300, "FPSFactor2: " + f2s(FPSFactor2, 3)
 				
 				AAText x - 50, 400, "DeafPlayer: " + bool2s(DeafPlayer)
 				AAText x - 50, 420, "DeafTimer: " + f2s(DeafTimer, 3)
@@ -8090,7 +8363,7 @@ Function DrawGUI()
 					;[Block]
 					PlaySound_Strict LoadTempSound("SFX\SCP\513\Bell1.ogg")
 					
-					If Curr5131 = Null
+					If Curr5131 = Null And CanSpawnSCP5131 Then
 						Curr5131 = CreateNPC(NPCtype5131, 0,0,0)
 					EndIf	
 					SelectedItem = Null
@@ -9408,6 +9681,10 @@ Function DrawGUI()
 						SelectedItem = Null
 					EndIf
 					;[End Block]
+
+				Case "crowbar"
+					If PlayerCrowbar <> 0 Then ShowEntity PlayerCrowbar
+				
 				Default
 					;[Block]
 					;check if the item is an inventory-type object
@@ -10350,6 +10627,14 @@ Function LoadEntities()
 	EntityRadius Collider, 0.15, 0.30
 	EntityPickMode(Collider, 1)
 	EntityType Collider, HIT_PLAYER
+	
+	;Collider = CreateCylinder()
+	;EntityAlpha Collider, 0
+	;ScaleMesh Collider, 0.15, 0.3, 0.15
+	;EntityRadius Collider, 0.15, 0.30
+	;EntityPickMode(Collider, 1)
+	;EntityType Collider, HIT_PLAYER
+	;EntityColor Collider, 255, 0, 0
 	
 	Head = CreatePivot()
 	EntityRadius Head, 0.15
@@ -13487,78 +13772,6 @@ Function UpdateINIFile$(filename$)
 	CloseFile(f)
 End Function
 
-Function IsINIParameterExist%(file$, section$, parameter$)
-	Local TemporaryString$ = ""
-	
-	Local lfile.INIFile = Null
-	For k.INIFile = Each INIFile
-		If k\name = Lower(file) Then
-			lfile = k
-			Exit
-		EndIf
-	Next
-	
-	If lfile = Null Then
-		DebugLog "CREATE BANK FOR "+file
-		lfile = New INIFile
-		lfile\name = Lower(file)
-		lfile\bank = 0
-		UpdateINIFile(lfile\name)
-	EndIf
-	
-	lfile\bankOffset = 0
-	
-	section = Lower(section)
-	
-	;While Not Eof(f)
-	While lfile\bankOffset<lfile\size
-		Local strtemp$ = ReadINILine(lfile)
-		If Left(strtemp,1) = "[" Then
-			strtemp$ = Lower(strtemp)
-			If Mid(strtemp, 2, Len(strtemp)-2)=section Then
-				Repeat
-					TemporaryString = ReadINILine(lfile)
-					If Lower(Trim(Left(TemporaryString, Max(Instr(TemporaryString, "=") - 1, 0)))) = Lower(parameter) Then
-						;CloseFile f
-						Return True
-					EndIf
-				Until (Left(TemporaryString, 1) = "[") Or (lfile\bankOffset>=lfile\size)
-				
-				;CloseFile f
-				Return False
-			EndIf
-		EndIf
-	Wend
-	
-	Return False
-End Function
-
-Function IsINIParameterExist2%(file$, start%, parameter$)
-	Local TemporaryString$ = ""
-	Local f% = ReadFile(file)
-	
-	Local n%=0
-	While Not Eof(f)
-		Local strtemp$ = ReadLine(f)
-		n=n+1
-		If n=start Then 
-			Repeat
-				TemporaryString = ReadLine(f)
-				If Lower(Trim(Left(TemporaryString, Max(Instr(TemporaryString, "=") - 1, 0)))) = Lower(parameter) Then
-					CloseFile f
-					Return True
-				EndIf
-			Until Left(TemporaryString, 1) = "[" Or Eof(f)
-			CloseFile f
-			Return False
-		EndIf
-	Wend
-	
-	CloseFile f
-	
-	Return False
-End Function
-
 Function GetINIString$(file$, section$, parameter$, defaultvalue$="")
 	Local TemporaryString$ = ""
 	
@@ -13940,6 +14153,7 @@ Function RenderWorld2()
 	CameraProjMode Camera,1
 	CameraRange Camera, CameraRangeNear, CameraRangeFar
 	If ForceCameraFogColor Then CameraFogColor Camera, CameraFogColorR, CameraFogColorG, CameraFogColorB
+	CameraClsColor Camera, CameraClsColorR, CameraClsColorG, CameraClsColorB
 	
 	If WearingNightVision>0 And WearingNightVision<3 Then
 		AmbientLight Min(Brightness*2,255), Min(Brightness*2,255), Min(Brightness*2,255)
