@@ -70,6 +70,7 @@ Global LightFlickering% = GetINIBool(SandboxConfigMain, "gameplay", "light flick
 Global StopHidingEvent% = GetINIBool(SandboxConfigMain, "gameplay", "stop hiding")
 Global WaitKeyOrMouseInDrawLoading% = GetINIBool(SandboxConfigMain, "gameplay", "wait key or mouse in DrawLoading")
 Global CanSpawnSCP5131% = GetINIBool(SandboxConfigMain, "gameplay", "can spawn SCP-513-1")
+Global EnableNostalgiaEffect% = GetINIBool(SandboxConfigMain, "gameplay", "nostalgia effect")
 
 ; [debug]
 
@@ -200,6 +201,8 @@ Global PlayerCrowbarScaleY# = GetINIFloat(SandboxConfigPlayer, "crowbar", "scale
 Global PlayerCrowbarScaleZ# = GetINIFloat(SandboxConfigPlayer, "crowbar", "scale z")
 ;Global PlayerCrowbarSwingXCoefficient# = GetINIFloat(SandboxConfigPlayer, "crowbar", "swing x coefficient")
 ;Global PlayerCrowbarSwingZCoefficient# = GetINIFloat(SandboxConfigPlayer, "crowbar", "swing z coefficient")
+;Global PlayerCrowbarHorizontalShakeMultiplier# = GetINIFloat(SandboxConfigPlayer, "crowbar", "horizontal shake multiplier")
+Global PlayerCrowbarVerticalShakeMultiplier# = GetINIFloat(SandboxConfigPlayer, "crowbar", "vertical shake multiplier")
 
 ; [custom intro]
 
@@ -235,6 +238,9 @@ Global KEY_TOGGLE_DEBUGHUD = GetINIInt(SandboxConfigBinds, "binds", "Toggle Debu
 Global KEY_TOGGLE_NOBLINKING = GetINIInt(SandboxConfigBinds, "binds", "Toggle no blinking key")
 Global KEY_TOGGLE_SHOWFPS = GetINIInt(SandboxConfigBinds, "binds", "Toggle show FPS key")
 Global KEY_TOGGLE_TOGGLEINFSTAM = GetINIInt(SandboxConfigBinds, "binds", "Toggle infinite stamina key")
+Global KEY_TOGGLE_GODMODE = GetINIInt(SandboxConfigBinds, "binds", "Toggle GodMode key")
+Global KEY_TOGGLE_NOTARGET = GetINIInt(SandboxConfigBinds, "binds", "Toggle NoTarget key")
+
 Global KEY_CALL_BIND = GetINIInt(SandboxConfigBinds, "binds", "Call bind key")
 Global KEY_TAKE_SCREENSHOT = GetINIInt(SandboxConfigBinds, "binds", "Screenshot key")
 Global KEYS_SELECT_ITEM%[10]
@@ -1045,7 +1051,7 @@ Function ExecConsole(cin$, silent% = False)
 					CreateConsoleMsg("- infect [value]")
 					CreateConsoleMsg("- heal")
 					CreateConsoleMsg("- teleport [room name]")
-					CreateConsoleMsg("- spawnitem [item name]")
+					;CreateConsoleMsg("- spawnitem [item name]")
 					CreateConsoleMsg("- wireframe")
 					CreateConsoleMsg("- 106speed")
 					CreateConsoleMsg("- 106state")
@@ -1123,14 +1129,14 @@ Function ExecConsole(cin$, silent% = False)
 					CreateConsoleMsg("Allows only the edges of geometry to be rendered,")
 					CreateConsoleMsg("making everything else transparent.")
 					CreateConsoleMsg("******************************")
-				Case "spawnitem"
-					CreateConsoleMsg("HELP - spawnitem")
-					CreateConsoleMsg("******************************")
-					CreateConsoleMsg("Spawns an item at the player's location.")
-					CreateConsoleMsg("Any name that can appear in your inventory")
-					CreateConsoleMsg("is a valid parameter.")
-					CreateConsoleMsg("Example: spawnitem Key Card Omni")
-					CreateConsoleMsg("******************************")
+				;Case "spawnitem"
+				;	CreateConsoleMsg("HELP - spawnitem")
+				;	CreateConsoleMsg("******************************")
+				;	CreateConsoleMsg("Spawns an item at the player's location.")
+				;	CreateConsoleMsg("Any name that can appear in your inventory")
+				;	CreateConsoleMsg("is a valid parameter.")
+				;	CreateConsoleMsg("Example: spawnitem Key Card Omni")
+				;	CreateConsoleMsg("******************************")
 				Case "spawn"
 					CreateConsoleMsg("HELP - spawn")
 					CreateConsoleMsg("******************************")
@@ -1313,28 +1319,7 @@ Function ExecConsole(cin$, silent% = False)
 			
 			If PlayerRoom\RoomTemplate\Name <> StrTemp Then CreateConsoleMsg("Room not found.",255,150,0)
 			;[End Block]
-		Case "spawnitem"
-			;[Block]
-			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
-			temp = False 
-			For itt.Itemtemplates = Each ItemTemplates
-				If (Lower(itt\name) = StrTemp) Then
-					temp = True
-					CreateConsoleMsg(itt\name + " spawned.")
-					it.Items = CreateItem(itt\name, itt\tempname, EntityX(Collider), EntityY(Camera,True), EntityZ(Collider))
-					EntityType(it\collider, HIT_ITEM)
-					Exit
-				Else If (Lower(itt\tempname) = StrTemp) Then
-					temp = True
-					CreateConsoleMsg(itt\name + " spawned.")
-					it.Items = CreateItem(itt\name, itt\tempname, EntityX(Collider), EntityY(Camera,True), EntityZ(Collider))
-					EntityType(it\collider, HIT_ITEM)
-					Exit
-				End If
-			Next
-			
-			If temp = False Then CreateConsoleMsg("Item not found.",255,150,0)
-			;[End Block]
+		
 		Case "wireframe"
 			;[Block]
 			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
@@ -1924,7 +1909,6 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("addlight <r:0-255> <g:0-255> <b:0-255> - spawns light at current player position width RGB-color <r> <g> <b>.")
 			CreateConsoleMsg("secondarylight [on/true/1 off/false/0] - toggles (or sets) state of secondary light.")
 			CreateConsoleMsg("props.create <propname:cabinet.a/cabinet.b/keyboard> [scale=1] - spawns prop <propname> with scale <scale> at current player position.")
-			CreateConsoleMsg("item.nearest.remove - removes nearest item to player.")
 			CreateConsoleMsg("sound.play <relative filepath> [volume=SFX volume] - plays strict sound from file <relative filepath> with volume [volume] or you SFX volume if [volume] not set.")
 			CreateConsoleMsg("doors.all.open/doors.all.close - closes or opens all unlocked doors in Facility.")
 			CreateConsoleMsg("set106state <state:float> - sets state of current SCP-106.")
@@ -1939,6 +1923,15 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("setlightblinktimer <time:float> - sets light blink timer to <time> value (in seconds).")
 			CreateConsoleMsg("setmousesmoothing <modifer:float [0; +INF]> - sets mouse smoothing coeffcient <modifer>.")
 			CreateConsoleMsg("clearscp5131 - removes all instances of SCP-513-1.")
+
+			CreateConsoleMsg(" ")
+			CreateConsoleMsg("- Items control commands:", 255, 127, 0)
+			CreateConsoleMsg(" ")
+
+			CreateConsoleMsg("item.give <name/template name:string> - gives item to player if inventory ist't full.")
+			CreateConsoleMsg("item.spawn <name/template name:string> - spawns item at player position.")
+			CreateConsoleMsg("item.list - prints list of available item template ID-s & names.")
+			CreateConsoleMsg("item.nearest.remove - removes nearest item to player.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Player control commands:", 255, 127, 0)
@@ -2352,11 +2345,6 @@ Function ExecConsole(cin$, silent% = False)
 				CreateConsoleMsg("Created " + Chr(34) + StrTemp + Chr(34) + " prop.", 0, 255, 0)
 			End If
 
-		Case "item.nearest.remove"
-			it.Items = GetNearestItemToEntity(Collider)
-			RemoveItem(it)
-			CreateConsoleMsg("Removed nearest item to player.", 0, 255, 0)
-
 		Case "sound.play"
 			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
 
@@ -2544,6 +2532,51 @@ Function ExecConsole(cin$, silent% = False)
 			Else
 				CreateConsoleMsg("No instances of SCP-513-1 have been found.", 255, 0, 0)
 			End If
+
+		; === ITEMS ===
+
+		Case "item.give"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			slot% = GetFirstInventoryEmptySlot()
+			If slot < 0 Then CreateConsoleMsg("Inventory is full.", 255, 0, 0) : Return
+
+			itt.ItemTemplates = FindItemTemplateByName(StrTemp)
+			If itt = Null then itt = FindItemTemplateByTempName(StrTemp)
+			If itt = Null Then CreateConsoleMsg("Item not found.", 255, 0, 0) : Return
+
+			it.Items = CreateItem(itt\name, itt\tempname, 0, 0, 0)
+			EntityType(it\collider, HIT_ITEM)
+			PickItem(it)
+
+			CreateConsoleMsg("Gave item " + Chr(34) + itt\name + Chr(34) + ".", 0, 255, 0)
+
+		Case "item.list"
+			CreateConsoleMsg("Template ID = " + Chr(34) + "Item Name" + Chr(34) + ".", 255, 255, 255)
+			For itt.ItemTemplates = Each ItemTemplates
+				CreateConsoleMsg(itt\tempname + " = " + Chr(34) + itt\name + Chr(34) + ".", 0, 255, 255)
+			Next
+			
+		Case "item.nearest.remove"
+			it.Items = GetNearestItemToEntity(Collider)
+			RemoveItem(it)
+			CreateConsoleMsg("Removed nearest item to player.", 0, 255, 0)
+
+		Case "item.spawn"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			itt.ItemTemplates = FindItemTemplateByName(StrTemp)
+			If itt = Null then itt = FindItemTemplateByTempName(StrTemp)
+			If itt = Null Then CreateConsoleMsg("Item not found.", 255, 0, 0) : Return
+
+			it.Items = CreateItem(itt\name, itt\tempname, EntityX(Collider), EntityY(Camera, True), EntityZ(Collider))
+			EntityType(it\collider, HIT_ITEM)
+
+			CreateConsoleMsg("Spawned item " + Chr(34) + itt\name + Chr(34) + " at player.", 0, 255, 0)
 
 		; === CONTROLLABLE NPC ===
 
@@ -6657,8 +6690,20 @@ Function MovePlayer()
 		InfiniteStamina = Not InfiniteStamina
 	End If
 
+	If KeyHit(KEY_TOGGLE_GODMODE) Then
+		GodMode = Not GodMode
+	End If
+
+	If KeyHit(KEY_TOGGLE_NOTARGET) Then
+		NoTarget = Not NoTarget
+	End If
+
 	For keyi = 0 To 9
-		If KeyHit(KEYS_SELECT_ITEM[keyi]) SelectedItem = Inventory(keyi)
+		If KeyHit(KEYS_SELECT_ITEM[keyi]) Then
+			Local sel_it.Items = Inventory(keyi)
+			If sel_it\itemtemplate\sound <> 66 Then PlaySound_Strict(PickSFX(sel_it\itemtemplate\sound))
+			SelectedItem = sel_it
+		End If
 	Next
 
 	If KeyHit(KEY_DROP_ITEM) And SelectedItem <> Null And PlayerCanFastDropItems Then
@@ -6690,6 +6735,11 @@ Function MovePlayer()
 					Sprint = 0
 				EndIf
 			EndIf
+
+			If PlayerCrowbar <> 0 Then
+				MoveEntity PlayerCrowbar, 0, (Sin(Shake) / (20.0+CrouchState*20.0)) * PlayerCrowbarVerticalShakeMultiplier, 0
+				;TurnEntity PlayerCrowbar, Cos(Shake) * PlayerCrowbarHorizontalShakeMultiplier, 0, 0
+			End If
 			
 			temp# = (Shake Mod 360)
 			Local tempchn%
@@ -8599,7 +8649,7 @@ Function DrawGUI()
 								;don't resize because it messes up the masking
 								SelectedItem\itemtemplate\img=LoadImage_Strict(SelectedItem\itemtemplate\imgpath)	
 								
-								If (SelectedItem\state = 0) Then
+								If (SelectedItem\state = 0) And EnableNostalgiaEffect Then
 									Msg = Chr(34)+"Hey, I remember this movie!"+Chr(34)
 									MsgTimer = 70*10
 									PlaySound_Strict LoadTempSound("SFX\SCP\1162\NostalgiaCancer"+Rand(1,5)+".ogg")
@@ -9587,7 +9637,7 @@ Function DrawGUI()
 					
 					DrawImage(SelectedItem\itemtemplate\img, GraphicWidth / 2 - ImageWidth(SelectedItem\itemtemplate\img) / 2, GraphicHeight / 2 - ImageHeight(SelectedItem\itemtemplate\img) / 2)
 					
-					If SelectedItem\state = 0 Then
+					If SelectedItem\state = 0 And EnableNostalgiaEffect Then
 						PlaySound_Strict LoadTempSound("SFX\SCP\1162\NostalgiaCancer"+Rand(6,10)+".ogg")
 						Select SelectedItem\itemtemplate\name
 							Case "Old Badge"
@@ -9600,7 +9650,7 @@ Function DrawGUI()
 					;[End Block]
 				Case "key"
 					;[Block]
-					If SelectedItem\state = 0 Then
+					If SelectedItem\state = 0 And EnableNostalgiaEffect Then
 						PlaySound_Strict LoadTempSound("SFX\SCP\1162\NostalgiaCancer"+Rand(6,10)+".ogg")
 						
 						Msg = Chr(34)+"Isn't this the key to that old shack? The one where I... No, it can't be."+Chr(34)
@@ -9621,7 +9671,7 @@ Function DrawGUI()
 					
 					DrawImage(SelectedItem\itemtemplate\img, GraphicWidth / 2 - ImageWidth(SelectedItem\itemtemplate\img) / 2, GraphicHeight / 2 - ImageHeight(SelectedItem\itemtemplate\img) / 2)
 					
-					If SelectedItem\state = 0
+					If SelectedItem\state = 0 And EnableNostalgiaEffect Then
 						Select SelectedItem\itemtemplate\name
 							Case "Disciplinary Hearing DH-S-4137-17092"
 								BlurTimer = 1000
@@ -9635,7 +9685,7 @@ Function DrawGUI()
 					;[End Block]
 				Case "coin"
 					;[Block]
-					If SelectedItem\state = 0
+					If SelectedItem\state = 0 And EnableNostalgiaEffect Then
 						PlaySound_Strict LoadTempSound("SFX\SCP\1162\NostalgiaCancer"+Rand(1,5)+".ogg")
 					EndIf
 					

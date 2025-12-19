@@ -422,6 +422,44 @@ Function InsertStr$(dest$, src$, index%)
     Return sbefore + src + safter
 End Function
 
+Function GetFirstInventoryEmptySlot%()
+    Local slot% = -1
+
+    For i% = 0 To MaxItemAmount - 1
+        If Inventory(i) = Null Then slot = i : Exit
+    Next
+
+    Return slot
+End Function
+
+Function FindItemTemplateByName.ItemTemplates(name$)
+    Local ret.ItemTemplates = Null
+
+    For itt.ItemTemplates = Each ItemTemplates
+        If itt\name = name Then ret = itt : Exit
+    Next
+
+    Return ret
+End Function
+
+Function FindItemTemplateByTempName.ItemTemplates(tempname$)
+    Local ret.ItemTemplates = Null
+
+    For itt.ItemTemplates = Each ItemTemplates
+        If itt\tempname = tempname Then ret = itt : Exit
+    Next
+
+    Return ret
+End Function
+
+;Const GIVEITEMERR_OK% = 0
+;Const GIVEITEMERR_FULLINV% = 1
+;Const GIVEITEMERR_ITEMNOTFOUND% = 2
+;
+;Function GiveItem%(name_tempname$)
+;
+;End Function
+
 ;Function AdvReadInput$(aString$)
 ;	If KeyHit(211) Then
 ;		Return ""

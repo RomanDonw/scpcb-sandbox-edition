@@ -150,7 +150,7 @@ Function OnUpdate()
         Local d# = Vec3Length(EntityX(Collider, True), EntityY(Collider, True), EntityZ(Collider, True))
 
         ;RotateEntity PlayerCrowbar, Sin(d * PlayerCrowbarSwingXCoefficient), EntityYaw(PlayerCrowbar, False), Sin(d * PlayerCrowbarSwingZCoefficient), False
-        Local up# = (Sin(Shake) / (20.0+CrouchState*20.0))*0.6
+        ;Local up# = (Sin(Shake) / (20.0+CrouchState*20.0))*0.6
 
         ;MoveEntity PlayerCrowbar, 0, up + 0.6 + CrouchState * -0.3, 0
 
