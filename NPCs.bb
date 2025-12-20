@@ -3944,11 +3944,12 @@ Function UpdateNPCs()
 								Next
 								n\State2 = MilliSecs2()+5000
 							EndIf
-						ElseIf dist < 8.0
+						ElseIf dist < 8.0 And (Not NoTarget)
 							n\LastDist = Rnd(1.0, 2.5)
 							n\State = 1
 						EndIf
 					Case 1 ;staring at the player
+						If NoTarget Then n\State = 0
 						
 						If n\Frame<451 Then
 							angle = WrapAngle(CurveAngle(DeltaYaw(n\Collider, Collider)-180, (AnimTime(n\obj)-2.0)/1.2445, 15.0))
@@ -3969,7 +3970,9 @@ Function UpdateNPCs()
 						If dist < 1.0+n\LastDist Then
 							n\State = Rand(2,3)
 						EndIf
-					Case 2 ;roll towards the player and make a sound, and then escape	
+					Case 2 ;roll towards the player and make a sound, and then escape
+						If NoTarget Then n\State = 0
+
 						If n\Frame < 647 Then 
 							angle = CurveAngle(0, (AnimTime(n\obj)-2.0)/1.2445, 5.0)
 							
