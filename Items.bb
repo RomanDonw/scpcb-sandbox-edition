@@ -484,6 +484,9 @@ End Function
 Function RemoveItem(i.Items)
 	CatchErrors("Uncaught (RemoveItem)")
 	Local n
+
+	If i = Null Then Return
+
 	FreeEntity(i\model) : FreeEntity(i\collider) : i\collider = 0
 	
 	For n% = 0 To MaxItemAmount - 1

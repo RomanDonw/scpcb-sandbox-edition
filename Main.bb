@@ -75,6 +75,7 @@ Global EnableNostalgiaEffect% = GetINIBool(SandboxConfigMain, "gameplay", "nosta
 ; [debug]
 
 Global DebugShowWaypoints% = GetINIBool(SandboxConfigDebug, "debug", "show waypoints")
+Global AllowTestsCommands% = GetINIBool(SandboxConfigDebug, "debug", "allow tests commands")
 
 ; [console]
 
@@ -202,7 +203,10 @@ Global PlayerCrowbarScaleZ# = GetINIFloat(SandboxConfigPlayer, "crowbar", "scale
 ;Global PlayerCrowbarSwingXCoefficient# = GetINIFloat(SandboxConfigPlayer, "crowbar", "swing x coefficient")
 ;Global PlayerCrowbarSwingZCoefficient# = GetINIFloat(SandboxConfigPlayer, "crowbar", "swing z coefficient")
 ;Global PlayerCrowbarHorizontalShakeMultiplier# = GetINIFloat(SandboxConfigPlayer, "crowbar", "horizontal shake multiplier")
-Global PlayerCrowbarVerticalShakeMultiplier# = GetINIFloat(SandboxConfigPlayer, "crowbar", "vertical shake multiplier")
+;Global PlayerCrowbarVerticalShakeMultiplier# = GetINIFloat(SandboxConfigPlayer, "crowbar", "vertical shake multiplier")
+Global PlayerCrowbarHitCooldown# = GetINIFloat(SandboxConfigPlayer, "crowbar", "hit cooldown")
+Global PlayerCrowbarMissCooldown# = GetINIFloat(SandboxConfigPlayer, "crowbar", "miss cooldown")
+Global PlayerCrowbarMaxInteractionDistance# = GetINIFloat(SandboxConfigPlayer, "crowbar", "max interaction distance")
 
 ; [custom intro]
 
@@ -240,6 +244,7 @@ Global KEY_TOGGLE_SHOWFPS = GetINIInt(SandboxConfigBinds, "binds", "Toggle show 
 Global KEY_TOGGLE_TOGGLEINFSTAM = GetINIInt(SandboxConfigBinds, "binds", "Toggle infinite stamina key")
 Global KEY_TOGGLE_GODMODE = GetINIInt(SandboxConfigBinds, "binds", "Toggle GodMode key")
 Global KEY_TOGGLE_NOTARGET = GetINIInt(SandboxConfigBinds, "binds", "Toggle NoTarget key")
+Global KEY_TOGGLE_DOOROPENBYPASS = GetINIInt(SandboxConfigBinds, "binds", "Toggle DoorOpenBypass key")
 
 Global KEY_CALL_BIND = GetINIInt(SandboxConfigBinds, "binds", "Call bind key")
 Global KEY_TAKE_SCREENSHOT = GetINIInt(SandboxConfigBinds, "binds", "Screenshot key")
@@ -322,7 +327,7 @@ Select TextureDetails%
 	Case 4
 		TextureFloat# = -0.8
 End Select
-Global ConsoleOpening% = GetINIInt(SandboxConfigMain, "console", "auto opening")
+Global ConsoleOpening% = GetINIInt(SandboxConfigDebug, "console", "auto opening")
 Global SFXVolume# = GetINIFloat(OptionFile, "audio", "sound volume")
 
 Global Bit16Mode = GetINIInt(OptionFile, "options", "16bit")
@@ -575,7 +580,7 @@ Global GrabbedEntity%
 Global InvertMouse% = GetINIInt(OptionFile, "options", "invert mouse y")
 Global MouseHit1%, MouseDown1%, MouseHit2%, DoubleClick%, LastMouseHit1%, MouseUp1%
 
-Global GodMode%, NoClip%, NoBlinking%, NoClipSpeed# = DefaultNoClipSpeed
+Global GodMode%, NoClip%, NoBlinking%, NoClipSpeed# = DefaultNoClipSpeed, DoorOpenBypass%
 
 Global CoffinDistance# = 100.0
 
@@ -673,7 +678,7 @@ Global ConsoleCurY% = ConsoleDefaultY
 Global ConsoleCurWidth% = ConsoleDefaultWidth
 Global ConsoleCurHeight% = ConsoleDefaultHeight
 
-Function UpdateConsole(exec_command% = True)
+Function UpdateConsole() ;(exec_command% = True)
 	Local e.Events
 	
 	If CanOpenConsole = False Then
@@ -857,7 +862,7 @@ Function UpdateConsole(exec_command% = True)
 			ConsoleReissue = Null
 			ConsoleScroll = 0
 			
-			If exec_command Then ExecConsole(ConsoleInput)
+			ExecConsole(ConsoleInput)
 			
 			ConsoleInput = ""
 		End If
@@ -1012,6 +1017,385 @@ Function UpdateConsole(exec_command% = True)
 	AASetFont Font1
 	
 End Function
+
+;Function UpdateConsole() ;(exec_command% = True)
+;	Local e.Events
+;	
+;	If CanOpenConsole = False Then
+;		ConsoleOpen = False
+;		Return
+;	EndIf
+;	
+;	If ConsoleOpen Then
+;		Local cm.ConsoleMsg
+;		
+;		AASetFont ConsoleFont
+;		
+;		ConsoleR = 255 : ConsoleG = 255 : ConsoleB = 255
+;		
+;		;Local x% = 0, y% = GraphicHeight-300*MenuScale, width% = GraphicWidth, height% = 300*MenuScale-30*MenuScale
+;		;Local x% = ConsoleX * MenuScale, y% = ConsoleY * MenuScale, width% = ConsoleWidth * MenuScale, height = ConsoleHeight * MenuScale
+;
+;		Local x% = ConsoleCurX
+;		Local y% = ConsoleCurY
+;		Local width% = ConsoleCurWidth
+;		Local height% = ConsoleCurHeight
+;
+;		If x < 0 Then x = (GraphicWidth + x) ;* MenuScale
+;		If y < 0 Then y = (GraphicHeight + y) ;* MenuScale
+;		If width <= 0 Then width = GraphicWidth ;* MenuScale
+;		If height <= 0 Then height = GraphicHeight ;* MenuScale
+;
+;		Local StrTemp$, temp%,  i%
+;		Local ev.Events, r.Rooms, it.Items
+;		
+;		DrawFrame x,y,width,height+30*MenuScale
+;		
+;		Local consoleHeight% = 0
+;		Local scrollbarHeight% = 0
+;		For cm.ConsoleMsg = Each ConsoleMsg
+;			;consoleHeight = consoleHeight + 15*MenuScale
+;			text$ = cm\txt
+;			txt_$ = ""
+;
+;			While Len(text) > 0
+;				If Len(text) < 40 Then
+;					txt_ = text
+;					text = ""
+;				Else
+;					txt_ = Left(text, 40)
+;					text = Right(text, Len(text) - 40)
+;				End If
+;
+;				consoleHeight = consoleHeight + AAStringHeight(txt_)
+;			Wend
+;
+;			;consoleHeight = consoleHeight + AAStringHeight(cm\txt)
+;		Next
+;		scrollbarHeight = (Float(height)/Float(consoleHeight))*height
+;		If scrollbarHeight>height Then scrollbarHeight = height
+;		If consoleHeight<height Then consoleHeight = height
+;		
+;		Color 50,50,50
+;		inBar% = MouseOn(x+width-26*MenuScale,y,26*MenuScale,height)
+;		If inBar Then Color 70,70,70
+;		Rect x+width-26*MenuScale,y,26*MenuScale,height,True
+;		
+;		
+;		Color 120,120,120
+;		inBox% = MouseOn(x+width-23*MenuScale,y+height-scrollbarHeight+(ConsoleScroll*scrollbarHeight/height),20*MenuScale,scrollbarHeight)
+;		If inBox Then Color 200,200,200
+;		If ConsoleScrollDragging Then Color 255,255,255
+;		Rect x+width-23*MenuScale,y+height-scrollbarHeight+(ConsoleScroll*scrollbarHeight/height),20*MenuScale,scrollbarHeight,True
+;		
+;		If Not MouseDown(1) Then
+;			ConsoleScrollDragging=False
+;		ElseIf ConsoleScrollDragging Then
+;			ConsoleScroll = ConsoleScroll+((ScaledMouseY()-ConsoleMouseMem)*height/scrollbarHeight)
+;			ConsoleMouseMem = ScaledMouseY()
+;		EndIf
+;		
+;		If (Not ConsoleScrollDragging) Then
+;			If MouseHit1 Then
+;				If inBox Then
+;					ConsoleScrollDragging=True
+;					ConsoleMouseMem = ScaledMouseY()
+;				ElseIf inBar Then
+;					ConsoleScroll = ConsoleScroll+((ScaledMouseY()-(y+height))*consoleHeight/height+(height/2))
+;					ConsoleScroll = ConsoleScroll/2
+;				EndIf
+;			EndIf
+;		EndIf
+;		
+;		mouseScroll = MouseZSpeed()
+;		;CreateConsoleMsg(mouseScroll)
+;		If mouseScroll <> 0 Then
+;			ConsoleScroll = ConsoleScroll + 15*MenuScale * -mouseScroll
+;		EndIf
+;		;ConsoleScroll = MouseZ() * MenuScale * 15
+;		
+;		Local reissuePos%
+;		If KeyHit(200) Then
+;			reissuePos% = 0
+;			If (ConsoleReissue=Null) Then
+;				ConsoleReissue=First ConsoleMsg
+;				
+;				While (ConsoleReissue<>Null)
+;					If (ConsoleReissue\isCommand) Then
+;						Exit
+;					EndIf
+;					reissuePos = reissuePos - 15*MenuScale
+;					ConsoleReissue = After ConsoleReissue
+;				Wend
+;				
+;			Else
+;				cm.ConsoleMsg = First ConsoleMsg
+;				While cm<>Null
+;					If cm=ConsoleReissue Then Exit
+;					reissuePos = reissuePos-15*MenuScale
+;					cm = After cm
+;				Wend
+;				ConsoleReissue = After ConsoleReissue
+;				reissuePos = reissuePos-15*MenuScale
+;				
+;				While True
+;					If (ConsoleReissue=Null) Then
+;						ConsoleReissue=First ConsoleMsg
+;						reissuePos = 0
+;					EndIf
+;				
+;					If (ConsoleReissue\isCommand) Then
+;						Exit
+;					EndIf
+;					reissuePos = reissuePos - 15*MenuScale
+;					ConsoleReissue = After ConsoleReissue
+;				Wend
+;			EndIf
+;			
+;			If ConsoleReissue<>Null Then
+;				ConsoleInput = ConsoleReissue\txt
+;				ConsoleScroll = reissuePos+(height/2)
+;			EndIf
+;		EndIf
+;		
+;		If KeyHit(208) Then
+;			reissuePos% = -consoleHeight+15*MenuScale
+;			If (ConsoleReissue=Null) Then
+;				ConsoleReissue=Last ConsoleMsg
+;				
+;				While (ConsoleReissue<>Null)
+;					If (ConsoleReissue\isCommand) Then
+;						Exit
+;					EndIf
+;					reissuePos = reissuePos + 15*MenuScale
+;					ConsoleReissue = Before ConsoleReissue
+;				Wend
+;				
+;			Else
+;				cm.ConsoleMsg = Last ConsoleMsg
+;				While cm<>Null
+;					If cm=ConsoleReissue Then Exit
+;					reissuePos = reissuePos+15*MenuScale
+;					cm = Before cm
+;				Wend
+;				ConsoleReissue = Before ConsoleReissue
+;				reissuePos = reissuePos+15*MenuScale
+;				
+;				While True
+;					If (ConsoleReissue=Null) Then
+;						ConsoleReissue=Last ConsoleMsg
+;						reissuePos=-consoleHeight+15*MenuScale
+;					EndIf
+;				
+;					If (ConsoleReissue\isCommand) Then
+;						Exit
+;					EndIf
+;					reissuePos = reissuePos + 15*MenuScale
+;					ConsoleReissue = Before ConsoleReissue
+;				Wend
+;			EndIf
+;			
+;			If ConsoleReissue<>Null Then
+;				ConsoleInput = ConsoleReissue\txt
+;				ConsoleScroll = reissuePos+(height/2)
+;			EndIf
+;		EndIf
+;		
+;		If ConsoleScroll<-consoleHeight+height Then ConsoleScroll = -consoleHeight+height
+;		If ConsoleScroll>0 Then ConsoleScroll = 0
+;		
+;		Color 255, 255, 255
+;		
+;		SelectedInputBox = 2
+;		Local oldConsoleInput$ = ConsoleInput
+;		ConsoleInput = InputBox(x, y + height, width, 30*MenuScale, ConsoleInput, 2)
+;		If oldConsoleInput<>ConsoleInput Then
+;			ConsoleReissue = Null
+;		EndIf
+;		If ConsoleInputLimit > 0 Then ConsoleInput = Left(ConsoleInput, ConsoleInputLimit)
+;		
+;		If KeyHit(28) And ConsoleInput <> "" Then
+;			ConsoleReissue = Null
+;			ConsoleScroll = 0
+;			
+;			;If exec_command Then ExecConsole(ConsoleInput)
+;
+;			ExecConsole(ConsoleInput)
+;			
+;			ConsoleInput = ""
+;		End If
+;		
+;		;Log("UpdateConsole", "ConsoleScroll = " + ConsoleScroll)
+;		Local TempY% = y - height + ConsoleScroll   ; + height - 25*MenuScale - ConsoleScroll
+;		Local count% = 0
+;		;For cm.ConsoleMsg = Each ConsoleMsg
+;		cm.ConsoleMsg = Last ConsoleMsg
+;		Repeat
+;			count = count+1
+;			If count > ConsoleBufferLimit And ConsoleBufferLimit > 0 Then
+;				Delete cm
+;			Else
+;				;text$ = cm\txt
+;				;
+;				;If cm\isCommand Then text = "> " + text
+;				;
+;				;Repeat
+;				;	If Not (TempY >= y And TempY < y + height - 20*MenuScale) Then Exit
+;				;
+;				;	;If TempY >= y And TempY < y + height - 20*MenuScale Then
+;				;		If cm=ConsoleReissue Then
+;				;			Color cm\r/4,cm\g/4,cm\b/4
+;				;			Rect x,TempY-2*MenuScale,width-30*MenuScale,24*MenuScale,True
+;				;		EndIf
+;				;		Color cm\r,cm\g,cm\b
+;				;		;If cm\isCommand Then
+;				;		;	AAText(x + 20*MenuScale, TempY, "> "+cm\txt)
+;				;		;Else
+;				;		;	AAText(x + 20*MenuScale, TempY, cm\txt)
+;				;		;EndIf
+;				;
+;				;		AAText(x + 20*MenuScale, TempY, Left(text, 15))
+;				;
+;				;		;Local cm_first_line_display% = True
+;				;		;Repeat
+;				;		;
+;				;		;	Local cm_display_text$
+;				;		;	If Len(cm\txt) > ConsoleMaxCharsCountInSignleLine Then
+;				;		;		cm_display_text = Left(cm\txt, ConsoleMaxCharsCountInSignleLine)
+;				;		;		cm\txt = Right(cm\txt, Len(cm\txt) - ConsoleMaxCharsCountInSignleLine)
+;				;		;	Else
+;				;		;		cm_display_text = cm\txt
+;				;		;	End If
+;				;		;
+;				;		;	If cm\isCommand and cm_first_line_display Then
+;				;		;		AAText(x + 20*MenuScale, TempY, "> " + cm_display_text)
+;				;		;		cm_first_line_display = False
+;				;		;	Else
+;				;		;		AAText(x + 20*MenuScale, TempY, cm_display_text)
+;				;		;	EndIf
+;				;		;	TempY = TempY - 15*MenuScale
+;				;		;
+;				;		;Until Len(cm\txt) = 0 Or cm_display_text = cm\txt
+;				;	;EndIf
+;				;	text = Right(text, Max(Len(text) - 15))
+;				;	TempY = TempY - 15*MenuScale
+;				;Until Len(text) <= 0
+;
+;				If cm\RGBIridescence Then
+;					Select cm\RGBIridescenceState
+;						Case 0
+;							If cm\r < 255 Then
+;								cm\r = cm\r + 1
+;							Else
+;								cm\RGBIridescenceState = 1
+;							End If
+;
+;						Case 1
+;							If cm\b > 0 Then
+;								cm\b = cm\b - 1
+;							Else
+;								cm\RGBIridescenceState = 2
+;							End If
+;
+;						Case 2
+;							If cm\g < 255 Then
+;								cm\g = cm\g + 1
+;							Else
+;								cm\RGBIridescenceState = 3
+;							End If
+;
+;						Case 3
+;							If cm\r > 0 Then
+;								cm\r = cm\r - 1
+;							Else
+;								cm\RGBIridescenceState = 4
+;							End If
+;
+;						Case 4
+;							If cm\b < 255 Then
+;								cm\b = cm\b + 1
+;							Else
+;								cm\RGBIridescenceState = 5
+;							End If
+;
+;						Case 5
+;							If cm\g > 0 Then
+;								cm\g = cm\g - 1
+;							Else
+;								cm\RGBIridescenceState = 0
+;							End If
+;							
+;						Default
+;							cm\RGBIridescenceState = 0
+;					End Select
+;				End If
+;
+;				text$ = cm\txt
+;				txt_$ = ""
+;
+;				Color cm\r, cm\g, cm\b
+;				While Len(text) > 0
+;					If Len(text) < 40 Then
+;						txt_ = text
+;						text = ""
+;					Else
+;						txt_ = Left(text, 40)
+;						text = Right(text, Len(text) - 40)
+;					End If
+;
+;					;Log("UpdateConsole", "Text: " + Chr(34) + text + Chr(34) + ", txt_ = " + Chr(34) + txt_ + Chr(34) + ".")
+;
+;					If TempY >= y And TempY < y + height - 20*MenuScale Then
+;						;If cm=ConsoleReissue Then
+;						;	Color cm\r/4,cm\g/4,cm\b/4
+;						;	Rect x,TempY-2*MenuScale,width-30*MenuScale,24*MenuScale,True
+;						;EndIf
+;
+;						;Color cm\r,cm\g,cm\b
+;
+;						If cm\isCommand Then
+;							AAText(x + 20*MenuScale, TempY, "> " + txt_)
+;						Else
+;							AAText(x + 20*MenuScale, TempY, txt_)
+;						EndIf
+;
+;						;Local cm_first_line_display% = True
+;						;Repeat
+;						;
+;						;	Local cm_display_text$
+;						;	If Len(cm\txt) > ConsoleMaxCharsCountInSignleLine Then
+;						;		cm_display_text = Left(cm\txt, ConsoleMaxCharsCountInSignleLine)
+;						;		cm\txt = Right(cm\txt, Len(cm\txt) - ConsoleMaxCharsCountInSignleLine)
+;						;	Else
+;						;		cm_display_text = cm\txt
+;						;	End If
+;						;
+;						;	If cm\isCommand and cm_first_line_display Then
+;						;		AAText(x + 20*MenuScale, TempY, "> " + cm_display_text)
+;						;		cm_first_line_display = False
+;						;	Else
+;						;		AAText(x + 20*MenuScale, TempY, cm_display_text)
+;						;	EndIf
+;						;	TempY = TempY - 15*MenuScale
+;						;
+;						;Until Len(cm\txt) = 0 Or cm_display_text = cm\txt
+;					EndIf
+;					TempY = TempY + 15*MenuScale
+;				Wend
+;			EndIf
+;			
+;		;Next
+;		cm = Before cm
+;		Until cm = Null
+;		
+;		Color 255,255,255
+;		
+;		If Fullscreen Then DrawImage CursorIMG, ScaledMouseX(),ScaledMouseY()
+;	End If
+;	
+;	AASetFont Font1
+;	
+;End Function
 
 
 Global CurrDoor.Doors = Null
@@ -1869,6 +2253,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("chelp - returns help list of custom commands.")
+			If AllowTestsCommands Then CreateConsoleMsg("chelp.tests - prints list of tests commands.", 255, 255, 0)
 			CreateConsoleMsg("cls - clears console.")
 			CreateConsoleMsg("execfile <relative filepath> - executes commands in Console from file <relative filepath> (comments (starts by #) and empty lines ignores).")
 			CreateConsoleMsg("execwithdelay <delay> <command> - executes <command> with <delay> in seconds.")
@@ -1897,12 +2282,14 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("nb = noblinking.")
 			CreateConsoleMsg("gm = godmode.")
 			CreateConsoleMsg("st = infinitestamina.")
+			CreateConsoleMsg("dob = dooropenbypass.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Uncategorized commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
 			CreateConsoleMsg("noblinking [on/true/1 off/false/0] - toggles no blinking mode (or sets if special parameter set).")
+			CreateConsoleMsg("dooropenbypass [on/true/1 off/false/0] - toggles door open bypass mode (or sets if special parameter set).")
 			CreateConsoleMsg("spawnroom <roomname> - spawns room with using room template <roomname> at current player position.")
 			CreateConsoleMsg("setcurrentroom <roomname> - sets current player room to <roomname>.")
 			CreateConsoleMsg("enablefog/disablefog - toggles display fog entity.")
@@ -1923,6 +2310,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("setlightblinktimer <time:float> - sets light blink timer to <time> value (in seconds).")
 			CreateConsoleMsg("setmousesmoothing <modifer:float [0; +INF]> - sets mouse smoothing coeffcient <modifer>.")
 			CreateConsoleMsg("clearscp5131 - removes all instances of SCP-513-1.")
+			CreateConsoleMsg("npc.nearest.remove - removes nearest NPC to player.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Items control commands:", 255, 127, 0)
@@ -2033,10 +2421,10 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("- Door control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
 
-			CreateConsoleMsg("door.create <x> <y> <z> <angle> <type:light/default|big|heavy|elevator - integer> [access level - integer] [access code - string] - creates a door with specified properties.")
-			CreateConsoleMsg("door.createandselect <x> <y> <z> <angle> <type:light/default|big|heavy|elevator - integer> [access level - integer] [access code - string] - creates and selects a door with specified properties.")
-			CreateConsoleMsg("door.create.atplayer <type:light/default|big|heavy|elevator - integer> [access level - integer] [access code - string] - creates a door at player X, Y, Z and yaw (y) with specific properties.")
-			CreateConsoleMsg("door.createandselect.atplayer <type:light/default|big|heavy|elevator - integer> [access level - integer] [access code - string] - creates and selects a door at player X, Y, Z and yaw (y) with specific properties.")
+			CreateConsoleMsg("door.create <x> <y> <z> <angle> <type:light/default|big/cont/containment|heavy|elevator - integer> [access level - integer] [access code - string] - creates a door with specified properties.")
+			CreateConsoleMsg("door.createandselect <x> <y> <z> <angle> <type:light/default|big/cont/containment|heavy|elevator - integer> [access level - integer] [access code - string] - creates and selects a door with specified properties.")
+			CreateConsoleMsg("door.create.atplayer <type:light/default|big/cont/containment|heavy|elevator - integer> [access level - integer] [access code - string] - creates a door at player X, Y, Z and yaw (y) with specific properties.")
+			CreateConsoleMsg("door.createandselect.atplayer <type:light/default|big/cont/containment|heavy|elevator - integer> [access level - integer] [access code - string] - creates and selects a door at player X, Y, Z and yaw (y) with specific properties.")
 			CreateConsoleMsg("door.select.nearesttoplayer - selects nearest to player door.")
 			CreateConsoleMsg("door.select.nearesttopoint <x> <y> <z> - selects nearest door to X, Y and Z position.")
 			CreateConsoleMsg("door.selected.deselect - deselects selected door.")
@@ -2055,8 +2443,51 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("door.selected.position.move <x> <y> <z> - moves position of selected door.")
 			CreateConsoleMsg("door.selected.position.translate <x> <y> <z> - translates position of selected door.")
 			CreateConsoleMsg("door.selected.position.set <x> <y> <z> - sets position of selected door.")
+			CreateConsoleMsg("door.selected.button.create <button index:int=0|1> - creates button with specified index if it didn't exist before.")
+			CreateConsoleMsg("door.selected.button.remove <button index:int=0|1> - removes button with specified index if it exist.")
+			CreateConsoleMsg("door.selected.button.position.move <button index:int=0|1> <x:float> <y:float> <z:float> - moves position of button with specified index on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("door.selected.button.position.translate <button index:int=0|1> <x:float> <y:float> <z:float> - translates position of button with specified index on <x>, <y> and <z> offset.")
+			CreateConsoleMsg("door.selected.button.position.set <button index:int=0|1> <x:float> <y:float> <z:float> - sets position of button with specified index to <x>, <y> and <z>.")
+			CreateConsoleMsg("door.selected.button.rotation.turn <button index:int=0|1> <pitch:float> <yaw:float> <roll:float> - turns rotation of button with specified index on <pitch>, <yaw> and <roll> offset.")
+			CreateConsoleMsg("door.selected.button.rotation.set <button index:int=0|1> <pitch:float> <yaw:float> <roll:float> - sets rotation of button with specified index to <pitch>, <yaw> and <roll>.")
+			;CreateConsoleMsg("door.selected.buttons.all.create")
+			CreateConsoleMsg("door.selected.buttons.all.remove - removes all exist buttons of selected door.")
+			CreateConsoleMsg("door.selected.buttons.list - returns list of indices of all exist buttons of selected door.")
+			CreateConsoleMsg("door.selected.frame.show/door.selected.frame.hide - shows or hides frame of selected door.")
 
-			CreateConsoleMsg()
+			CreateConsoleMsg("")
+
+			ConsoleR = oldcr : ConsoleG = oldcg : ConsoleB = oldcb
+
+		Case "chelp.tests"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			oldcr = ConsoleR : oldcg = ConsoleG : oldcb = ConsoleB
+			ConsoleR = 0 : ConsoleG = 255 : ConsoleB = 255
+
+			CreateConsoleMsg("- SCP-049 tests:", 255, 127, 0)
+
+			CreateConsoleMsg("  test.049.start")
+			CreateConsoleMsg("  test.049.stop")
+			CreateConsoleMsg("  test.049.moveanimtype.get")
+			CreateConsoleMsg("  test.049.moveanimtype.set <animtype:0|1>")
+			CreateConsoleMsg("  test.049.settargetpos - sets target position of SCP-049 test instance to current player position.")
+			CreateConsoleMsg("  test.049.movetotarget")
+			CreateConsoleMsg("  test.049.teleporttoplayer")
+			CreateConsoleMsg("  test.049.speechsfx.enable")
+			CreateConsoleMsg("  test.049.speechsfx.disable")
+			CreateConsoleMsg("")
+
+			CreateConsoleMsg("- SCP-106 tests:", 255, 127, 0)
+
+			CreateConsoleMsg("  test.106.start")
+			CreateConsoleMsg("  test.106.stop")
+			CreateConsoleMsg("  test.106.settargetpos - sets target position of SCP-106 test instance to current player position.")
+			CreateConsoleMsg("  test.106.movetotarget")
+			CreateConsoleMsg("  test.106.gravity.enable")
+			CreateConsoleMsg("  test.106.gravity.disable")
+
+			CreateConsoleMsg("")
 
 			ConsoleR = oldcr : ConsoleG = oldcg : ConsoleB = oldcb
 
@@ -2172,14 +2603,16 @@ Function ExecConsole(cin$, silent% = False)
 
 			;CreateConsoleMsg("Press key: ", 0, 255, 255)
 			;UpdateConsole(False)
-			ClsColor 0, 0, 255
-			Cls
+			;ClsColor 0, 0, 255
+			;Cls
 
 			Color 255, 255, 255
 			AASetFont ConsoleVeryLargeFont
 			Local txt_$ = "[ PRESS KEY ]"
-			AAText GraphicsWidth() / 2 - AAStringWidth(txt_) / 2, GraphicsHeight() / 2 - AAStringHeight(txt_) / 2, txt_
+			AAText GraphicsWidth() / 2 - AAStringWidth(txt_) / 2, GraphicsHeight() - AAStringHeight(txt_) - 20, txt_
 			Flip
+
+			AASetFont ConsoleFont
 
 			keycode% = WaitKeyScan()
 			GetKey()
@@ -2244,6 +2677,28 @@ Function ExecConsole(cin$, silent% = False)
 			Else
 				CreateConsoleMsg("NoBlinking disabled.", 0, 255, 0)	
 			EndIf
+
+		Case "dooropenbypass", "dob"
+			If CalculateCharCountInString(cin, " ") < 1 Then
+				StrTemp$ = ""
+			Else
+				StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+			End If
+
+			Select StrTemp
+				Case "on", "1", "true"
+					DoorOpenBypass% = True
+				Case "off", "0", "false"
+					DoorOpenBypass% = False
+				Default
+					DoorOpenBypass = Not DoorOpenBypass
+			End Select
+
+			If DoorOpenBypass Then
+				CreateConsoleMsg("DoorOpenBypass enabled.", 0, 255, 0)
+			Else
+				CreateConsoleMsg("DoorOpenBypass disabled.", 0, 255, 0)
+			End If
 		
 
 		Local rname$
@@ -2532,6 +2987,109 @@ Function ExecConsole(cin$, silent% = False)
 			Else
 				CreateConsoleMsg("No instances of SCP-513-1 have been found.", 255, 0, 0)
 			End If
+
+		Case "npc.nearest.remove"
+			n.NPCs = FindNearestNPCtoEntityByCollider(Collider)
+
+			If n <> Null Then
+				RemoveNPC(n)
+
+				CreateConsoleMsg("Successfully removed nearest NPC to player.", 0, 255, 0)
+			Else
+				CreateConsoleMsg("Can't find any NPC. What happened with your save?", 255, 0, 0)
+			End If
+
+		; ===== TESTS =====
+
+		; == TEST 049 ==
+
+		Case "test.049.start"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_049_enabled = True
+			CreateConsoleMsg("Test started.", 255, 0, 255)
+
+		Case "test.049.stop"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_049_enabled = False
+			CreateConsoleMsg("Test stopped.", 255, 0, 255)
+
+		Case "test.049.settargetpos"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			PositionEntity test_049_target, EntityX(Collider), EntityY(Collider) + 0.2, EntityZ(Collider)
+
+		Case "test.049.movetotarget"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_049_movetotarget = True
+
+		Case "test.049.moveanimtype.get"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			CreateConsoleMsg(test_049_moveanimtype + ".", 0, 255, 0)
+
+		Case "test.049.moveanimtype.set"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			StrTemp$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			test_049_moveanimtype = Int(StrTemp)
+
+		Case "test.049.teleporttoplayer"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			If test_049_currinstance = Null Then CreateConsoleMsg("SCP-049 test's instance not found.", 255, 0, 0)
+
+			PositionEntity test_049_currinstance\Collider, EntityX(Collider), EntityY(Collider) + 0.2, EntityZ(Collider)
+			ResetEntity test_049_currinstance\Collider
+
+		Case "test.049.speechsfx.enable"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_049_enablespeechsfx = True
+
+		Case "test.049.speechsfx.disable"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_049_enablespeechsfx = False
+
+		; == TEST 106 ==
+
+		Case "test.106.start"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_106_enabled = True
+			CreateConsoleMsg("Test started.", 255, 0, 255)
+
+		Case "test.106.stop"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_106_enabled = False
+			CreateConsoleMsg("Test stopped.", 255, 0, 255)
+
+		Case "test.106.settargetpos"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			PositionEntity test_106_target, EntityX(Collider), EntityY(Collider), EntityZ(Collider)
+
+		Case "test.106.movetotarget"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_106_movetotarget = True
+
+		Case "test.106.gravity.enable"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_106_disable_gravity = False
+
+		Case "test.106.gravity.disable"
+			If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+
+			test_106_disable_gravity = True
 
 		; === ITEMS ===
 
@@ -3349,7 +3907,7 @@ Function ExecConsole(cin$, silent% = False)
 				Case "light", "default"
 					dtype = 0
 
-				Case "big"
+				Case "big", "cont", "containment"
 					dtype = 1
 
 				Case "heavy"
@@ -3397,7 +3955,7 @@ Function ExecConsole(cin$, silent% = False)
 				Case "light", "default"
 					dtype = 0
 
-				Case "big"
+				Case "big", "cont", "containment"
 					dtype = 1
 
 				Case "heavy"
@@ -3441,7 +3999,7 @@ Function ExecConsole(cin$, silent% = False)
 				Case "light", "default"
 					dtype = 0
 
-				Case "big"
+				Case "big", "cont", "containment"
 					dtype = 1
 
 				Case "heavy"
@@ -3485,7 +4043,7 @@ Function ExecConsole(cin$, silent% = False)
 				Case "light", "default"
 					dtype = 0
 
-				Case "big"
+				Case "big", "cont", "containment"
 					dtype = 1
 
 				Case "heavy"
@@ -3814,55 +4372,259 @@ Function ExecConsole(cin$, silent% = False)
 				CreateConsoleMsg("No selected door.", 255, 0, 0)
 			End If
 
-		;Case "door.selected.frame.show"
-		;
-		;	If CurrDoor <> Null Then
-		;		ShowEntity CurrDoor\frameobj
-		;
-		;		CreateConsoleMsg("Frame of selected door showed.", 0, 255, 0)
-		;
-		;	Else
-		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
-		;	End If
-		;
-		;Case "door.selected.frame.hide"
-		;
-		;	If CurrDoor <> Null Then
-		;		HideEntity CurrDoor\frameobj
-		;
-		;		CreateConsoleMsg("Frame of selected door hid.", 0, 255, 0)
-		;
-		;	Else
-		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
-		;	End If
-
-		;Case "door.selected.button.position.set"
-		;	args$ = Right(cin, Len(cin) - Instr(cin, " "))
-		;	StrTemp$ = Piece$(args$,1," ")
-		;	StrTemp2$ = Piece$(args$,2," ")
-		;	StrTemp3$ = Piece$(args$,3," ")
-		;	StrTemp4$ = Piece$(args$,4," ")
-		;
-		;	btnindex% = Int(StrTemp)
-		;	x# = Float(StrTemp2)
-		;	y# = Float(StrTemp3)
-		;	z# = Float(StrTemp4)
-		;
-		;	If CurrDoor <> Null Then
-		;		If Not (btnindex < 0 Or btnindex > 1) Then
-		;			If CurrDoor\buttons[btnindex] <> 0 Then
-		;				PositionEntity CurrDoor\buttons[btnindex], x, y, z, True
-		;				CreateConsoleMsg("Set position of selected door button with index " + btnindex + " to (X|Y|Z) " + x + " " + y + " " + z + ".", 0, 255, 0)
-		;			Else
-		;				CreateConsoleMsg("Button with index " + btnindex + " doesn't exist.", 255, 0, 0)
-		;			End If
-		;		Else
-		;			CreateConsoleMsg("Incorrect button index.", 255, 0, 0)
-		;		End If
-		;	Else
-		;		CreateConsoleMsg("No selected door.", 255, 0, 0)
-		;	End If
+		Case "door.selected.frame.show"
+			If CurrDoor <> Null Then
+				EntityAlpha CurrDoor\frameobj, 1
 		
+				CreateConsoleMsg("Frame of selected door showed.", 0, 255, 0)
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+		
+		Case "door.selected.frame.hide"
+			If CurrDoor <> Null Then
+				EntityAlpha CurrDoor\frameobj, 0
+		
+				CreateConsoleMsg("Frame of selected door hid.", 0, 255, 0)
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+		
+		Case "door.selected.button.create"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			btnindex% = Int(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			If btnindex < 0 Or btnindex > 1 Then CreateConsoleMsg("Invalid button index value.", 255, 0, 0) : Return
+
+			If CurrDoor <> Null Then
+				If CurrDoor\buttons[btnindex] = 0 Then
+					If CurrDoor\Code <> "" Then
+						CurrDoor\buttons[btnindex] = CopyEntity(ButtonCodeOBJ)
+						EntityFX CurrDoor\buttons[btnindex], 1
+					Else
+						If CurrDoor\KeyCard > 0 Then
+							CurrDoor\buttons[btnindex] = CopyEntity(ButtonKeyOBJ)
+						Else If CurrDoor\KeyCard < 0 Then
+							CurrDoor\buttons[btnindex] = CopyEntity(ButtonScannerOBJ)
+						Else
+							CurrDoor\buttons[btnindex] = CopyEntity(ButtonOBJ)
+						End If
+					End If
+
+					PositionEntity CurrDoor\buttons[btnindex], EntityX(CurrDoor\frameobj, True), EntityY(CurrDoor\frameobj, True), EntityZ(CurrDoor\frameobj, True), True
+					ScaleEntity CurrDoor\buttons[btnindex], 0.03, 0.03, 0.03
+					EntityParent CurrDoor\buttons[btnindex], CurrDoor\frameobj
+					EntityPickMode CurrDoor\buttons[btnindex], 2
+
+					CreateConsoleMsg("Created button with specified index.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door already have button with specified index.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.button.remove"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			btnindex% = Int(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			If btnindex < 0 Or btnindex > 1 Then CreateConsoleMsg("Invalid button index value.", 255, 0, 0) : Return
+
+			If CurrDoor <> Null Then
+				If CurrDoor\buttons[btnindex] <> 0 Then
+					If ClosestButton = CurrDoor\buttons[btnindex] Then ClosestButton = 0
+
+					FreeEntity CurrDoor\buttons[btnindex]
+					CurrDoor\buttons[btnindex] = 0
+
+					CreateConsoleMsg("Removed button with specified index.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door doesn't have button with specified index.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.button.position.move"
+			If CalculateCharCountInString(cin, " ") < 4 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+			StrTemp4$ = Piece$(args$,4," ")
+
+			btnindex% = Int(StrTemp)
+			x# = Float(StrTemp2)
+			y# = Float(StrTemp3)
+			z# = Float(StrTemp4)
+
+			If btnindex < 0 Or btnindex > 1 Then CreateConsoleMsg("Invalid button index value.", 255, 0, 0) : Return
+
+
+			If CurrDoor <> Null Then
+				If CurrDoor\buttons[btnindex] <> 0 Then
+					MoveEntity CurrDoor\buttons[btnindex], x, y, z
+
+					CreateConsoleMsg("Moved position of button with index " + btnindex + " on (X|Y|Z) " + x + ", " + y + ", " + z + " offset.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door doesn't have button with specified index.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.button.position.translate"
+			If CalculateCharCountInString(cin, " ") < 4 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+			StrTemp4$ = Piece$(args$,4," ")
+
+			btnindex% = Int(StrTemp)
+			x# = Float(StrTemp2)
+			y# = Float(StrTemp3)
+			z# = Float(StrTemp4)
+
+			If btnindex < 0 Or btnindex > 1 Then CreateConsoleMsg("Invalid button index value.", 255, 0, 0) : Return
+
+
+			If CurrDoor <> Null Then
+				If CurrDoor\buttons[btnindex] <> 0 Then
+					TranslateEntity CurrDoor\buttons[btnindex], x, y, z, True
+
+					CreateConsoleMsg("Translated position of button with index " + btnindex + " on (X|Y|Z) " + x + ", " + y + ", " + z + " offset.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door doesn't have button with specified index.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.button.position.set"
+			If CalculateCharCountInString(cin, " ") < 4 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+			StrTemp4$ = Piece$(args$,4," ")
+
+			btnindex% = Int(StrTemp)
+			x# = Float(StrTemp2)
+			y# = Float(StrTemp3)
+			z# = Float(StrTemp4)
+
+			If btnindex < 0 Or btnindex > 1 Then CreateConsoleMsg("Invalid button index value.", 255, 0, 0) : Return
+
+
+			If CurrDoor <> Null Then
+				If CurrDoor\buttons[btnindex] <> 0 Then
+					PositionEntity CurrDoor\buttons[btnindex], x, y, z, True
+
+					CreateConsoleMsg("Set position of button with index " + btnindex + " to (X|Y|Z) " + x + ", " + y + ", " + z + ".", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door doesn't have button with specified index.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.button.rotation.turn"
+			If CalculateCharCountInString(cin, " ") < 4 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+			StrTemp4$ = Piece$(args$,4," ")
+
+			btnindex% = Int(StrTemp)
+			pitch# = Float(StrTemp2)
+			yaw# = Float(StrTemp3)
+			roll# = Float(StrTemp4)
+
+			If btnindex < 0 Or btnindex > 1 Then CreateConsoleMsg("Invalid button index value.", 255, 0, 0) : Return
+
+
+			If CurrDoor <> Null Then
+				If CurrDoor\buttons[btnindex] <> 0 Then
+					TurnEntity CurrDoor\buttons[btnindex], pitch, yaw, roll
+
+					CreateConsoleMsg("Turned rotation of button with index " + btnindex + " on (pitch|yaw|roll) " + pitch + ", " + yaw + ", " + roll + " offset.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door doesn't have button with specified index.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.button.rotation.set"
+			If CalculateCharCountInString(cin, " ") < 4 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			args$ = Right(cin, Len(cin) - Instr(cin, " "))
+
+			StrTemp$ = Piece$(args$,1," ")
+			StrTemp2$ = Piece$(args$,2," ")
+			StrTemp3$ = Piece$(args$,3," ")
+			StrTemp4$ = Piece$(args$,4," ")
+
+			btnindex% = Int(StrTemp)
+			pitch# = Float(StrTemp2)
+			yaw# = Float(StrTemp3)
+			roll# = Float(StrTemp4)
+
+			If btnindex < 0 Or btnindex > 1 Then CreateConsoleMsg("Invalid button index value.", 255, 0, 0) : Return
+
+
+			If CurrDoor <> Null Then
+				If CurrDoor\buttons[btnindex] <> 0 Then
+					RotateEntity CurrDoor\buttons[btnindex], pitch, yaw, roll
+
+					CreateConsoleMsg("Set rotation of button with index " + btnindex + " to (pitch|yaw|roll) " + pitch + ", " + yaw + ", " + roll + ".", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door doesn't have button with specified index.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.buttons.all.remove"
+			If CurrDoor <> Null Then
+				For i% = 0 To 1
+					If CurrDoor\buttons[i] <> 0 Then
+						If ClosestButton = CurrDoor\buttons[i] Then ClosestButton = 0
+
+						FreeEntity CurrDoor\buttons[i]
+						CurrDoor\buttons[i] = 0
+
+						CreateConsoleMsg("Successfully removed button of selected door with index " + i + ".", 0, 255, 0)
+					Else
+						CreateConsoleMsg("Selected door doesn't have button with index " + i + ".", 255, 0, 0)
+					End If
+				Next
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.buttons.list"
+			If CurrDoor <> Null Then
+				For i% = 0 To 1
+					If CurrDoor\buttons[i] <> 0 Then CreateConsoleMsg(i + ".", 0, 255, 255)
+				Next
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+		
+		Case "door.selected."
 
 		Default
 			;[Block]
@@ -3927,7 +4689,12 @@ If BypassOpeningConsole Then
 	CreateConsoleMsg("Commands, that works with gameplay are recommended to use only when save loaded (in game).", 192, 192, 0)
 	CreateConsoleMsg("Be careful with this instrument. Good luck in usage!", 192, 192, 0)
 	CreateConsoleMsg(" ================================", 192, 192, 0)
-	CreateConsoleMsg(" ")
+	CreateConsoleMsg("")
+End If
+
+If AllowTestsCommands Then
+	CreateConsoleMsg("Tests commands allowed.", 255, 0, 255)
+	CreateConsoleMsg("")
 End If
 
 ;---------------------------------------------------------------------------------------------------
@@ -4240,7 +5007,7 @@ Global SelectedDoor.Doors, UpdateDoorsTimer#
 Global DoorTempID%
 Type Doors
 	Field obj%, obj2%, frameobj%, buttons%[2]
-	Field locked%, open%, angle%, openstate#, fastopen%
+	Field locked%, open%, angle#, openstate#, fastopen%
 	Field dir%
 	Field timer%, timerstate#
 	Field KeyCard%
@@ -4663,184 +5430,186 @@ End Function
 Function UseDoor(d.Doors, showmsg%=True, playsfx%=True, access_level% = -1000)
 	If d = Null Then Return
 
-	Local temp% = 0
-	If d\KeyCard > 0 Then
-		If SelectedItem = Null And (Not KeycardFastUsage) And access_level < -999 Then
-			If showmsg = True And EnableDoorUsingMessage Then
-				If (Instr(Msg,"The keycard")=0 And Instr(Msg,"A keycard with")=0) Or (MsgTimer<70*3) Then
-					Msg = "A keycard is required to operate this door."
-					MsgTimer = 70 * 7
-				EndIf
-			EndIf
-			Return
-		Else
-			If access_level < -999 Then
-				If SelectedItem <> Null Then
-					Select SelectedItem\itemtemplate\tempname
-						Case "key1"
-							temp = 1
-						Case "key2"
-							temp = 2
-						Case "key3"
-							temp = 3
-						Case "key4"
-							temp = 4
-						Case "key5"
-							temp = 5
-						Case "key6"
-							temp = 6
-						Default 
-							temp = -1
-					End Select
-				Else
-					temp = -1
-				End If
-
-				If KeycardFastUsage And temp = -1 Then
-					Local it.Items = FindItemInInventoryByTemplateName("key1")
-					If it <> Null Then temp = 1
-
-					it = FindItemInInventoryByTemplateName("key2")
-					If it <> Null Then temp = 2
-
-					it = FindItemInInventoryByTemplateName("key3")
-					If it <> Null Then temp = 3
-
-					it = FindItemInInventoryByTemplateName("key4")
-					If it <> Null Then temp = 4
-
-					it = FindItemInInventoryByTemplateName("key5")
-					If it <> Null Then temp = 5
-
-					it = FindItemInInventoryByTemplateName("key6")
-					;If it <> Null And temp < d\KeyCard Then temp = 6
-					If it <> Null Then temp = 6
-				End If
-			Else
-				temp = access_level
-			End If 
-			
-			If temp =-1 Then 
+	If Not DoorOpenBypass Then
+		Local temp% = 0
+		If d\KeyCard > 0 Then
+			If SelectedItem = Null And (Not KeycardFastUsage) And access_level < -999 Then
 				If showmsg = True And EnableDoorUsingMessage Then
 					If (Instr(Msg,"The keycard")=0 And Instr(Msg,"A keycard with")=0) Or (MsgTimer<70*3) Then
 						Msg = "A keycard is required to operate this door."
 						MsgTimer = 70 * 7
 					EndIf
 				EndIf
-				Return				
-			ElseIf temp >= d\KeyCard 
-				If access_level < -999 And DeselectItemOnKeycardReaderInteraction Then SelectedItem = Null
-				If showmsg = True Then
-					If d\locked Then
-						PlaySound_Strict KeyCardSFX2
-						If EnableDoorUsingMessage Then
-							Msg = "The keycard was inserted into the slot but nothing happened."
-							MsgTimer = 70 * 7
-						End If
-						Return
-					Else
-						PlaySound_Strict KeyCardSFX1
-						If EnableDoorUsingMessage Then
-							Msg = "The keycard was inserted into the slot."
-							MsgTimer = 70 * 7
-						End If
-					EndIf
-				EndIf
-			Else
-				If access_level < -999 Then SelectedItem = Null
-				If showmsg = True Then 
-					PlaySound_Strict KeyCardSFX2
-					If EnableDoorUsingMessage Then				
-						If d\locked Then
-							Msg = "The keycard was inserted into the slot but nothing happened."
-						Else
-							Msg = "A keycard with security clearance "+d\KeyCard+" or higher is required to operate this door."
-						EndIf
-						MsgTimer = 70 * 7	
-					End If				
-				EndIf
 				Return
-			End If
-		EndIf	
-	ElseIf d\KeyCard < 0
-		;I can't find any way to produce short circuited boolean expressions so work around this by using a temporary variable - risingstar64
-		If SelectedItem <> Null and access_level < -999 Then
-			temp = (SelectedItem\itemtemplate\tempname = "hand" And d\KeyCard=-1) Or (SelectedItem\itemtemplate\tempname = "hand2" And d\KeyCard=-2)
-		Else If access_level >= -999
-			temp = access_level
-		EndIf
-		If access_level < -999 Then SelectedItem = Null
-		If temp <> 0 Then
-			PlaySound_Strict ScannerSFX1
-			If EnableDoorUsingMessage Then
-				If (Instr(Msg,"You placed your")=0) Or (MsgTimer < 70*3) Then
-					Msg = "You place the palm of the hand onto the scanner. The scanner reads: "+Chr(34)+"DNA verified. Access granted."+Chr(34)
-				EndIf
-				MsgTimer = 70 * 10
-			End If
-		Else
-			If showmsg = True Then 
-				PlaySound_Strict ScannerSFX2
-				If EnableDoorUsingMessage Then
-					Msg = "You placed your palm onto the scanner. The scanner reads: "+Chr(34)+"DNA does not match known sample. Access denied."+Chr(34)
-					MsgTimer = 70 * 10
-				End If
-			EndIf
-			Return			
-		EndIf
-	Else
-		If d\locked Then
-			If showmsg = True Then 
-				If Not (d\IsElevatorDoor>0) Then
-					PlaySound_Strict ButtonSFX2
-					If EnableDoorUsingMessage Then
-						If PlayerRoom\RoomTemplate\Name <> "room2elevator" Then
-							If d\open Then
-								Msg = "You pushed the button but nothing happened."
-							Else    
-								Msg = "The door appears to be locked."
-							EndIf    
-						Else
-							Msg = "The elevator appears to be broken."
-						EndIf
-						MsgTimer = 70 * 5
+			Else
+				If access_level < -999 Then
+					If SelectedItem <> Null Then
+						Select SelectedItem\itemtemplate\tempname
+							Case "key1"
+								temp = 1
+							Case "key2"
+								temp = 2
+							Case "key3"
+								temp = 3
+							Case "key4"
+								temp = 4
+							Case "key5"
+								temp = 5
+							Case "key6"
+								temp = 6
+							Default 
+								temp = -1
+						End Select
+					Else
+						temp = -1
+					End If
+
+					If KeycardFastUsage And temp = -1 Then
+						Local it.Items = FindItemInInventoryByTemplateName("key1")
+						If it <> Null Then temp = 1
+
+						it = FindItemInInventoryByTemplateName("key2")
+						If it <> Null Then temp = 2
+
+						it = FindItemInInventoryByTemplateName("key3")
+						If it <> Null Then temp = 3
+
+						it = FindItemInInventoryByTemplateName("key4")
+						If it <> Null Then temp = 4
+
+						it = FindItemInInventoryByTemplateName("key5")
+						If it <> Null Then temp = 5
+
+						it = FindItemInInventoryByTemplateName("key6")
+						;If it <> Null And temp < d\KeyCard Then temp = 6
+						If it <> Null Then temp = 6
 					End If
 				Else
-					If d\IsElevatorDoor = 1 and EnableDoorUsingMessage Then
-						Msg = "You called the elevator."
-						MsgTimer = 70 * 5
-					ElseIf d\IsElevatorDoor = 3 and EnableDoorUsingMessage Then
-						Msg = "The elevator is already on this floor."
-						MsgTimer = 70 * 5
-					ElseIf (Msg<>"You called the elevator." and EnableDoorUsingMessage)
-						If (Msg="You already called the elevator.") Or (MsgTimer<70*3)	
-							Select Rand(10)
-								Case 1
-									Msg = "Stop spamming the button."
-									MsgTimer = 70 * 7
-								Case 2
-									Msg = "Pressing it harder does not make the elevator come faster."
-									MsgTimer = 70 * 7
-								Case 3
-									Msg = "If you continue pressing this button I will generate a Memory Access Violation."
-									MsgTimer = 70 * 7
-								Default
-									Msg = "You already called the elevator."
-									MsgTimer = 70 * 7
-							End Select
-						EndIf
-					Else
-						If EnableDoorUsingMessage Then
-							Msg = "You already called the elevator."
-							MsgTimer = 70 * 7
-						End If
-					EndIf
-				EndIf
+					temp = access_level
+				End If 
 				
+				If temp =-1 Then 
+					If showmsg = True And EnableDoorUsingMessage Then
+						If (Instr(Msg,"The keycard")=0 And Instr(Msg,"A keycard with")=0) Or (MsgTimer<70*3) Then
+							Msg = "A keycard is required to operate this door."
+							MsgTimer = 70 * 7
+						EndIf
+					EndIf
+					Return				
+				ElseIf temp >= d\KeyCard 
+					If access_level < -999 And DeselectItemOnKeycardReaderInteraction Then SelectedItem = Null
+					If showmsg = True Then
+						If d\locked Then
+							PlaySound_Strict KeyCardSFX2
+							If EnableDoorUsingMessage Then
+								Msg = "The keycard was inserted into the slot but nothing happened."
+								MsgTimer = 70 * 7
+							End If
+							Return
+						Else
+							PlaySound_Strict KeyCardSFX1
+							If EnableDoorUsingMessage Then
+								Msg = "The keycard was inserted into the slot."
+								MsgTimer = 70 * 7
+							End If
+						EndIf
+					EndIf
+				Else
+					If access_level < -999 Then SelectedItem = Null
+					If showmsg = True Then 
+						PlaySound_Strict KeyCardSFX2
+						If EnableDoorUsingMessage Then				
+							If d\locked Then
+								Msg = "The keycard was inserted into the slot but nothing happened."
+							Else
+								Msg = "A keycard with security clearance "+d\KeyCard+" or higher is required to operate this door."
+							EndIf
+							MsgTimer = 70 * 7	
+						End If				
+					EndIf
+					Return
+				End If
+			EndIf	
+		ElseIf d\KeyCard < 0
+			;I can't find any way to produce short circuited boolean expressions so work around this by using a temporary variable - risingstar64
+			If SelectedItem <> Null and access_level < -999 Then
+				temp = (SelectedItem\itemtemplate\tempname = "hand" And d\KeyCard=-1) Or (SelectedItem\itemtemplate\tempname = "hand2" And d\KeyCard=-2)
+			Else If access_level >= -999
+				temp = access_level
 			EndIf
-			Return
-		EndIf	
-	EndIf
+			If access_level < -999 Then SelectedItem = Null
+			If temp <> 0 Then
+				PlaySound_Strict ScannerSFX1
+				If EnableDoorUsingMessage Then
+					If (Instr(Msg,"You placed your")=0) Or (MsgTimer < 70*3) Then
+						Msg = "You place the palm of the hand onto the scanner. The scanner reads: "+Chr(34)+"DNA verified. Access granted."+Chr(34)
+					EndIf
+					MsgTimer = 70 * 10
+				End If
+			Else
+				If showmsg = True Then 
+					PlaySound_Strict ScannerSFX2
+					If EnableDoorUsingMessage Then
+						Msg = "You placed your palm onto the scanner. The scanner reads: "+Chr(34)+"DNA does not match known sample. Access denied."+Chr(34)
+						MsgTimer = 70 * 10
+					End If
+				EndIf
+				Return			
+			EndIf
+		Else
+			If d\locked Then
+				If showmsg = True Then 
+					If Not (d\IsElevatorDoor>0) Then
+						PlaySound_Strict ButtonSFX2
+						If EnableDoorUsingMessage Then
+							If PlayerRoom\RoomTemplate\Name <> "room2elevator" Then
+								If d\open Then
+									Msg = "You pushed the button but nothing happened."
+								Else    
+									Msg = "The door appears to be locked."
+								EndIf    
+							Else
+								Msg = "The elevator appears to be broken."
+							EndIf
+							MsgTimer = 70 * 5
+						End If
+					Else
+						If d\IsElevatorDoor = 1 and EnableDoorUsingMessage Then
+							Msg = "You called the elevator."
+							MsgTimer = 70 * 5
+						ElseIf d\IsElevatorDoor = 3 and EnableDoorUsingMessage Then
+							Msg = "The elevator is already on this floor."
+							MsgTimer = 70 * 5
+						ElseIf (Msg<>"You called the elevator." and EnableDoorUsingMessage)
+							If (Msg="You already called the elevator.") Or (MsgTimer<70*3)	
+								Select Rand(10)
+									Case 1
+										Msg = "Stop spamming the button."
+										MsgTimer = 70 * 7
+									Case 2
+										Msg = "Pressing it harder does not make the elevator come faster."
+										MsgTimer = 70 * 7
+									Case 3
+										Msg = "If you continue pressing this button I will generate a Memory Access Violation."
+										MsgTimer = 70 * 7
+									Default
+										Msg = "You already called the elevator."
+										MsgTimer = 70 * 7
+								End Select
+							EndIf
+						Else
+							If EnableDoorUsingMessage Then
+								Msg = "You already called the elevator."
+								MsgTimer = 70 * 7
+							End If
+						EndIf
+					EndIf
+					
+				EndIf
+				Return
+			EndIf	
+		EndIf
+	End If
 	
 	d\open = (Not d\open)
 	If d\LinkedDoor <> Null Then d\LinkedDoor\open = (Not d\LinkedDoor\open)
@@ -6697,11 +7466,15 @@ Function MovePlayer()
 	If KeyHit(KEY_TOGGLE_NOTARGET) Then
 		NoTarget = Not NoTarget
 	End If
+	
+	If KeyHit(KEY_TOGGLE_DOOROPENBYPASS) Then DoorOpenBypass = Not DoorOpenBypass
 
 	For keyi = 0 To 9
 		If KeyHit(KEYS_SELECT_ITEM[keyi]) Then
 			Local sel_it.Items = Inventory(keyi)
-			If sel_it\itemtemplate\sound <> 66 Then PlaySound_Strict(PickSFX(sel_it\itemtemplate\sound))
+			If sel_it <> Null Then
+				If sel_it\itemtemplate\sound <> 66 Then PlaySound_Strict(PickSFX(sel_it\itemtemplate\sound))
+			End If
 			SelectedItem = sel_it
 		End If
 	Next
@@ -6736,10 +7509,10 @@ Function MovePlayer()
 				EndIf
 			EndIf
 
-			If PlayerCrowbar <> 0 Then
-				MoveEntity PlayerCrowbar, 0, (Sin(Shake) / (20.0+CrouchState*20.0)) * PlayerCrowbarVerticalShakeMultiplier, 0
-				;TurnEntity PlayerCrowbar, Cos(Shake) * PlayerCrowbarHorizontalShakeMultiplier, 0, 0
-			End If
+			;If PlayerCrowbar <> 0 Then
+			;	MoveEntity PlayerCrowbar, 0, (Sin(Shake) / (20.0+CrouchState*20.0)) * PlayerCrowbarVerticalShakeMultiplier, 0
+			;	;TurnEntity PlayerCrowbar, Cos(Shake) * PlayerCrowbarHorizontalShakeMultiplier, 0, 0
+			;End If
 			
 			temp# = (Shake Mod 360)
 			Local tempchn%
@@ -7465,9 +8238,12 @@ Function DrawGUI()
 						displaystr = displaystr + "True (Tunnels; 2)"
 				End Select
 				AAText x - 50, 220, displaystr
-				AAText x - 50, 240, "SFX3Ds count: " + SFX3DsCount
-				AAText x - 50, 280, "FPSFactor: " + f2s(FPSFactor, 3)
-				AAText x - 50, 300, "FPSFactor2: " + f2s(FPSFactor2, 3)
+
+				AAText x - 50, 260, "SFX3Ds count: " + SFX3DsCount
+				AAText x - 50, 280, "NPCs Count: " + NPCsCount
+
+				AAText x - 50, 320, "FPSFactor: " + f2s(FPSFactor, 3)
+				AAText x - 50, 340, "FPSFactor2: " + f2s(FPSFactor2, 3)
 				
 				AAText x - 50, 400, "DeafPlayer: " + bool2s(DeafPlayer)
 				AAText x - 50, 420, "DeafTimer: " + f2s(DeafTimer, 3)
@@ -7508,11 +8284,17 @@ Function DrawGUI()
 				AAText x + 350, 460, "WearingNightVision: " + bool2s(WearingNightVision)
 				AAText x + 350, 480, "NVTimer: " + f2s(NVTimer, 3)
 
-				AAText x + 350, 510, "GodMode: " + bool2s(GodMode)
-				AAText x + 350, 530, "Noclip: " + bool2s(Noclip)
-				AAText x + 350, 550, "NoTarget: " + bool2s(NoTarget)
-				AAText x + 350, 570, "NoBlinking: " + bool2s(NoBlinking)
-				AAText x + 350, 590, "InfiniteStamina: " + bool2s(InfiniteStamina)
+				AAText x + 350, 510, "CurrCameraZoom: " + f2s(CurrCameraZoom, 3)
+
+
+				AAText x + 750, 50, "RandomSeed: " + Chr(34) + RandomSeed + Chr(34)
+
+				AAText x + 750, 90, "GodMode: " + bool2s(GodMode)
+				AAText x + 750, 110, "Noclip: " + bool2s(Noclip)
+				AAText x + 750, 130, "NoTarget: " + bool2s(NoTarget)
+				AAText x + 750, 150, "NoBlinking: " + bool2s(NoBlinking)
+				AAText x + 750, 170, "InfiniteStamina: " + bool2s(InfiniteStamina)
+				AAText x + 750, 190, "DoorOpenBypass: " + bool2s(DoorOpenBypass)
 
 			Default
 				DebugHUDpage = 0
@@ -7576,7 +8358,11 @@ Function DrawGUI()
 	Local PrevInvOpen% = InvOpen, MouseSlot% = 66
 	
 	Local shouldDrawHUD%=True
-	If SelectedDoor <> Null Then
+	If DoorOpenBypass And SelectedDoor <> Null Then
+		UseDoor(SelectedDoor, True)
+		SelectedDoor = Null
+
+	Else If SelectedDoor <> Null Then
 		SelectedItem = Null
 		
 		If shouldDrawHUD Then
@@ -8826,7 +9612,8 @@ Function DrawGUI()
 					;RadioState(7) = another timer for the "code channel"
 					
 					If RadioState(5) = 0 Then 
-						Msg = "Use the numbered keys 1 through 5 to cycle between various channels."
+						;Msg = "Use the left mouse button to cycle between various channels."
+						Msg = "Click left mouse button to cycle between various channels. Press E key to change usertrack."
 						MsgTimer = 70 * 5
 						RadioState(5) = 1
 						RadioState(0) = -1
@@ -8878,7 +9665,7 @@ Function DrawGUI()
 											UserTrackFlag = False
 										EndIf
 										
-										If KeyHit(2) Then
+										If KeyHit(18) And (Not (MenuOpen Or InvOpen Or ConsoleOpen)) Then ; 'E' key
 											PlaySound_Strict RadioSquelch
 											If (Not UserTrackFlag%)
 												If UserTrackMode
@@ -8898,6 +9685,8 @@ Function DrawGUI()
 											DebugLog "CurrTrack: "+RadioState(0)
 											DebugLog UserTrackName$(RadioState(0))
 										EndIf
+
+										ChannelVolume RadioCHN(0), MusicVolume
 									EndIf
 								Case 1 ;h?�lytyskanava
 									DebugLog RadioState(1) 
@@ -9108,17 +9897,32 @@ Function DrawGUI()
 								AAText(x+97, y+16, Rand(0,9),True,True)
 								
 							Else
-								For i = 2 To 6
-									If KeyHit(i) Then
-										If SelectedItem\state2 <> i-2 Then ;pausetetaan nykyinen radiokanava
-											PlaySound_Strict RadioSquelch
-											If RadioCHN(Int(SelectedItem\state2)) <> 0 Then PauseChannel(RadioCHN(Int(SelectedItem\state2)))
-										EndIf
-										SelectedItem\state2 = i-2
-										;jos nykyist?� kanavaa ollaan soitettu, laitetaan jatketaan toistoa samasta kohdasta
-										If RadioCHN(SelectedItem\state2)<>0 Then ResumeChannel(RadioCHN(SelectedItem\state2))
-									EndIf
-								Next
+								;For i = 2 To 6
+								;	If KeyHit(i) Then
+								;		If SelectedItem\state2 <> i-2 Then ;pausetetaan nykyinen radiokanava
+								;			PlaySound_Strict RadioSquelch
+								;			If RadioCHN(Int(SelectedItem\state2)) <> 0 Then PauseChannel(RadioCHN(Int(SelectedItem\state2)))
+								;		EndIf
+								;		SelectedItem\state2 = i-2
+								;		;jos nykyist?� kanavaa ollaan soitettu, laitetaan jatketaan toistoa samasta kohdasta
+								;		If RadioCHN(SelectedItem\state2)<>0 Then ResumeChannel(RadioCHN(SelectedItem\state2))
+								;	EndIf
+								;Next
+								
+								If MouseHit1 And (Not (MenuOpen Or InvOpen Or ConsoleOpen)) Then
+									PlaySound_Strict RadioSquelch
+									If RadioCHN(Int(SelectedItem\state2)) <> 0 Then PauseChannel(RadioCHN(Int(SelectedItem\state2)))
+
+									SelectedItem\state2 = SelectedItem\state2 + 1
+									If SelectedItem\state2 > 4 Then SelectedItem\state2 = 0
+
+									If RadioCHN(SelectedItem\state2)<>0 Then ResumeChannel(RadioCHN(SelectedItem\state2))
+
+									;CreateConsoleMsg(SelectedItem\state2, 255, 0, 255)
+
+									MouseHit1 = False
+								End If
+
 								
 								AASetFont Font4
 								AAText(x+97, y+16, Int(SelectedItem\state2+1),True,True)
@@ -9733,7 +10537,65 @@ Function DrawGUI()
 					;[End Block]
 
 				Case "crowbar"
-					If PlayerCrowbar <> 0 Then ShowEntity PlayerCrowbar
+					If Not (MenuOpen Or InvOpen Or ConsoleOpen) Then
+						If PlayerCrowbar <> 0 Then ShowEntity PlayerCrowbar
+
+						If MouseHit1 And PlayerCrowbarUsageCooldownTimer <= 0 Then
+							Local ent% = CameraPick(Camera, GraphicWidth / 2, GraphicHeight / 2)
+							Local hit% = False
+							If ent Then
+								If EntityDistanceToPoint(Camera, PickedX(), PickedY(), PickedZ()) <= PlayerCrowbarMaxInteractionDistance And ent <> Collider Then
+									hit = True
+									Local ent_n.NPCs = Null
+
+									For n_.NPCs = Each NPCs
+										If n_\obj = ent Then ent_n = n_ : Exit
+									Next
+
+									Local is_living% = False
+
+									If ent_n <> Null Then
+										Select ent_n\NPCtype
+											Case NPCtype008, NPCtype049, NPCtype066, NPCtype096, NPCtype1048a, NPCtype1499, NPCtype5131, NPCtype860, NPCtype939, NPCtype966
+												is_living = True
+											Case NPCtypeClerk, NPCtypeD, NPCtypeGuard, NPCtypeMaxwellCat, NPCtypeMTF, NPCtypeOldMan, NPCtypeTentacle, NPCtypeZombie
+												is_living = True
+										End Select
+									End If
+
+									Local de.Decals
+									If is_living Then
+										PlaySound_Strict(CrowbarHitBodySFX[Rand(0, 2)])
+
+										de.Decals = CreateDecal(3, PickedX(), PickedY(), PickedZ(), 0, 0, 0)
+									Else
+										PlaySound_Strict(CrowbarHitSFX[Rand(0, 1)])
+
+										;bullet hole decal
+										de.Decals = CreateDecal(Rand(13, 14), PickedX(), PickedY(), PickedZ(), 0, 0, 0)
+
+										EntityBlend de\obj, 2
+										EntityFX de\obj, 1
+									End If
+									AlignToVector de\obj, -PickedNX(), -PickedNY(), -PickedNZ(), 3
+									MoveEntity de\obj, 0, 0, -0.001
+									de\lifetime = 70 * 20							
+									de\Size = Rnd(0.028, 0.034)
+									ScaleSprite de\obj, de\Size, de\Size
+
+									EntityParent de\obj, ent, True
+
+									PlayerCrowbarUsageCooldownTimer = 70 * PlayerCrowbarHitCooldown;0.25
+								End If
+							End If
+							If Not hit Then
+								PlaySound_Strict(CrowbarMissSFX)
+								PlayerCrowbarUsageCooldownTimer = 70 * PlayerCrowbarMissCooldown;0.4
+							End If 
+						End If
+
+						PlayerCrowbarUsageCooldownTimer = Max(0, PlayerCrowbarUsageCooldownTimer - FPSFactor)
+					End If
 				
 				Default
 					;[Block]
@@ -13724,6 +14586,14 @@ Function CreateDecal.Decals(id%, x#, y#, z#, pitch#, yaw#, roll#)
 	Return d
 End Function
 
+Function RemoveDecal(decal.Decals)
+	If decal = Null Then Return
+
+	FreeEntity decal\obj
+
+	Delete decal
+End Function
+
 Function UpdateDecals()
 	Local d.Decals
 	For d.Decals = Each Decals
@@ -14076,8 +14946,7 @@ Function SaveOptionsINI()
 	PutINIValue(OptionFile, "options", "achievement popup enabled", AchvMSGenabled%)
 	PutINIValue(OptionFile, "options", "room lights enabled", EnableRoomLights%)
 	PutINIValue(OptionFile, "options", "texture details", TextureDetails%)
-	PutINIValue(OptionFile, "console", "enabled", CanOpenConsole%)
-	PutINIValue(OptionFile, "console", "auto opening", ConsoleOpening%)
+	
 	PutINIValue(OptionFile, "options", "antialiased text", AATextEnable)
 	PutINIValue(OptionFile, "options", "particle amount", ParticleAmount)
 	PutINIValue(OptionFile, "options", "enable vram", EnableVRam)
@@ -14099,6 +14968,9 @@ Function SaveOptionsINI()
 	PutINIValue(OptionFile, "binds", "Crouch key", KEY_CROUCH)
 	PutINIValue(OptionFile, "binds", "Save key", KEY_SAVE)
 	PutINIValue(OptionFile, "binds", "Console key", KEY_CONSOLE)
+
+	PutINIValue(SandboxConfigDebug, "console", "enabled", CanOpenConsole%)
+	PutINIValue(SandboxConfigDebug, "console", "auto opening", ConsoleOpening%)
 	
 End Function
 

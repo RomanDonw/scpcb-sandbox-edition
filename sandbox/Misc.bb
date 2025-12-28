@@ -103,6 +103,22 @@ Function GetNearestItemToEntity.Items(obj%, max_distance# = -1)
     Return ret
 End Function
 
+Function FindNearestNPCtoEntityByCollider.NPCs(ent%, max_distance# = -1)
+    Local dist# = INFINITY
+    Local dist_# = dist
+    Local ret.NPCs = Null
+
+    For n.NPCs = Each NPCs
+        dist_ = EntityDistance(ent, n\Collider)
+        If dist_ < dist And (dist_ <= max_distance Or max_distance < 0) Then
+            dist = dist_
+            ret = n
+        End If
+    Next
+
+    Return ret
+End Function
+
 Function ReloadDoorButtons(d.Doors)
     closest_button_index% = -1
     
@@ -140,9 +156,9 @@ Function ReloadDoorButtons(d.Doors)
 			EntityFX(d\buttons[i], 1)
 		Else
 			If d\KeyCard > 0 Then
-				d\buttons[i]= CopyEntity(ButtonKeyOBJ)
+				d\buttons[i] = CopyEntity(ButtonKeyOBJ)
 			ElseIf d\KeyCard < 0
-				d\buttons[i]= CopyEntity(ButtonScannerOBJ)	
+				d\buttons[i] = CopyEntity(ButtonScannerOBJ)	
 			Else
 				d\buttons[i] = CopyEntity(ButtonOBJ)
 			End If
@@ -154,17 +170,16 @@ Function ReloadDoorButtons(d.Doors)
     If btn0_exists Then
         PositionEntity d\buttons[0], btn0_old_x, btn0_old_y, btn0_old_z, True
         RotateEntity d\buttons[0], btn0_old_pitch, btn0_old_yaw, btn0_old_roll, True
+        EntityParent(d\buttons[0], d\frameobj)
+        EntityPickMode(d\buttons[0], 2)
     End If
 
     If btn1_exists Then
         PositionEntity d\buttons[1], btn1_old_x, btn1_old_y, btn1_old_z, True
         RotateEntity d\buttons[1], btn1_old_pitch, btn1_old_yaw, btn1_old_roll, True
+        EntityParent(d\buttons[1], d\frameobj)
+	    EntityPickMode(d\buttons[1], 2)
     End If
-
-	EntityParent(d\buttons[0], d\frameobj)
-	EntityParent(d\buttons[1], d\frameobj)
-	EntityPickMode(d\buttons[0], 2)
-	EntityPickMode(d\buttons[1], 2)
 
     If closest_button_index >= 0 Then ClosestButton = d\buttons[closest_button_index]
 End Function
@@ -450,6 +465,20 @@ Function FindItemTemplateByTempName.ItemTemplates(tempname$)
     Next
 
     Return ret
+End Function
+
+Function EntityFlatXZDistance(ent_a%, ent_b%)
+    Local ax# = EntityX(ent_a)
+    Local az# = EntityZ(ent_a)
+
+    Local bx# = EntityX(ent_b)
+    Local bz# = EntityZ(ent_b)
+
+    Return Abs(Sqr(ax * ax + az * az) - Sqr(bx * bx + bz * bz))
+End Function
+
+Function NOP()
+    Return
 End Function
 
 ;Const GIVEITEMERR_OK% = 0

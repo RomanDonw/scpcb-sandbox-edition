@@ -1,6 +1,8 @@
 /build/Saves/
 /updates/
 /build/screenshots/
+/build/SFX/Music/Custom
+/build/SFX/Radio/UserTracks
 
 error_log_*
 *FastExt.bb

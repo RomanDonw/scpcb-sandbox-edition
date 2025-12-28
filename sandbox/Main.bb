@@ -41,7 +41,7 @@ Function OnBeforeLoad()
 End Function
 
 Function OnBeforeSave()
-    RemoveControllableNPC()
+    ;RemoveControllableNPC()
 End Function
 
 Function OnLoad(f%)
@@ -54,7 +54,6 @@ Function OnLoad(f%)
 
     If PresetDisableSCP106 Then
 		Curr106\Idle = True
-		;Curr106\State = 200000
 		Contained106 = True
 	End If
 
@@ -63,6 +62,10 @@ Function OnLoad(f%)
     flag_maxwellcatspawned = ReadByte(f)
 
     ;ShowPlayerCrowbar = False
+
+    DoorOpenBypass = False
+    CurrDoor = Null
+    PlayerCrowbarUsageCooldownTimer = 0
 End Function
 
 Function OnSave(f%)
@@ -86,15 +89,22 @@ Function OnInitNewGame()
 
     PDCameraEffect = False
     flag_maxwellcatspawned = False
+    DoorOpenBypass = False
+    CurrDoor = Null
+    PlayerCrowbarUsageCooldownTimer = 0
 
-    ;ShowPlayerCrowbar = False
+    ctrl_npc = Null
+    ctrl_npc_follow = False
+    ctrl_npc_follow_entity = 0
 End Function
 
 Function OnNullGame()
     PDCameraEffect = False
     flag_maxwellcatspawned = False
+    CurrDoor = Null
+    PlayerCrowbarUsageCooldownTimer = 0
 
-    ;ShowPlayerCrowbar = False
+    RemoveControllableNPC()
 End Function
 
 ; ===========================================================================================================================================================
@@ -147,7 +157,7 @@ Function OnUpdate()
     ;End If
 
     If PlayerCrowbar <> 0 Then
-        Local d# = Vec3Length(EntityX(Collider, True), EntityY(Collider, True), EntityZ(Collider, True))
+        ;Local d# = Vec3Length(EntityX(Collider, True), EntityY(Collider, True), EntityZ(Collider, True))
 
         ;RotateEntity PlayerCrowbar, Sin(d * PlayerCrowbarSwingXCoefficient), EntityYaw(PlayerCrowbar, False), Sin(d * PlayerCrowbarSwingZCoefficient), False
         ;Local up# = (Sin(Shake) / (20.0+CrouchState*20.0))*0.6
@@ -242,16 +252,273 @@ Function OnUpdateEvents()
     CatchErrors("OnUpdateEvents (after cheat functions)")
 End Function
 
+Global test_049_currinstance.NPCs = Null
+Global test_049_enabled% = False
+Global test_049_target = CreatePivot()
+Global test_049_movetotarget% = False, test_049_moveanimtype% = 0
+Global test_049_enablespeechsfx% = True
+
+Global test_106_currinstance.NPCs = Null
+Global test_106_enabled% = False
+Global test_106_target = CreatePivot()
+Global test_106_movetotarget% = False
+Global test_106_disable_gravity% = False
+
+Function OnUpdateNPCs()
+    If test_049_enabled Then
+        If test_049_currinstance = Null Then
+            test_049_currinstance = CreateNPC(NPCtype049, EntityX(Collider), EntityY(Collider) + 0.4, EntityZ(Collider), False)
+            test_049_currinstance\State = 0
+        End If
+
+        n.NPCs = test_049_currinstance
+        prevFrame# = n\Frame
+        ;n\Speed = 0.015
+
+        If test_049_movetotarget Then
+            n\CurrSpeed = CurveValue(n\Speed, n\CurrSpeed, 10.0)
+
+            Local targetx# = EntityX(test_049_target, True)
+            Local targety# = EntityY(test_049_target, True)
+            Local targetz# = EntityZ(test_049_target, True)
+
+            If n\PathTimer <= 0 Then ; refind path
+                n\PathStatus = FindPath(n, targetx, targety, targetz)
+                n\PathTimer = 70 * 5
+                n\PathLocation = 0
+                n\State3 = 0
+            EndIf
+
+            Select n\PathStatus
+                Case 0 ; too near to target point.
+                    ;AnimateNPC(n, 37, 269, 0.7, False)
+                    ;CreateConsoleMsg("Test 049: PathStatus 0.", 255, 0, 0)
+
+                    PointEntity n\obj, test_049_target
+                    RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj), EntityYaw(n\Collider), 10.0), 0
+                    MoveEntity n\Collider, 0, 0, n\CurrSpeed * FPSfactor
+
+                    ;If EntityFlatDistance(n\obj, test_049_target) <= 0.05 Then
+                    If EntityDistance(n\Collider, test_049_target) <= 0.5 Then
+                        test_049_movetotarget = False
+                    End If
+
+                Case 1 ; if successfully found
+                    While n\Path[n\PathLocation]=Null
+                        If n\PathLocation > 19 Then 
+                            n\PathLocation = 0 : n\PathStatus = 0
+                            Exit
+                        Else
+                            n\PathLocation = n\PathLocation + 1
+                        EndIf
+                    Wend
+
+                    If n\Path[n\PathLocation] <> Null Then
+                        ;closes doors behind him
+                        If n\PathLocation>0 Then
+                            If n\Path[n\PathLocation-1] <> Null Then
+                                If n\Path[n\PathLocation-1]\door <> Null Then
+                                    If (Not n\Path[n\PathLocation-1]\door\IsElevatorDoor) Then
+                                        If EntityDistance(n\Path[n\PathLocation-1]\obj,n\Collider) > 0.3 Then
+                                            If (n\Path[n\PathLocation-1]\door\MTFClose) And (n\Path[n\PathLocation-1]\door\open) And (n\Path[n\PathLocation-1]\door\buttons[0]<>0 Or n\Path[n\PathLocation-1]\door\buttons[1]<>0) Then
+                                                If n\Path[n\PathLocation-1]\door\Keycard = 0 And n\Path[n\PathLocation-1]\door\Code = "" And (Not n\Path[n\PathLocation-1]\door\locked) Then UseDoor(n\Path[n\PathLocation-1]\door, False)
+                                            EndIf
+                                        EndIf
+                                    EndIf
+                                EndIf
+                            EndIf
+                        EndIf
+
+                        PointEntity n\obj, n\Path[n\PathLocation]\obj
+                        RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj), EntityYaw(n\Collider), 10.0), 0
+                        MoveEntity n\Collider, 0, 0, n\CurrSpeed * FPSfactor
+
+                        ;opens doors in front of him
+                        dist2# = EntityDistance(n\Collider,n\Path[n\PathLocation]\obj)
+                        If dist2 < 0.6 Then
+                            Local CanInteractWithDoor% = True
+                            If n\Path[n\PathLocation]\door <> Null Then
+                                If (Not n\Path[n\PathLocation]\door\IsElevatorDoor)
+                                    If (n\Path[n\PathLocation]\door\locked Or n\Path[n\PathLocation]\door\KeyCard<>0 Or n\Path[n\PathLocation]\door\Code<>"") And (Not n\Path[n\PathLocation]\door\open) Then
+                                        CanInteractWithDoor = False
+                                    Else
+                                        If n\Path[n\PathLocation]\door\open = False And (n\Path[n\PathLocation]\door\buttons[0]<>0 Or n\Path[n\PathLocation]\door\buttons[1]<>0) Then
+                                            UseDoor(n\Path[n\PathLocation]\door, False)
+                                        EndIf
+                                    EndIf
+                                EndIf
+                            EndIf
+
+                            If dist2 < 0.2 And CanInteractWithDoor Then
+                                n\PathLocation = n\PathLocation + 1
+                            Else If dist2 < 0.5 And (Not CanInteractWithDoor) Then
+                                If Int(n\State3) > 0 Then
+                                    test_049_target = False
+                                    CreateConsoleMsg("Test 049: Can't find available path to target point.", 255, 0, 255)
+                                End If
+
+                                n\PathTimer = 0
+                                n\State3 = Int(n\State3) + 1
+                            End If
+                        EndIf
+                        
+                        ;If EntityDistance(n\Collider, n\Path[n\PathLocation]\obj) < 0.5 Then n\PathLocation = n\PathLocation + 1
+                    Else
+                        AnimateNPC(n, 37, 269, 0.7, False)
+                    EndIf
+
+                Case 2 ; target unreachable
+                    test_049_movetotarget = False
+                    CreateConsoleMsg("Test 049: Can't find path to target.", 255, 0, 0)
+            End Select
+
+            Select test_049_moveanimtype
+                Case 0
+                    AnimateNPC(n, Max(Min(AnimTime(n\obj), 358.0), 346), 393.0, n\CurrSpeed * 38)
+
+                Case 1
+                    AnimateNPC(n, Max(Min(AnimTime(n\obj),428.0),387), 463.0, n\CurrSpeed*38)
+
+                Default
+                    test_049_moveanimtype = 0
+            End Select
+
+            If test_049_enablespeechsfx Then
+                ;Playing a sound if he hears the player
+                If n\PrevState = 0 And ChannelPlaying(n\SoundChn2)=False
+                    If n\Sound2 <> 0 Then FreeSound_Strict(n\Sound2)
+                    If Rand(30)=1
+                        n\Sound2 = LoadSound_Strict("SFX\SCP\049\Searching7.ogg")
+                    Else
+                        n\Sound2 = LoadSound_Strict("SFX\SCP\049\Searching"+Rand(1,6)+".ogg")
+                    EndIf
+                    n\SoundChn2 = LoopSound2(n\Sound2,n\SoundChn2,Camera,n\obj)
+                    n\PrevState = 1
+                EndIf
+                
+                ;Resetting the "PrevState" value randomly, to make 049 talking randomly 
+                If Rand(600)=1 And ChannelPlaying(n\SoundChn2)=False Then n\PrevState = 0
+                
+                If n\PrevState > 1 Then n\PrevState = 1
+            End If
+
+            n\PathTimer = Max(n\PathTimer-FPSfactor,0) ; update path refind timer
+        Else
+            ;AnimateNPC(n, 37, 269, 0.7, False)
+            n\PathTimer = 0
+
+            Select test_049_moveanimtype
+                Case 0
+                    AnimateNPC(n, 37, 269, 0.7, False)
+            
+                Case 1
+                    If AnimTime(n\obj) > 358.0 Then 
+                        AnimateNPC(n, Max(Min(AnimTime(n\obj), 358.0), 346), 393.0, -n\CurrSpeed * 38)
+                    Else
+                        AnimateNPC(n, 37, 269, 0.7, False)
+                    End If
+            
+                Default
+                    test_049_moveanimtype = 0
+            End Select
+
+            n\CurrSpeed = CurveValue(0, n\CurrSpeed, 20.0)
+        End If
+
+        If n\CurrSpeed > 0.005 Then
+            If (prevFrame < 361 And n\Frame=>361) Or (prevFrame < 377 And n\Frame=>377) Then
+                PlaySound2(StepSFX(3,0,Rand(0,2)),Camera, n\Collider, 8.0, Rnd(0.8,1.0))						
+            ElseIf (prevFrame < 431 And n\Frame=>431) Or (prevFrame < 447 And n\Frame=>447)
+                PlaySound2(StepSFX(3,0,Rand(0,2)),Camera, n\Collider, 8.0, Rnd(0.8,1.0))
+            EndIf
+        EndIf
+    Else
+        If test_049_currinstance <> Null Then
+            n.NPCs = test_049_currinstance
+
+            RemoveNPC(test_049_currinstance) : test_049_currinstance = Null
+        End If
+    End If
+
+    If test_106_enabled Then
+        If test_106_currinstance = Null Then
+            test_106_currinstance = CreateNPC(NPCtypeOldMan, EntityX(Collider), EntityY(Collider) + 0.4, EntityZ(Collider), False)
+            test_106_currinstance\State2 = 1
+
+            test_106_currinstance\Idle = False
+            ShowEntity test_106_currinstance\obj
+            HideEntity test_106_currinstance\obj2
+            PositionEntity test_106_currinstance\obj, EntityX(Collider), EntityY(Collider) + 0.4, EntityZ(Collider)
+        End If
+
+        n.NPCs = test_106_currinstance
+
+        If Rand(500) = 1 Then PlaySound2(OldManSFX(Rand(0, 2)), Camera, n\Collider)
+		n\SoundChn = LoopSound2(OldManSFX(4), n\SoundChn, Camera, n\Collider, 8.0, 0.8)
+
+        If test_106_movetotarget Then
+            n\CurrSpeed = CurveValue(n\Speed, n\CurrSpeed, 10.0)
+
+            PointEntity n\Collider, test_106_target
+            MoveEntity n\Collider, 0, 0, n\CurrSpeed * FPSfactor
+
+            If test_106_disable_gravity Then
+                ResetEntity(n\Collider)
+                n\DropSpeed = 0
+            End If
+            PositionEntity(n\obj, EntityX(n\Collider), EntityY(n\Collider) - 0.15, EntityZ(n\Collider))
+            
+            RotateEntity n\obj, 0, EntityYaw(n\Collider), 0
+            
+            ;PositionEntity(n\obj2, EntityX(n\obj), EntityY(n\obj) , EntityZ(n\obj))
+            ;RotateEntity(n\obj2, 0, EntityYaw(n\Collider) - 180, 0)
+            ;MoveEntity(n\obj2, 0, 8.6 * 0.11, -1.5 * 0.11)
+
+            prevFrame# = AnimTime(n\obj)
+            AnimateNPC(n, 284, 333, n\CurrSpeed*43)
+            ;Animate2(n\obj, AnimTime(n\obj), 284, 333, n\CurrSpeed*43)
+            If prevFrame =< 286 And n\Frame>286 Then
+                PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))	
+            ElseIf prevFrame=<311 And n\Frame>311.0 
+                PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))
+            EndIf
+            
+            ;If dist2 < 0.2 Then n\PathLocation = n\PathLocation + 1
+
+            If EntityDistance(n\Collider, test_106_target) < 0.2 Then test_106_movetotarget = False
+        Else
+            ;AnimateNPC(n, 334, 494, 0.3)
+            AnimateNPC(n, 334, 494, 0.3)
+
+            n\CurrSpeed = CurveValue(0, n\CurrSpeed, 10.0)
+        End If
+    Else
+        If test_106_currinstance <> Null Then RemoveNPC(test_106_currinstance) : test_106_currinstance = Null
+    End If
+End Function
+
 Global MaxwellCatOBJ%
-Global MaxwellCatLoopedThemeSound%
+Global MaxwellCatLoopedThemeSound% = LoadLoopedSound("sandbox\SFX\NPC\MaxwellCat\theme.ogg")
 
 Global CenterPointerImage%
 
 ;Global SkyboxSky.Skybox, SkyboxSky1499.Skybox
 
 Global CrowbarOBJ%
+Global DisketteOBJ%
 
-Global PlayerCrowbar%   ;, ShowPlayerCrowbar% = False
+Global PlayerCrowbar%  ;, ShowPlayerCrowbar% = False
+Global PlayerCrowbarUsageCooldownTimer# = 0
+
+Global CrowbarHitSFX%[2]
+For i% = 0 To 1
+    CrowbarHitSFX[i] = LoadSound_Strict("sandbox\SFX\crowbar\hit_" + (i + 1) + ".wav")
+Next
+Global CrowbarHitBodySFX%[3]
+For i% = 0 To 2
+    CrowbarHitBodySFX[i] = LoadSound_Strict("sandbox\SFX\crowbar\hitbody_" + (i + 1) + ".wav")
+Next
+Global CrowbarMissSFX% = LoadSound_Strict("sandbox\SFX\crowbar\miss.wav")
 
 Function OnLoadEntities()
     CatchErrors("Uncaught (OnLoadEntities)")
@@ -267,8 +534,6 @@ Function OnLoadEntities()
     HideEntity MaxwellCatOBJ
     ScaleMesh MaxwellCatOBJ, 0.01, 0.01, 0.01
     EntityTexture MaxwellCatOBJ, LoadTexture_Strict("sandbox\GFX\NPC\MaxwellCat\textures\maxwell.png", TEXTURE_FLAGS_PNG)
-
-    MaxwellCatLoopedThemeSound = LoadLoopedSound("sandbox\SFX\NPC\MaxwellCat\theme.ogg")
 
     ; ===================
 
@@ -327,6 +592,25 @@ Function OnLoadEntities()
     cwit\invimg = LoadImage_Strict(PlayerCrowbarInvImgPath)
 	
     ; ===================
+
+    DisketteOBJ = LoadMesh_Strict("sandbox\GFX\diskette\diskette.b3d")
+    HideEntity DisketteOBJ
+    EntityFX DisketteOBJ, 2
+    EntityTexture DisketteOBJ, LoadTexture_Strict("sandbox\GFX\diskette\1.png")
+    ScaleEntity DisketteOBJ, 0.031, 0.031, 0.031
+
+    ; ===================
+
+    itt.ItemTemplates = New ItemTemplates
+    itt\obj = CopyEntity(DisketteOBJ)
+    HideEntity itt\obj
+
+    itt\tempname = "diskette"
+    itt\name = "Diskette"
+    itt\sound = 1
+    itt\scale = 1
+
+    itt\invimg = LoadImage_Strict("sandbox\GFX\diskette\invimg.png")
     
     CatchErrors("OnLoadEntities")
 End Function

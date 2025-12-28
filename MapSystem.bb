@@ -1672,6 +1672,7 @@ Function LoadRoomTemplates(file$)
 			
 			rt = CreateRoomTemplate(StrTemp)
 			rt\Name = Lower(TemporaryString)
+			If TemporaryString <> "room ambience" Then Log("LoadRoomTemplates(" + Chr(34) + file + Chr(34) + ")", "Load room " + Chr(34) + TemporaryString + Chr(34) + ".")
 			
 			StrTemp = Lower(GetINIString(file, TemporaryString, "shape"))
 			
@@ -1755,6 +1756,7 @@ End Function
 
 
 LoadRoomTemplates("Data\rooms.ini")
+LoadRoomTemplates("sandbox\Data\rooms.ini")
 
 Global RoomScale# = 8.0 / 2048.0
 Const ZONEAMOUNT = 3

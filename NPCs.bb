@@ -74,9 +74,10 @@ Type NPCs
 
 	Field sound3d.SFX3D = Null
 	Field TeleportObjToSpawnPositionOnCreate% = True
+	Field CanSave%
 End Type
 
-Function CreateNPC.NPCs(NPCtype%, x#, y#, z#)
+Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 	Local n.NPCs = New NPCs, n2.NPCs
 	Local temp#, i%, diff1, bump1, spec1
 	Local sf, b, t1
@@ -86,6 +87,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#)
 	n\MaxGravity = 0.2
 	n\CollRadius = 0.2
 	n\FallingPickDistance = 10
+	n\CanSave = CanSave
 	Select NPCtype
 		Case NPCtype173
 			;[Block]
@@ -632,6 +634,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#)
 	
 	PositionEntity(n\Collider, x, y, z, True)
 	If n\TeleportObjToSpawnPositionOnCreate Then PositionEntity(n\obj, x, y, z, True)
+	EntityPickMode n\obj, 2
 	
 	ResetEntity(n\Collider)
 	
@@ -696,15 +699,24 @@ End Function
 Global UpdatingSCP106State% = True
 Global SCP106SpawnAtCustomPos% = False, SCP106SpawnPosX#, SCP106SpawnPosY#, SCP106SpawnPosZ#
 
+Global NPCsCount% = 0
+
 Function UpdateNPCs()
 	If Not NPCsUpdateEnabled Return
 	CatchErrors("Uncaught (UpdateNPCs)")
+
+	OnUpdateNPCs()
+
 	Local n.NPCs, n2.NPCs, d.Doors, de.Decals, r.Rooms, eo.ElevatorObj, eo2.ElevatorObj
 	Local i%, dist#, dist2#, angle#, x#, y#, z#, prevFrame#, PlayerSeeAble%, RN$
 	
 	Local target
 	
+	NPCsCount = 0
+
 	For n.NPCs = Each NPCs
+		NPCsCount = NPCsCount + 1
+
 		;A variable to determine if the NPC is in the facility or not
 		n\InFacility = CheckForNPCInFacility(n)
 		
@@ -969,320 +981,322 @@ Function UpdateNPCs()
 				;[End block]
 			Case NPCtypeOldMan ;------------------------------------------------------------------------------------------------------------------
 				;[Block]
-				If Contained106 Then
-					n\Idle = True
-					HideEntity n\obj
-					HideEntity n\obj2
-					PositionEntity n\obj, 0,500.0,0, True
-				Else
-					
-					dist = EntityDistance(n\Collider, Collider)
-					
-					Local spawn106% = True
-					;checking if 106 is allowed to spawn
-					If PlayerRoom\RoomTemplate\Name$ = "dimension1499" Then spawn106% = False
-					For e.Events = Each Events
-						If e\EventName = "room860"
-							If e\EventState = 1
-								spawn106% = False
-							EndIf
-							Exit
-						EndIf
-					Next
-					If PlayerRoom\RoomTemplate\Name$ = "room049" And EntityY(Collider) <= -2848*RoomScale Then
-						spawn106% = False
-					EndIf
-					;GateA event has been triggered - don't make 106 disapper!
-					;The reason why this is a seperate For loop is because we need to make sure that room860 would not be able to overwrite the "spawn106%" variable
-					For e.events = Each Events
-						If e\EventName = "gatea"
-							If e\EventState <> 0
-								spawn106% = True
-								If PlayerRoom\RoomTemplate\Name$ = "dimension1499" Then
-									n\Idle = True
-								Else
-									n\Idle = False
+				If Not Int(n\State2) Then
+					If Contained106 Then
+						n\Idle = True
+						HideEntity n\obj
+						HideEntity n\obj2
+						PositionEntity n\obj, 0,500.0,0, True
+					Else
+						
+						dist = EntityDistance(n\Collider, Collider)
+						
+						Local spawn106% = True
+						;checking if 106 is allowed to spawn
+						If PlayerRoom\RoomTemplate\Name$ = "dimension1499" Then spawn106% = False
+						For e.Events = Each Events
+							If e\EventName = "room860"
+								If e\EventState = 1
+									spawn106% = False
 								EndIf
+								Exit
 							EndIf
-							Exit
+						Next
+						If PlayerRoom\RoomTemplate\Name$ = "room049" And EntityY(Collider) <= -2848*RoomScale Then
+							spawn106% = False
 						EndIf
-					Next
-					If (Not spawn106%) And n\State <= 0 Then
-						n\State = Rand(22000, 27000)
-						PositionEntity n\Collider,0,500,0
-					EndIf
-					
-					If (Not n\Idle) And spawn106%
-						If n\State <= 0 Then	;attacking
-							;CreateConsoleMsg("SCP-106 attacking!", 255, 0, 255)	
-							If EntityY(n\Collider) < EntityY(Collider) - 20.0 - 0.55 Then
-								If Not PlayerRoom\RoomTemplate\DisableDecals Then
-									de.Decals = CreateDecal(0, EntityX(Collider), 0.01, EntityZ(Collider), 90, Rand(360), 0)
-									de\Size = 0.05 : de\SizeChange = 0.001 : EntityAlpha(de\obj, 0.8) : UpdateDecals
+						;GateA event has been triggered - don't make 106 disapper!
+						;The reason why this is a seperate For loop is because we need to make sure that room860 would not be able to overwrite the "spawn106%" variable
+						For e.events = Each Events
+							If e\EventName = "gatea"
+								If e\EventState <> 0
+									spawn106% = True
+									If PlayerRoom\RoomTemplate\Name$ = "dimension1499" Then
+										n\Idle = True
+									Else
+										n\Idle = False
+									EndIf
 								EndIf
-								
-								If SCP106SpawnAtCustomPos Then
-									n\PrevY = SCP106SpawnPosY
-								Else
-									n\PrevY = EntityY(Collider)
-								End If
-								
-								SetAnimTime n\obj, 110
-								
-								If PlayerRoom\RoomTemplate\Name <> "coffin"
+								Exit
+							EndIf
+						Next
+						If (Not spawn106%) And n\State <= 0 Then
+							n\State = Rand(22000, 27000)
+							PositionEntity n\Collider,0,500,0
+						EndIf
+						
+						If (Not n\Idle) And spawn106%
+							If n\State <= 0 Then	;attacking
+								;CreateConsoleMsg("SCP-106 attacking!", 255, 0, 255)	
+								If EntityY(n\Collider) < EntityY(Collider) - 20.0 - 0.55 Then
+									If Not PlayerRoom\RoomTemplate\DisableDecals Then
+										de.Decals = CreateDecal(0, EntityX(Collider), 0.01, EntityZ(Collider), 90, Rand(360), 0)
+										de\Size = 0.05 : de\SizeChange = 0.001 : EntityAlpha(de\obj, 0.8) : UpdateDecals
+									EndIf
+									
 									If SCP106SpawnAtCustomPos Then
-										PositionEntity(n\Collider, SCP106SpawnPosX, SCP106SpawnPosY - 15, SCP106SpawnPosZ)
+										n\PrevY = SCP106SpawnPosY
 									Else
-										PositionEntity(n\Collider, EntityX(Collider), EntityY(Collider) - 15, EntityZ(Collider))
+										n\PrevY = EntityY(Collider)
 									End If
-								EndIf
-								
-								PlaySound_Strict(DecaySFX(0))
-							End If
-							
-							If Rand(500) = 1 Then PlaySound2(OldManSFX(Rand(0, 2)), Camera, n\Collider)
-							n\SoundChn = LoopSound2(OldManSFX(4), n\SoundChn, Camera, n\Collider, 8.0, 0.8)
-							
-							If n\State > - 10 Then
-								ShouldPlay = 66
-								If n\Frame<259 Then
-									PositionEntity n\Collider, EntityX(n\Collider), n\PrevY-0.15, EntityZ(n\Collider)
-									PointEntity n\obj, Collider
-									RotateEntity (n\Collider, 0, CurveValue(EntityYaw(n\obj),EntityYaw(n\Collider),100.0), 0, True)
-									;CreateConsoleMsg("SCP-106 spawning!", 255, 0, 255)
 									
-									AnimateNPC(n, 110, 259, 0.15, False)
-								Else
-									n\State = -10
-									SCP106SpawnAtCustomPos = False
-								EndIf
-							Else
-								If PlayerRoom\RoomTemplate\Name <> "gatea" Then ShouldPlay = 10
-								
-								Local Visible% = False
-								If dist < 8.0 Then
-									Visible% = EntityVisible(n\Collider, Collider)
-								EndIf
-								
-								If NoTarget Then Visible = False
-								
-								If Visible Then
-									If PlayerRoom\RoomTemplate\Name <> "gatea" Then n\PathTimer = 0
-									If EntityInView(n\Collider, Camera) Then
-										GiveAchievement(Achv106)
-										
-										;Achievements(Achv106) = True
-										
-										BlurVolume = Max(Max(Min((4.0 - dist) / 6.0, 0.9), 0.1), BlurVolume)
-										CurrCameraZoom = Max(CurrCameraZoom, (Sin(Float(MilliSecs2())/20.0)+1.0) * 20.0 * Max((4.0-dist)/4.0,0))
-										
-										If MilliSecs2() - n\LastSeen > 60000 Then 
-											CurrCameraZoom = 40
-											PlaySound_Strict(HorrorSFX(6))
-											n\LastSeen = MilliSecs2()
-										EndIf
+									SetAnimTime n\obj, 110
+									
+									If PlayerRoom\RoomTemplate\Name <> "coffin"
+										If SCP106SpawnAtCustomPos Then
+											PositionEntity(n\Collider, SCP106SpawnPosX, SCP106SpawnPosY - 15, SCP106SpawnPosZ)
+										Else
+											PositionEntity(n\Collider, EntityX(Collider), EntityY(Collider) - 15, EntityZ(Collider))
+										End If
 									EndIf
-								Else
-									If UpdatingSCP106State Then n\State=n\State-FPSfactor
+									
+									PlaySound_Strict(DecaySFX(0))
 								End If
 								
-								If dist > 0.8 Then
-									If (dist > 25.0 Or PlayerRoom\RoomTemplate\Name = "pocketdimension" Or Visible Or n\PathStatus <> 1) And PlayerRoom\RoomTemplate\Name <> "gatea" Then 
-										
-										If (dist > 40 Or PlayerRoom\RoomTemplate\Name = "pocketdimension") Then
-											TranslateEntity n\Collider, 0, ((EntityY(Collider) - 0.14) - EntityY(n\Collider)) / 50.0, 0
-										EndIf
-										
-										n\CurrSpeed = CurveValue(n\Speed,n\CurrSpeed,10.0)
-										
-										PointEntity n\obj, Collider
-										RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj), EntityYaw(n\Collider), 10.0), 0
-										
-										If KillTimer >= 0 Then
-											prevFrame# = n\Frame
-											AnimateNPC(n, 284, 333, n\CurrSpeed*43)
-											;Animate2(n\obj, AnimTime(n\obj), 284, 333, n\CurrSpeed*43)
-											
-											If prevFrame =< 286 And n\Frame>286 Then
-												PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))	
-											ElseIf prevFrame=<311 And n\Frame>311.0 
-												PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))
-											EndIf
-										Else 
-											n\CurrSpeed = 0
-										EndIf
-										
-										n\PathTimer = Max(n\PathTimer-FPSfactor,0)
-										If n\PathTimer =< 0 Then
-											n\PathStatus = FindPath (n, EntityX(Collider,True), EntityY(Collider,True), EntityZ(Collider,True))
-											n\PathTimer = 70*10
-										EndIf
-									Else 
-										If n\PathTimer <= 0 Then
-											n\PathStatus = FindPath (n, EntityX(Collider,True), EntityY(Collider,True), EntityZ(Collider,True))
-											n\PathTimer = 70*10
-											n\CurrSpeed = 0
-										Else
-											n\PathTimer = Max(n\PathTimer-FPSfactor,0)
-											
-											If n\PathStatus = 2 Then
-												n\CurrSpeed = 0
-											ElseIf n\PathStatus = 1
-												While n\Path[n\PathLocation]=Null
-													If n\PathLocation > 19 Then 
-														n\PathLocation = 0 : n\PathStatus = 0
-														Exit
-													Else
-														n\PathLocation = n\PathLocation + 1
-													EndIf
-												Wend
-												
-												If n\Path[n\PathLocation]<>Null Then 
-													TranslateEntity n\Collider, 0, ((EntityY(n\Path[n\PathLocation]\obj,True) - 0.11) - EntityY(n\Collider)) / 50.0, 0
-													
-													PointEntity n\obj, n\Path[n\PathLocation]\obj
-													
-													dist2# = EntityDistance(n\Collider,n\Path[n\PathLocation]\obj)
-													
-													RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj), EntityYaw(n\Collider), Min(20.0,dist2*10.0)), 0
-													n\CurrSpeed = CurveValue(n\Speed,n\CurrSpeed,10.0)
-													
-													prevFrame# = AnimTime(n\obj)
-													AnimateNPC(n, 284, 333, n\CurrSpeed*43)
-													;Animate2(n\obj, AnimTime(n\obj), 284, 333, n\CurrSpeed*43)
-													If prevFrame =< 286 And n\Frame>286 Then
-														PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))	
-													ElseIf prevFrame=<311 And n\Frame>311.0 
-														PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))
-													EndIf
-													
-													If dist2 < 0.2 Then n\PathLocation = n\PathLocation + 1
-												EndIf
-											ElseIf n\PathStatus = 0
-												If n\State3=0 Then AnimateNPC(n, 334, 494, 0.3)
-												;Animate2(n\obj, AnimTime(n\obj), 334, 494, 0.3)
-												n\CurrSpeed = CurveValue(0,n\CurrSpeed,10.0)
-											EndIf
-										EndIf
-										
-									EndIf
-									
-								ElseIf PlayerRoom\RoomTemplate\Name <> "gatea" And (Not NoTarget) ;dist < 0.8
-									
-									If dist > 0.5 Then 
-										n\CurrSpeed = CurveValue(n\Speed * 2.5,n\CurrSpeed,10.0)
-									Else
-										n\CurrSpeed = 0
-									EndIf
-									AnimateNPC(n, 105, 110, 0.15, False)
-									;Animate2(n\obj, AnimTime(n\obj), 105, 110, 0.15, False)
-									;If Floor(AnimTime(n\obj)) = 43 Then SetAnimTime(n\obj, 43)
-									
-									If KillTimer >= 0 And FallTimer >= 0 Then
-										PointEntity n\obj, Collider
-										RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj), EntityYaw(n\Collider), 10.0), 0										
-										
-										If Ceil(n\Frame) = 110 And (Not GodMode) Then
-											PlaySound_Strict(DamageSFX(1))
-											PlaySound_Strict(HorrorSFX(5))											
-											If PlayerRoom\RoomTemplate\Name = "pocketdimension" Then
-												DeathMSG = "Subject D-9341. Body partially decomposed by what is assumed to be SCP-106's "+Chr(34)+"corrosion"+Chr(34)+" effect. Body disposed of via incineration."
-												Kill()
-											Else
-												PlaySound_Strict(OldManSFX(3))
-												FallTimer = Min(-1, FallTimer)
-												PositionEntity(Head, EntityX(Camera, True), EntityY(Camera, True), EntityZ(Camera, True), True)
-												ResetEntity (Head)
-												RotateEntity(Head, 0, EntityYaw(Camera) + Rand(-45, 45), 0)
-											EndIf
-										EndIf
-									EndIf
-									
-								EndIf
+								If Rand(500) = 1 Then PlaySound2(OldManSFX(Rand(0, 2)), Camera, n\Collider)
+								n\SoundChn = LoopSound2(OldManSFX(4), n\SoundChn, Camera, n\Collider, 8.0, 0.8)
 								
-							EndIf 
-							
-							MoveEntity n\Collider, 0, 0, n\CurrSpeed * FPSfactor
-							
-							If n\State <= Rand(-3500, -3000) Then 
-								If Not EntityInView(n\obj,Camera) And dist > 5 Then
-									n\State = Rand(22000, 27000)
-									PositionEntity n\Collider,0,500,0
-								EndIf
-							EndIf
-							
-							If FallTimer < -250.0 Then
-								MoveToPocketDimension()
-								n\State = 250 ;make 106 idle for a while
-							EndIf
-							
-							If n\Reload = 0 Then
-                                If dist > 10 And PlayerRoom\RoomTemplate\Name <> "pocketdimension" And PlayerRoom\RoomTemplate\Name <> "gatea" And n\State <-5 Then ;timer idea by Juanjpro
-                                    If (Not EntityInView(n\obj,Camera))
-                                        TurnEntity Collider,0,180,0
-                                        pick = EntityPick(Collider,5)
-                                        TurnEntity Collider,0,180,0
-                                        If pick<>0
-											TeleportEntity(n\Collider,PickedX(),PickedY(),PickedZ(),n\CollRadius)
-                                            PointEntity(n\Collider,Collider)
-                                            RotateEntity(n\Collider,0,EntityYaw(n\Collider),0)
-                                            MoveEntity(n\Collider,0,0,-2)
-                                            PlaySound2(OldManSFX(3),Camera,n\Collider)
-											n\SoundChn2 = PlaySound2(OldManSFX(6+Rand(0,2)),Camera,n\Collider)
-                                            n\PathTimer = 0
-                                            n\Reload = (70*10.0)/(SelectedDifficulty\otherFactors+1)
-                                            DebugLog "Teleported 106 (Distance: "+EntityDistance(n\Collider,Collider)+")"
-                                        EndIf
-                                    EndIf
-                                EndIf
-                            EndIf
-                            n\Reload = Max(0, n\Reload - FPSfactor)
-                            DebugLog "106 in... "+n\Reload 
-							
-							UpdateSoundOrigin(n\SoundChn2,Camera,n\Collider)
-						Else ;idling outside the map
-							n\CurrSpeed = 0
-							MoveEntity n\Collider, 0, ((EntityY(Collider) - 30) - EntityY(n\Collider)) / 200.0, 0
-							n\DropSpeed = 0
-							n\Frame = 110
-							;SetAnimTime n\obj, 110.0
-							
-							If (Not PlayerRoom\RoomTemplate\DisableDecals) Then
-								If PlayerRoom\RoomTemplate\Name <> "gatea"
-									If (SelectedDifficulty\aggressiveNPCs) Then
-										If UpdatingSCP106State Then n\State=n\State-FPSfactor*2
+								If n\State > - 10 Then
+									ShouldPlay = 66
+									If n\Frame<259 Then
+										PositionEntity n\Collider, EntityX(n\Collider), n\PrevY-0.15, EntityZ(n\Collider)
+										PointEntity n\obj, Collider
+										RotateEntity (n\Collider, 0, CurveValue(EntityYaw(n\obj),EntityYaw(n\Collider),100.0), 0, True)
+										;CreateConsoleMsg("SCP-106 spawning!", 255, 0, 255)
+										
+										AnimateNPC(n, 110, 259, 0.15, False)
+									Else
+										n\State = -10
+										SCP106SpawnAtCustomPos = False
+									EndIf
+								Else
+									If PlayerRoom\RoomTemplate\Name <> "gatea" Then ShouldPlay = 10
+									
+									Local Visible% = False
+									If dist < 8.0 Then
+										Visible% = EntityVisible(n\Collider, Collider)
+									EndIf
+									
+									If NoTarget Then Visible = False
+									
+									If Visible Then
+										If PlayerRoom\RoomTemplate\Name <> "gatea" Then n\PathTimer = 0
+										If EntityInView(n\Collider, Camera) Then
+											GiveAchievement(Achv106)
+											
+											;Achievements(Achv106) = True
+											
+											BlurVolume = Max(Max(Min((4.0 - dist) / 6.0, 0.9), 0.1), BlurVolume)
+											CurrCameraZoom = Max(CurrCameraZoom, (Sin(Float(MilliSecs2())/20.0)+1.0) * 20.0 * Max((4.0-dist)/4.0,0))
+											
+											If MilliSecs2() - n\LastSeen > 60000 Then 
+												CurrCameraZoom = 40
+												PlaySound_Strict(HorrorSFX(6))
+												n\LastSeen = MilliSecs2()
+											EndIf
+										EndIf
 									Else
 										If UpdatingSCP106State Then n\State=n\State-FPSfactor
+									End If
+									
+									If dist > 0.8 Then
+										If (dist > 25.0 Or PlayerRoom\RoomTemplate\Name = "pocketdimension" Or Visible Or n\PathStatus <> 1) And PlayerRoom\RoomTemplate\Name <> "gatea" Then 
+											
+											If (dist > 40 Or PlayerRoom\RoomTemplate\Name = "pocketdimension") Then
+												TranslateEntity n\Collider, 0, ((EntityY(Collider) - 0.14) - EntityY(n\Collider)) / 50.0, 0
+											EndIf
+											
+											n\CurrSpeed = CurveValue(n\Speed,n\CurrSpeed,10.0)
+											
+											PointEntity n\obj, Collider
+											RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj), EntityYaw(n\Collider), 10.0), 0
+											
+											If KillTimer >= 0 Then
+												prevFrame# = n\Frame
+												AnimateNPC(n, 284, 333, n\CurrSpeed*43)
+												;Animate2(n\obj, AnimTime(n\obj), 284, 333, n\CurrSpeed*43)
+												
+												If prevFrame =< 286 And n\Frame>286 Then
+													PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))	
+												ElseIf prevFrame=<311 And n\Frame>311.0 
+													PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))
+												EndIf
+											Else 
+												n\CurrSpeed = 0
+											EndIf
+											
+											n\PathTimer = Max(n\PathTimer-FPSfactor,0)
+											If n\PathTimer =< 0 Then
+												n\PathStatus = FindPath (n, EntityX(Collider,True), EntityY(Collider,True), EntityZ(Collider,True))
+												n\PathTimer = 70*10
+											EndIf
+										Else 
+											If n\PathTimer <= 0 Then
+												n\PathStatus = FindPath (n, EntityX(Collider,True), EntityY(Collider,True), EntityZ(Collider,True))
+												n\PathTimer = 70*10
+												n\CurrSpeed = 0
+											Else
+												n\PathTimer = Max(n\PathTimer-FPSfactor,0)
+												
+												If n\PathStatus = 2 Then
+													n\CurrSpeed = 0
+												ElseIf n\PathStatus = 1
+													While n\Path[n\PathLocation]=Null
+														If n\PathLocation > 19 Then 
+															n\PathLocation = 0 : n\PathStatus = 0
+															Exit
+														Else
+															n\PathLocation = n\PathLocation + 1
+														EndIf
+													Wend
+													
+													If n\Path[n\PathLocation]<>Null Then 
+														TranslateEntity n\Collider, 0, ((EntityY(n\Path[n\PathLocation]\obj,True) - 0.11) - EntityY(n\Collider)) / 50.0, 0
+														
+														PointEntity n\obj, n\Path[n\PathLocation]\obj
+														
+														dist2# = EntityDistance(n\Collider,n\Path[n\PathLocation]\obj)
+														
+														RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj), EntityYaw(n\Collider), Min(20.0,dist2*10.0)), 0
+														n\CurrSpeed = CurveValue(n\Speed,n\CurrSpeed,10.0)
+														
+														prevFrame# = AnimTime(n\obj)
+														AnimateNPC(n, 284, 333, n\CurrSpeed*43)
+														;Animate2(n\obj, AnimTime(n\obj), 284, 333, n\CurrSpeed*43)
+														If prevFrame =< 286 And n\Frame>286 Then
+															PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))	
+														ElseIf prevFrame=<311 And n\Frame>311.0 
+															PlaySound2(Step2SFX(Rand(0,2)),Camera, n\Collider, 6.0, Rnd(0.8,1.0))
+														EndIf
+														
+														If dist2 < 0.2 Then n\PathLocation = n\PathLocation + 1
+													EndIf
+												ElseIf n\PathStatus = 0
+													If n\State3=0 Then AnimateNPC(n, 334, 494, 0.3)
+													;Animate2(n\obj, AnimTime(n\obj), 334, 494, 0.3)
+													n\CurrSpeed = CurveValue(0,n\CurrSpeed,10.0)
+												EndIf
+											EndIf
+											
+										EndIf
+										
+									ElseIf PlayerRoom\RoomTemplate\Name <> "gatea" And (Not NoTarget) ;dist < 0.8
+										
+										If dist > 0.5 Then 
+											n\CurrSpeed = CurveValue(n\Speed * 2.5,n\CurrSpeed,10.0)
+										Else
+											n\CurrSpeed = 0
+										EndIf
+										AnimateNPC(n, 105, 110, 0.15, False)
+										;Animate2(n\obj, AnimTime(n\obj), 105, 110, 0.15, False)
+										;If Floor(AnimTime(n\obj)) = 43 Then SetAnimTime(n\obj, 43)
+										
+										If KillTimer >= 0 And FallTimer >= 0 Then
+											PointEntity n\obj, Collider
+											RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj), EntityYaw(n\Collider), 10.0), 0										
+											
+											If Ceil(n\Frame) = 110 And (Not GodMode) Then
+												PlaySound_Strict(DamageSFX(1))
+												PlaySound_Strict(HorrorSFX(5))											
+												If PlayerRoom\RoomTemplate\Name = "pocketdimension" Then
+													DeathMSG = "Subject D-9341. Body partially decomposed by what is assumed to be SCP-106's "+Chr(34)+"corrosion"+Chr(34)+" effect. Body disposed of via incineration."
+													Kill()
+												Else
+													PlaySound_Strict(OldManSFX(3))
+													FallTimer = Min(-1, FallTimer)
+													PositionEntity(Head, EntityX(Camera, True), EntityY(Camera, True), EntityZ(Camera, True), True)
+													ResetEntity (Head)
+													RotateEntity(Head, 0, EntityYaw(Camera) + Rand(-45, 45), 0)
+												EndIf
+											EndIf
+										EndIf
+										
+									EndIf
+									
+								EndIf 
+								
+								MoveEntity n\Collider, 0, 0, n\CurrSpeed * FPSfactor
+								
+								If n\State <= Rand(-3500, -3000) Then 
+									If Not EntityInView(n\obj,Camera) And dist > 5 Then
+										n\State = Rand(22000, 27000)
+										PositionEntity n\Collider,0,500,0
 									EndIf
 								EndIf
-							EndIf
-						End If
-						
-						ResetEntity(n\Collider)
-						n\DropSpeed = 0
-						PositionEntity(n\obj, EntityX(n\Collider), EntityY(n\Collider) - 0.15, EntityZ(n\Collider))
-						
-						RotateEntity n\obj, 0, EntityYaw(n\Collider), 0
-						
-						PositionEntity(n\obj2, EntityX(n\obj), EntityY(n\obj) , EntityZ(n\obj))
-						RotateEntity(n\obj2, 0, EntityYaw(n\Collider) - 180, 0)
-						MoveEntity(n\obj2, 0, 8.6 * 0.11, -1.5 * 0.11)
-						
-						If PlayerRoom\RoomTemplate\Name = "pocketdimension" Or PlayerRoom\RoomTemplate\Name = "gatea" Then
-							HideEntity n\obj2
-						Else
-							If dist < CameraFogFar*LightVolume*0.6 Then
+								
+								If FallTimer < -250.0 Then
+									MoveToPocketDimension()
+									n\State = 250 ;make 106 idle for a while
+								EndIf
+								
+								If n\Reload = 0 Then
+									If dist > 10 And PlayerRoom\RoomTemplate\Name <> "pocketdimension" And PlayerRoom\RoomTemplate\Name <> "gatea" And n\State <-5 Then ;timer idea by Juanjpro
+										If (Not EntityInView(n\obj,Camera))
+											TurnEntity Collider,0,180,0
+											pick = EntityPick(Collider,5)
+											TurnEntity Collider,0,180,0
+											If pick<>0
+												TeleportEntity(n\Collider,PickedX(),PickedY(),PickedZ(),n\CollRadius)
+												PointEntity(n\Collider,Collider)
+												RotateEntity(n\Collider,0,EntityYaw(n\Collider),0)
+												MoveEntity(n\Collider,0,0,-2)
+												PlaySound2(OldManSFX(3),Camera,n\Collider)
+												n\SoundChn2 = PlaySound2(OldManSFX(6+Rand(0,2)),Camera,n\Collider)
+												n\PathTimer = 0
+												n\Reload = (70*10.0)/(SelectedDifficulty\otherFactors+1)
+												DebugLog "Teleported 106 (Distance: "+EntityDistance(n\Collider,Collider)+")"
+											EndIf
+										EndIf
+									EndIf
+								EndIf
+								n\Reload = Max(0, n\Reload - FPSfactor)
+								DebugLog "106 in... "+n\Reload 
+								
+								UpdateSoundOrigin(n\SoundChn2,Camera,n\Collider)
+							Else ;idling outside the map
+								n\CurrSpeed = 0
+								MoveEntity n\Collider, 0, ((EntityY(Collider) - 30) - EntityY(n\Collider)) / 200.0, 0
+								n\DropSpeed = 0
+								n\Frame = 110
+								;SetAnimTime n\obj, 110.0
+								
+								If (Not PlayerRoom\RoomTemplate\DisableDecals) Then
+									If PlayerRoom\RoomTemplate\Name <> "gatea"
+										If (SelectedDifficulty\aggressiveNPCs) Then
+											If UpdatingSCP106State Then n\State=n\State-FPSfactor*2
+										Else
+											If UpdatingSCP106State Then n\State=n\State-FPSfactor
+										EndIf
+									EndIf
+								EndIf
+							End If
+							
+							ResetEntity(n\Collider)
+							n\DropSpeed = 0
+							PositionEntity(n\obj, EntityX(n\Collider), EntityY(n\Collider) - 0.15, EntityZ(n\Collider))
+							
+							RotateEntity n\obj, 0, EntityYaw(n\Collider), 0
+							
+							PositionEntity(n\obj2, EntityX(n\obj), EntityY(n\obj) , EntityZ(n\obj))
+							RotateEntity(n\obj2, 0, EntityYaw(n\Collider) - 180, 0)
+							MoveEntity(n\obj2, 0, 8.6 * 0.11, -1.5 * 0.11)
+							
+							If PlayerRoom\RoomTemplate\Name = "pocketdimension" Or PlayerRoom\RoomTemplate\Name = "gatea" Then
 								HideEntity n\obj2
 							Else
-								ShowEntity n\obj2
-								EntityAlpha (n\obj2, Min(dist-CameraFogFar*LightVolume*0.6,1.0))
-							EndIf
-						EndIf						
-					Else
-						HideEntity n\obj2
+								If dist < CameraFogFar*LightVolume*0.6 Then
+									HideEntity n\obj2
+								Else
+									ShowEntity n\obj2
+									EntityAlpha (n\obj2, Min(dist-CameraFogFar*LightVolume*0.6,1.0))
+								EndIf
+							EndIf						
+						Else
+							HideEntity n\obj2
+						EndIf
+						
 					EndIf
-					
-				EndIf
+				End If
 				
 				;[End Block]
 			Case NPCtype096

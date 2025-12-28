@@ -142,61 +142,63 @@ Function SaveGame(file$)
 	
 	temp = 0
 	For  n.NPCs = Each NPCs
-		temp = temp +1
+		If n\CanSave Then temp = temp +1
 	Next	
 	
 	WriteInt f, temp
 	For n.NPCs = Each NPCs
-		DebugLog("Saving NPC " +n\NVName+ " (ID "+n\ID+")")
-		
-		WriteByte f, n\NPCtype
-		WriteFloat f, EntityX(n\Collider,True)
-		WriteFloat f, EntityY(n\Collider,True)
-		WriteFloat f, EntityZ(n\Collider,True)
-		
-		WriteFloat f, EntityPitch(n\Collider)
-		WriteFloat f, EntityYaw(n\Collider)
-		WriteFloat f, EntityRoll(n\Collider)
-		
-		WriteFloat f, n\State
-		WriteFloat f, n\State2
-		WriteFloat f, n\State3
-		WriteInt f, n\PrevState
-		
-		WriteByte f, n\Idle
-		WriteFloat f, n\LastDist
-		WriteInt f, n\LastSeen
-		
-		WriteInt f, n\CurrSpeed
-		
-		WriteFloat f, n\Angle
-		
-		WriteFloat f, n\Reload
-		
-		WriteInt f, n\ID
-		If n\Target <> Null Then
-			WriteInt f, n\Target\ID		
-		Else
-			WriteInt f, 0
-		EndIf
-		
-		WriteFloat f, n\EnemyX
-		WriteFloat f, n\EnemyY
-		WriteFloat f, n\EnemyZ
-		
-		WriteString f, n\texture
-		
-		WriteFloat f, AnimTime(n\obj)
-		
-		WriteInt f, n\IsDead
-		WriteFloat f, n\PathX
-		WriteFloat f, n\PathZ
-		WriteInt f, n\HP
-		WriteString f, n\Model
-		WriteFloat f, n\ModelScaleX#
-		WriteFloat f, n\ModelScaleY#
-		WriteFloat f, n\ModelScaleZ#
-		WriteInt f, n\TextureID
+		If n\CanSave Then
+			DebugLog("Saving NPC " +n\NVName+ " (ID "+n\ID+")")
+			
+			WriteByte f, n\NPCtype
+			WriteFloat f, EntityX(n\Collider,True)
+			WriteFloat f, EntityY(n\Collider,True)
+			WriteFloat f, EntityZ(n\Collider,True)
+			
+			WriteFloat f, EntityPitch(n\Collider)
+			WriteFloat f, EntityYaw(n\Collider)
+			WriteFloat f, EntityRoll(n\Collider)
+			
+			WriteFloat f, n\State
+			WriteFloat f, n\State2
+			WriteFloat f, n\State3
+			WriteInt f, n\PrevState
+			
+			WriteByte f, n\Idle
+			WriteFloat f, n\LastDist
+			WriteInt f, n\LastSeen
+			
+			WriteInt f, n\CurrSpeed
+			
+			WriteFloat f, n\Angle
+			
+			WriteFloat f, n\Reload
+			
+			WriteInt f, n\ID
+			If n\Target <> Null Then
+				WriteInt f, n\Target\ID		
+			Else
+				WriteInt f, 0
+			EndIf
+			
+			WriteFloat f, n\EnemyX
+			WriteFloat f, n\EnemyY
+			WriteFloat f, n\EnemyZ
+			
+			WriteString f, n\texture
+			
+			WriteFloat f, AnimTime(n\obj)
+			
+			WriteInt f, n\IsDead
+			WriteFloat f, n\PathX
+			WriteFloat f, n\PathZ
+			WriteInt f, n\HP
+			WriteString f, n\Model
+			WriteFloat f, n\ModelScaleX#
+			WriteFloat f, n\ModelScaleY#
+			WriteFloat f, n\ModelScaleZ#
+			WriteInt f, n\TextureID
+		End If
 	Next
 	
 	WriteFloat f, MTFtimer
@@ -325,6 +327,32 @@ Function SaveGame(file$)
 		
 		WriteByte f, do\IsElevatorDoor
 		WriteByte f, do\MTFClose
+		
+
+		WriteFloat f, do\angle
+		WriteInt f, do\dir
+		WriteInt f, do\KeyCard
+		WriteString f, do\Code
+
+		WriteByte f, (((do\buttons[1] <> 0) And %1) Shl 1) Or ((do\buttons[0] <> 0) And %1)
+		If do\buttons[0] <> 0 Then
+			WriteFloat f, EntityX(do\buttons[0], True)
+			WriteFloat f, EntityY(do\buttons[0], True)
+			WriteFloat f, EntityZ(do\buttons[0], True)
+
+			WriteFloat f, EntityPitch(do\buttons[0], True)
+			WriteFloat f, EntityYaw(do\buttons[0], True)
+			WriteFloat f, EntityRoll(do\buttons[0], True)
+		End If
+		If do\buttons[1] <> 0 Then
+			WriteFloat f, EntityX(do\buttons[1], True)
+			WriteFloat f, EntityY(do\buttons[1], True)
+			WriteFloat f, EntityZ(do\buttons[1], True)
+
+			WriteFloat f, EntityPitch(do\buttons[1], True)
+			WriteFloat f, EntityYaw(do\buttons[1], True)
+			WriteFloat f, EntityRoll(do\buttons[1], True)
+		End If
 	Next
 	
 	WriteInt f, 1845
@@ -955,7 +983,41 @@ Function LoadGame(file$)
 		
 		Local IsElevDoor = ReadByte(f)
 		Local MTFClose = ReadByte(f)
+
+		Local door_angle# = ReadFloat(f)
+		Local big% = ReadInt(f)
+		Local keycard% = ReadInt(f)
+		Local code$ = ReadString(f)
+
+		Local btnexistflags% = ReadByte(f)
+		Local btnexist0% = btnexistflags And %1
+		Local btnexist1% = (btnexistflags Shr 1) And %1
+		;Log("LoadGame", "Button exist: 0 = " + btnexist0 + ", 1 = " + btnexist1)
+
+		Local btn0_x#, btn0_y#, btn0_z#, btn0_pitch#, btn0_yaw#, btn0_roll#
+		Local btn1_x#, btn1_y#, btn1_z#, btn1_pitch#, btn1_yaw#, btn1_roll#
+
+		If btnexist0 Then
+			btn0_x = ReadFloat(f)
+			btn0_y = ReadFloat(f)
+			btn0_z = ReadFloat(f)
+
+			btn0_pitch = ReadFloat(f)
+			btn0_yaw = ReadFloat(f)
+			btn0_roll = ReadFloat(f)
+		End If
+
+		If btnexist1 Then
+			btn1_x = ReadFloat(f)
+			btn1_y = ReadFloat(f)
+			btn1_z = ReadFloat(f)
+
+			btn1_pitch = ReadFloat(f)
+			btn1_yaw = ReadFloat(f)
+			btn1_roll = ReadFloat(f)
+		End If
 		
+		found% = False
 		For do.Doors = Each Doors
 			If EntityX(do\frameobj,True) = x And EntityY(do\frameobj,True) = y And EntityZ(do\frameobj,True) = z Then
 				do\open = open
@@ -969,9 +1031,49 @@ Function LoadGame(file$)
 				
 				PositionEntity(do\obj, objX, y, objZ, True)
 				If do\obj2 <> 0 Then PositionEntity(do\obj2, obj2X, y, obj2Z, True)
+
+				found = True
 				Exit
 			End If
-		Next		
+		Next
+
+		If Not found Then
+			Local door.Doors = CreateDoor(0, x, y, z, door_angle, Null, False, big)
+
+			door\open = open
+			door\openstate = openstate
+			door\locked = locked
+			door\AutoClose = autoclose
+			door\timer = timer
+			door\timerstate = timerstate
+			door\IsElevatorDoor = IsElevDoor
+			door\MTFClose = MTFClose
+
+			door\KeyCard = keycard
+			door\Code = code
+
+			ReloadDoorButtons(door)
+			
+			PositionEntity(door\obj, objX, y, objZ, True)
+			If door\obj2 <> 0 Then PositionEntity(door\obj2, obj2X, y, obj2Z, True)
+
+			If btnexist0 Then
+				PositionEntity door\buttons[0], btn0_x, btn0_y, btn0_z, True
+				RotateEntity door\buttons[0], btn0_pitch, btn0_yaw, btn0_roll, True
+			Else
+				FreeEntity door\buttons[0]
+				door\buttons[0] = 0
+			End If
+
+			If btnexist1 Then
+				PositionEntity door\buttons[1], btn1_x, btn1_y, btn1_z, True
+				RotateEntity door\buttons[1], btn1_pitch, btn1_yaw, btn1_roll, True
+			Else
+				FreeEntity door\buttons[1]
+				door\buttons[1] = 0
+			End If
+
+		End If		
 	Next
 	
 	InitWayPoints()
@@ -1068,10 +1170,16 @@ Function LoadGame(file$)
 		EndIf
 	Next
 	
+	;CatchErrors("LoadGame/debug 0")
+	;CreateConsoleMsg("Before remove all items in LoadGame")
 	Local it.Items
 	For it.Items = Each Items
+		;Log("LoadGame", it\itemtemplate\name)
+		NOP()
 		RemoveItem(it)
+		NOP()
 	Next
+	;CreateConsoleMsg("After remove all items in LoadGame")
 	
 	temp = ReadInt(f)
 	For i = 1 To temp
@@ -1691,8 +1799,43 @@ Function LoadGameQuick(file$)
 		
 		Local IsElevDoor = ReadByte(f)
 		Local MTFClose = ReadByte(f)
+
+
+		Local door_angle# = ReadFloat(f)
+		Local big% = ReadInt(f)
+		Local keycard% = ReadInt(f)
+		Local code$ = ReadString(f)
+
+		Local btnexistflags% = ReadByte(f)
+		Local btnexist0% = btnexistflags And %1
+		Local btnexist1% = (btnexistflags Shr 1) And %1
+
+		Local btn0_x#, btn0_y#, btn0_z#, btn0_pitch#, btn0_yaw#, btn0_roll#
+		Local btn1_x#, btn1_y#, btn1_z#, btn1_pitch#, btn1_yaw#, btn1_roll#
+
+		If btnexist0 Then
+			btn0_x = ReadFloat(f)
+			btn0_y = ReadFloat(f)
+			btn0_z = ReadFloat(f)
+
+			btn0_pitch = ReadFloat(f)
+			btn0_yaw = ReadFloat(f)
+			btn0_roll = ReadFloat(f)
+		End If
+
+		If btnexist1 Then
+			btn1_x = ReadFloat(f)
+			btn1_y = ReadFloat(f)
+			btn1_z = ReadFloat(f)
+
+			btn1_pitch = ReadFloat(f)
+			btn1_yaw = ReadFloat(f)
+			btn1_roll = ReadFloat(f)
+		End If
 		
 		For do.Doors = Each Doors
+			found% = False
+
 			If EntityX(do\frameobj,True) = x Then 
 				If EntityZ(do\frameobj,True) = z Then	
 					If EntityY(do\frameobj,True) = y 
@@ -1708,10 +1851,49 @@ Function LoadGameQuick(file$)
 						PositionEntity(do\obj, objX, EntityY(do\obj), objZ, True)
 						If do\obj2 <> 0 Then PositionEntity(do\obj2, obj2X, EntityY(do\obj2), obj2Z, True)
 						
+						found = True
+
 						Exit
 					EndIf
 				EndIf
 			End If
+
+			If Not found Then
+				Local door.Doors = CreateDoor(0, x, y, z, door_angle, Null, False, big)
+
+				door\open = open
+				door\openstate = openstate
+				door\locked = locked
+				door\AutoClose = autoclose
+				door\timer = timer
+				door\timerstate = timerstate
+				door\IsElevatorDoor = IsElevDoor
+				door\MTFClose = MTFClose
+
+				door\KeyCard = keycard
+				door\Code = code
+
+				ReloadDoorButtons(door)
+				
+				PositionEntity(door\obj, objX, y, objZ, True)
+				If door\obj2 <> 0 Then PositionEntity(door\obj2, obj2X, y, obj2Z, True)
+
+				If btnexist0 Then
+					PositionEntity door\buttons[0], btn0_x, btn0_y, btn0_z, True
+					RotateEntity door\buttons[0], btn0_pitch, btn0_yaw, btn0_roll, True
+				Else
+					FreeEntity door\buttons[0]
+					door\buttons[0] = 0
+				End If
+
+				If btnexist1 Then
+					PositionEntity door\buttons[1], btn1_x, btn1_y, btn1_z, True
+					RotateEntity door\buttons[1], btn1_pitch, btn1_yaw, btn1_roll, True
+				Else
+					FreeEntity door\buttons[1]
+					door\buttons[1] = 0
+				End If
+			End If	
 		Next		
 	Next
 	
