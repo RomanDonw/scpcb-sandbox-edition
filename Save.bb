@@ -192,12 +192,19 @@ Function SaveGame(file$)
 			WriteInt f, n\IsDead
 			WriteFloat f, n\PathX
 			WriteFloat f, n\PathZ
-			WriteInt f, n\HP
+			;WriteInt f, n\HP
 			WriteString f, n\Model
 			WriteFloat f, n\ModelScaleX#
 			WriteFloat f, n\ModelScaleY#
 			WriteFloat f, n\ModelScaleZ#
 			WriteInt f, n\TextureID
+
+			WriteFloat f, n\Health
+			If n\Invulnerable Then
+				WriteByte f, 1
+			Else
+				WriteByte f, 0
+			End If
 		End If
 	Next
 	
@@ -696,7 +703,7 @@ Function LoadGame(file$)
 		n\IsDead = ReadInt(f)
 		n\PathX = ReadFloat(f)
 		n\PathZ = ReadFloat(f)
-		n\HP = ReadInt(f)
+		;n\HP = ReadInt(f)
 		n\Model = ReadString(f)
 		n\ModelScaleX# = ReadFloat(f)
 		n\ModelScaleY# = ReadFloat(f)
@@ -712,6 +719,9 @@ Function LoadGame(file$)
 			ChangeNPCTextureID(n.NPCs,n\TextureID-1)
 			SetAnimTime(n\obj,frame)
 		EndIf
+
+		n\Health = ReadFloat(f)
+		n\Invulnerable = ReadByte(f)
 	Next
 	
 	For n.NPCs = Each NPCs
@@ -1619,7 +1629,7 @@ Function LoadGameQuick(file$)
 		n\IsDead = ReadInt(f)
 		n\PathX = ReadFloat(f)
 		n\PathZ = ReadFloat(f)
-		n\HP = ReadInt(f)
+		;n\HP = ReadInt(f)
 		n\Model = ReadString(f)
 		n\ModelScaleX# = ReadFloat(f)
 		n\ModelScaleY# = ReadFloat(f)
@@ -1635,6 +1645,9 @@ Function LoadGameQuick(file$)
 			ChangeNPCTextureID(n.NPCs,n\TextureID-1)
 			SetAnimTime(n\obj,frame)
 		EndIf
+
+		n\Health = ReadFloat(f)
+		n\Invulnerable = ReadByte(f)
 	Next
 	
 	For n.NPCs = Each NPCs

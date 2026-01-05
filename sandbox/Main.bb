@@ -4,6 +4,9 @@ Include "sandbox\SFX3D.bb"
 Include "sandbox\Lever.bb"
 Include "sandbox\DelayedCommands.bb"
 ;Include "sandbox\Skybox.bb"
+Include "sandbox\CameraTool.bb"
+
+Const EXT_PI# = 3.14159265358979323846
 
 Const MOUSE_BUTTON_MIDDLE% = 3
 
@@ -104,6 +107,11 @@ Function OnNullGame()
     CurrDoor = Null
     PlayerCrowbarUsageCooldownTimer = 0
 
+    If test_049_currinstance <> Null Then RemoveNPC(test_049_currinstance)
+    test_049_enabled = False
+    If test_106_currinstance <> Null Then RemoveNPC(test_106_currinstance)
+    test_106_enabled = False
+
     RemoveControllableNPC()
 End Function
 
@@ -125,6 +133,7 @@ Function OnUpdate()
     UpdateSFX3Ds()
     UpdateDelayedCommands()
     UpdateLevers()
+    UpdateCameraPoints()
     ;PositionEntity SkyboxMesh, EntityX(Camera, True), EntityY(Camera, True), EntityZ(Camera, True), True
 
     If KeyDown(KEY_CALL_BIND) Then ; Custom keybinds system.
@@ -191,6 +200,7 @@ Function OnUpdate()
 End Function
 
 Global flag_maxwellcatspawned%
+Global temp_maxwellcatdie_sfx.SFX3D = Null
 
 Function OnUpdateEvents()
     If PlayerRoom\RoomTemplate\Name = MaxwellCatNaturalSpawnRoom And MaxwellCatNaturalSpawn And (Not flag_maxwellcatspawned) Then
@@ -222,6 +232,15 @@ Function OnUpdateEvents()
     ;    If KeyDown(74) Then TranslateEntity PlayerCrowbar, 0, 0, -0.001
     ;    If KeyHit(82) Then CreateConsoleMsg("Rel Pos: X = " + EntityX(PlayerCrowbar, False) + ", Y = " + EntityY(PlayerCrowbar, False) + ", Z = " + EntityZ(PlayerCrowbar, False), 255, 0, 255)
     ;End If
+
+    If temp_maxwellcatdie_sfx <> Null Then
+        If ChannelPlaying(temp_maxwellcatdie_sfx\Channel) Then
+            LightBlink = 4
+            BlinkTimer = -10
+        Else
+            temp_maxwellcatdie_sfx = Null
+        End If
+    End If
 
     CatchErrors("OnUpdateEvents (before cheat functions)")
     If Not CheatGameControlEnabled Return
@@ -265,6 +284,13 @@ Global test_106_movetotarget% = False
 Global test_106_disable_gravity% = False
 
 Function OnUpdateNPCs()
+    CatchErrors("Uncaught (OnUpdateNPCs)")
+
+    If Curr173 <> Null Then Curr173\Invulnerable = True
+    If Curr106 <> Null Then Curr106\Invulnerable = True
+    If Curr096 <> Null Then Curr096\Invulnerable = True
+    If Curr5131 <> Null Then Curr5131\Invulnerable = True
+
     If test_049_enabled Then
         If test_049_currinstance = Null Then
             test_049_currinstance = CreateNPC(NPCtype049, EntityX(Collider), EntityY(Collider) + 0.4, EntityZ(Collider), False)
@@ -465,6 +491,9 @@ Function OnUpdateNPCs()
             If test_106_disable_gravity Then
                 ResetEntity(n\Collider)
                 n\DropSpeed = 0
+                n\Gravity = False
+            Else
+                n\Gravity = True
             End If
             PositionEntity(n\obj, EntityX(n\Collider), EntityY(n\Collider) - 0.15, EntityZ(n\Collider))
             
@@ -495,6 +524,104 @@ Function OnUpdateNPCs()
     Else
         If test_106_currinstance <> Null Then RemoveNPC(test_106_currinstance) : test_106_currinstance = Null
     End If
+
+    CatchErrors("OnUpdateNPCs")
+End Function
+
+;Function OnHitNPC(n.NPCs, x#, y#, z#, damage#)
+;
+;End Function
+
+Function OnDamageNPC(n.NPCs, damage#)
+    Select n\NPCtype
+        Case NPCtypeMaxwellCat
+            Select Int(n\State2)
+                Case 0
+                    Msg = "Don't try to kill Maxwell the Cat."
+                    PlaySound_Strict(LoadTempSound("SFX\SCP\513\Bell3.ogg"))
+
+                Case 1
+                    Msg = "It can be dangerous for you."
+
+                Case 2
+                    Msg = "You should be ashamed."
+                
+                Case 3
+                    Msg = "This is the last warning."
+                    ;PlaySound_Strict(HorrorSFX(12))
+                    PlaySound_Strict(LoadTempSound("SFX\Ambient\General\Ambient15.ogg"))
+
+                Case 4
+                    Msg = ""
+                
+                Default
+                    n\State2 = 0
+            End Select
+            MsgTimer = 70 * 4
+            n\State2 = Int(n\State2) + 1
+    End Select
+End Function
+
+Global LivingNPCBodySplatSFX% = SafeLoadSound("sandbox\SFX\NPC\_living\bodysplat.wav")
+Global SCP106DieSFX%[3]
+For i% = 0 To 2
+    SCP106DieSFX[i] = SafeLoadSound("sandbox\SFX\NPC\SCP-106\die_" + (i + 1) + ".wav")
+Next
+;Global MaxwellCatDieSFX% = SafeLoadSound("sandbox\SFX\NPC\MaxwellCat\die.ogg")
+;Global MusicBoxSFX% = SafeLoadSound("sandbox\SFX\musicbox.ogg")
+Global DaisyBellMusic% = SafeLoadSound("sandbox\SFX\daisy_bell.ogg")
+
+Function OnKillNPC(n.NPCs)
+    CatchErrors("Uncaught (OnKillNPC)")
+
+    Local sfxmxcat.SFX3D = Null
+
+    Local RemainsDecal.Decals = Null
+    If LinePick(EntityX(n\obj, True), EntityY(n\obj, True), EntityZ(n\obj, True), 0, -1, 0) Then
+        If n\NPCtype = NPCtypeMaxwellCat Then
+            ;ShowEntity(Light)
+            ;LightFlash = 3
+            ;LightBlink = 35.648
+            chn% = PlaySound_Strict(IntroSFX(Rand(10, 12)))
+            ChannelVolume chn, SFXVolume
+
+            EntityAlpha(Dark, 1.0)
+            LightBlink = 4
+
+            RemainsDecal = CreateDecal(8, PickedX(), PickedY(), PickedZ(), 0, EntityYaw(Collider), 0)
+            RemainsDecal\Size = 0.33
+            ScaleSprite RemainsDecal\obj, RemainsDecal\Size, RemainsDecal\Size
+            EntityFX(RemainsDecal\obj, 1 Or 8)
+			EntityBlend(RemainsDecal\obj, 2)
+
+            ;CreateSFX3DAtPos(MaxwellCatDieSFX, EntityX(n\obj, True), EntityY(n\obj, True), EntityZ(n\obj, True))
+            temp_maxwellcatdie_sfx = CreateSFX3DAtPos(DaisyBellMusic, EntityX(n\obj, True), EntityY(n\obj, True), EntityZ(n\obj, True), 32)
+
+        Else If n\NPCtype = NPCtypeOldMan Then
+            RemainsDecal = CreateDecal(0, PickedX(), PickedY(), PickedZ(), 0, Rnd(0, 360), 0)
+            RemainsDecal\Size = Rnd(0.9, 1.2)
+            ScaleSprite RemainsDecal\obj, RemainsDecal\Size, RemainsDecal\Size
+
+            CreateSFX3DAtPos(SCP106DieSFX[Rand(0, 2)], EntityX(n\obj, True), EntityY(n\obj, True), EntityZ(n\obj, True))
+        Else If IsLivingNPC(n) Then
+            RemainsDecal = CreateDecal(21, PickedX(), PickedY(), PickedZ(), 0, Rnd(0, 360), 0)
+            RemainsDecal\Size = Rnd(0.6, 0.9)
+            ScaleSprite RemainsDecal\obj, RemainsDecal\Size, RemainsDecal\Size
+
+            CreateSFX3DAtPos(LivingNPCBodySplatSFX, EntityX(n\obj, True), EntityY(n\obj, True), EntityZ(n\obj, True))
+        End If
+    End If
+
+    If RemainsDecal <> Null Then
+        ;AlignToVector RemainsDecal\obj, -PickedNX(), -PickedNY(), -PickedNZ(), 3
+        AlignToVector RemainsDecal\obj, 0, -1, 0, 3
+        MoveEntity RemainsDecal\obj, 0, 0, -0.001
+        RemainsDecal\lifetime = 70 * 60; 20
+        RemainsDecal\AlphaFadeOutStart = 70 * 10
+        EntityParent RemainsDecal\obj, PickedEntity(), True
+    End If
+
+    CatchErrors("OnKillNPC")
 End Function
 
 Global MaxwellCatOBJ%
@@ -519,6 +646,10 @@ For i% = 0 To 2
     CrowbarHitBodySFX[i] = LoadSound_Strict("sandbox\SFX\crowbar\hitbody_" + (i + 1) + ".wav")
 Next
 Global CrowbarMissSFX% = LoadSound_Strict("sandbox\SFX\crowbar\miss.wav")
+
+Global ContDoorFrame%, ContDoorsTexture%
+
+Global SirenLoopedSFX% = LoadLoopedSound("sandbox\SFX\ambient\siren.wav")
 
 Function OnLoadEntities()
     CatchErrors("Uncaught (OnLoadEntities)")
@@ -611,6 +742,15 @@ Function OnLoadEntities()
     itt\scale = 1
 
     itt\invimg = LoadImage_Strict("sandbox\GFX\diskette\invimg.png")
+
+    ; ===================
+
+    ContDoorsTexture = LoadTexture_Strict("GFX\containment_doors.jpg")
+
+    ContDoorFrame = LoadMesh_Strict("GFX\map\Props\ContDoorFrame.x")
+    HideEntity ContDoorFrame
+
+    EntityTexture ContDoorFrame, ContDoorsTexture
     
     CatchErrors("OnLoadEntities")
 End Function

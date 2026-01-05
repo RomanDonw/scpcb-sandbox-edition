@@ -1,3 +1,18 @@
+Function SafeLoadSound%(filepath$)
+    If FileType(filepath) <> 1 Then RuntimeError "Can't find file " + Chr(34) + filepath + Chr(34) + "."
+
+    Local sound% = LoadSound(filepath)
+    If sound = 0 Then RuntimeError "Can't load sound from file " + Chr(34) + filepath + Chr(34) + "."
+
+    Return Sound
+End Function
+
+Function LoadLoopedSound%(filepath$)
+    Local sound% = SafeLoadSound(filepath)
+    LoopSound sound
+    Return sound
+End Function
+
 Type SFX3D
     ; Writable section
 
@@ -8,6 +23,7 @@ Type SFX3D
     ; Read-only section
 
     Field Channel%
+    Field DeleteEmitter% = False
 End Type
 
 Function CreateSFX3D.SFX3D(sound%, emitter_entity%, radius# = 10, volume# = 1)
@@ -18,6 +34,22 @@ Function CreateSFX3D.SFX3D(sound%, emitter_entity%, radius# = 10, volume# = 1)
     ret\EmitterEntity = emitter_entity
     ret\Radius = radius
     ret\Volume = volume
+    ret\DeleteEmitter = False
+
+    Return ret
+End Function
+
+Function CreateSFX3DAtPos.SFX3D(sound%, x#, y#, z#, radius# = 10, volume# = 1)
+    Local ret.SFX3D = New SFX3D
+
+    ret\Channel = PlaySound(sound)
+    ChannelVolume ret\Channel, 0
+    ret\Radius = radius
+    ret\Volume = volume
+    ret\DeleteEmitter = True
+
+    ret\EmitterEntity = CreatePivot()
+    PositionEntity ret\EmitterEntity, x, y, z
 
     Return ret
 End Function
@@ -27,6 +59,10 @@ Function RemoveSFX3D(sound.SFX3D)
 
     If ChannelPlaying(sound\Channel) Then
         StopChannel sound\Channel
+    End If
+
+    If sound\DeleteEmitter Then
+        FreeEntity sound\EmitterEntity
     End If
 
     Delete sound
@@ -47,7 +83,7 @@ Function UpdateSFX3Ds()
         End If
 
         If Not removed Then
-            If Not (sfx\Paused Or MenuOpen Or ConsoleOpen) Then
+            If Not (sfx\Paused Or MenuOpen Or ConsoleOpen Or OtherOpen <> Null) Then
                 ResumeChannel sfx\Channel
                 If sfx\Radius > 0 Then
                     Local dist# = EntityDistance(Camera, sfx\EmitterEntity) / sfx\Radius

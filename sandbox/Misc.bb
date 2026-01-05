@@ -188,16 +188,6 @@ Function TakeScreenshot%(filename$)
     Return SaveBuffer(FrontBuffer(), filename)
 End Function
 
-Function LoadLoopedSound(filepath$)
-    If FileType(filepath) <> 1 Then RuntimeError "Can't find file " + Chr(34) + filepath + Chr(34) + "."
-
-    Local sound% = LoadSound(filepath)
-    If sound = 0 Then RuntimeError "Can't load sound from file " + Chr(34) + filepath + Chr(34) + "."
-    LoopSound sound
-
-    Return sound
-End Function
-
 Function WaitKeyScan%()
     FlushKeys
     Repeat
@@ -479,6 +469,29 @@ End Function
 
 Function NOP()
     Return
+End Function
+
+Function TurnEntityGlobal(entity%, pitch#, yaw#, roll#)
+    RotateEntity entity, EntityPitch(entity, True) + pitch, EntityYaw(entity, True) + yaw, EntityRoll(entity, True) + roll, True
+End Function
+
+Function FindTextureForRMeshInPool(texname$, flags% = 0)
+	If FileType(RMeshTexturesFoldersPoolFilePath) <> 1 Then Return 0
+
+	Local poolf% = ReadFile(RMeshTexturesFoldersPoolFilePath)
+	Local tex% = 0
+
+	Repeat
+		Local folderpath$ = ReadLine(poolf)
+		If FileType(folderpath) = 2 Then
+            Local filepath$ = folderpath + "\" + texname
+
+            If FileType(filepath) = 1 Then tex = LoadTexture_Strict(filepath, flags) : Exit
+        End If
+	Until Eof(poolf)
+	CloseFile(poolf)
+
+	Return tex
 End Function
 
 ;Const GIVEITEMERR_OK% = 0

@@ -416,10 +416,13 @@ Function LoadRMesh(file$,rt.RoomTemplates)
 				tex[j]=GetTextureFromCache(temp1s)
 				If tex[j]=0 Then ;texture is not in cache
 					Select True
-						Case temp1i<3
-							tex[j]=LoadTexture(file+temp1s,1)
+						Case temp1i < 3
+							tex[j] = LoadTexture(file + temp1s, 1)
+							If tex[j] = 0 Then tex[j] = FindTextureForRMeshInPool(temp1s, 1)
+							
 						Default
-							tex[j]=LoadTexture(file+temp1s,3)
+							tex[j] = LoadTexture(file + temp1s, 3)
+							If tex[j] = 0 Then tex[j] = FindTextureForRMeshInPool(temp1s, 3)
 					End Select
 					
 					If tex[j]<>0 Then

@@ -290,13 +290,23 @@ Function UpdateEvents()
 						EndIf
 					EndIf
 					
-					If (e\EventState < 2000) Then
-						If e\SoundCHN = 0 Then
-							e\SoundCHN = PlaySound_Strict(AlarmSFX(0))
-						Else
-							If Not ChannelPlaying(e\SoundCHN) Then e\SoundCHN = PlaySound_Strict(AlarmSFX(0))
+					If UseHl1SirenSFXInAlarmEventInsteadOriginalSFX Then
+						If e\EventState < 2000 Then
+							If e\SoundCHN = 0 Then e\SoundCHN = PlaySound(SirenLoopedSFX)
+							ChannelVolume e\SoundCHN, SFXVolume
+						Else If e\SoundCHN <> 0 Then
+							StopChannel e\SoundCHN
+							e\SoundCHN = 0
 						End If
-					EndIf
+					Else
+						If (e\EventState < 2000) Then
+							If e\SoundCHN = 0 Then
+								e\SoundCHN = PlaySound_Strict(AlarmSFX(0))
+							Else
+								If Not ChannelPlaying(e\SoundCHN) Then e\SoundCHN = PlaySound_Strict(AlarmSFX(0))
+							End If
+						EndIf
+					End If
 					
 					If (e\EventState3<11) Then
 						If (Not ChannelPlaying(e\SoundCHN2)) Then

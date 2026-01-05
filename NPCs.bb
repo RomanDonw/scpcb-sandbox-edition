@@ -61,7 +61,7 @@ Type NPCs
 	Field InFacility% = True
 	Field CanUseElevator% = False
 	Field CurrElevator.ElevatorObj
-	Field HP%
+	;Field HP%
 	Field PathX#,PathZ#
 	Field Model$
 	Field ModelScaleX#,ModelScaleY#,ModelScaleZ#
@@ -75,6 +75,10 @@ Type NPCs
 	Field sound3d.SFX3D = Null
 	Field TeleportObjToSpawnPositionOnCreate% = True
 	Field CanSave%
+	Field SCP173EnableObj2% = False
+
+	Field Health# = 100.0
+	Field Invulnerable% = False
 End Type
 
 Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
@@ -98,7 +102,8 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\Gravity = True
 			;n\Camera = CreateCamera(n\Collider)
 			;CameraProjMode n\Camera, 0
-			
+			n\Health = 4500.0
+
 			n\obj = LoadMesh_Strict("GFX\npcs\173_2.b3d")
 			
 			;On Halloween set jack-o-latern texture.
@@ -129,6 +134,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			EntityRadius n\Collider, 0.2
 			EntityType n\Collider, HIT_PLAYER
 			n\obj = LoadAnimMesh_Strict("GFX\npcs\106_2.b3d")
+			n\Health = 2500.0
 			
 			temp# = (GetINIFloat("DATA\NPCs.ini", "SCP-106", "scale") / 2.2)		
 			ScaleEntity n\obj, temp, temp, temp
@@ -154,6 +160,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			;EntityRadius Collider, 0.15, 0.30
 			EntityType n\Collider, HIT_PLAYER
 			n\obj = CopyEntity(GuardObj) ;LoadAnimMesh_Strict("GFX\npcs\mtf.b3d")
+			n\Health = 150.0
 			
 			n\Speed = (GetINIFloat("DATA\NPCs.ini", "Guard", "speed") / 100.0)
 			temp# = (GetINIFloat("DATA\NPCs.ini", "Guard", "scale") / 2.5)
@@ -171,6 +178,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			EntityType n\Collider, HIT_PLAYER
 			;EntityPickMode n\Collider, 1
 			n\obj = CopyEntity(MTFObj) ;LoadAnimMesh_Strict("GFX\npcs\mtf.b3d")
+			n\Health = 250.0
 			
 			n\Speed = (GetINIFloat("DATA\NPCs.ini", "MTF", "speed") / 100.0)
 			
@@ -218,6 +226,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			EntityType n\Collider, HIT_PLAYER
 			
 			n\obj = CopyEntity(ClassDObj)
+			n\Health = 100.0
 			
 			temp# = 0.5 / MeshWidth(n\obj)
 			ScaleEntity n\obj, temp, temp, temp
@@ -234,6 +243,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\Collider = CreatePivot()
 			EntityRadius n\Collider, 0.2
 			n\obj = LoadAnimMesh_Strict("GFX\npcs\372.b3d")
+			n\Health = 500.0
 			
 			temp# = 0.35 / MeshWidth(n\obj)
 			ScaleEntity n\obj, temp, temp, temp
@@ -244,6 +254,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\Collider = CreatePivot()
 			EntityRadius n\Collider, 0.2
 			n\obj = LoadAnimMesh_Strict("GFX\npcs\bll.b3d")
+			n\Health = 1500.0
 			
 			n\obj2 = CopyEntity (n\obj)
 			EntityAlpha n\obj2, 0.6
@@ -261,6 +272,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\obj = LoadAnimMesh_Strict("GFX\npcs\scp096.b3d")
 			
 			n\Speed = (GetINIFloat("DATA\NPCs.ini", "SCP-096", "speed") / 100.0)
+			n\Health = 3000.0
 			
 			temp# = (GetINIFloat("DATA\NPCs.ini", "SCP-096", "scale") / 3.0)
 			ScaleEntity n\obj, temp, temp, temp	
@@ -279,6 +291,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\obj = CopyEntity(NPC049OBJ)
 			
 			n\Speed = (GetINIFloat("DATA\NPCs.ini", "SCP-049", "speed") / 100.0)
+			n\Health = 2000.0
 			
 			temp# = GetINIFloat("DATA\NPCs.ini", "SCP-049", "scale")
 			ScaleEntity n\obj, temp, temp, temp	
@@ -295,6 +308,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\Collider = CreatePivot()
 			EntityRadius n\Collider, 0.2
 			EntityType n\Collider, HIT_PLAYER
+			n\Health = 150.0
 			
 			;For n2.NPCs = Each NPCs
 			;	If n\NPCtype = n2\NPCtype And n<>n2 Then
@@ -319,7 +333,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			
 			n\Sound = LoadSound_Strict("SFX\SCP\049\0492Breath.ogg")
 			
-			n\HP = 100
+			;n\HP = 100
 			;[End Block]
 		Case NPCtypeApache
 			;[Block]
@@ -329,6 +343,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\Collider = CreatePivot()
 			EntityRadius n\Collider, 0.2
 			n\obj = CopyEntity(ApacheObj);LoadAnimMesh_Strict("GFX\apache.b3d")
+			n\Health = 1000.0
 			
 			n\obj2 = CopyEntity(ApacheRotorObj);LoadAnimMesh_Strict("GFX\apacherotor.b3d",n\obj)
 			EntityParent n\obj2,n\obj
@@ -368,6 +383,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\NVName = "Unidentified"
 			
 			n\Collider = CreatePivot()
+			n\Health = 500.0
 			
 			For n2.NPCs = Each NPCs
 				If n\NPCtype = n2\NPCtype And n<>n2 Then
@@ -391,6 +407,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			EntityRadius n\Collider, 0.25
 			EntityType n\Collider, HIT_PLAYER
 			n\obj = LoadAnimMesh_Strict("GFX\npcs\forestmonster.b3d")
+			n\Health = 1500.0
 			
 			EntityFX(n\obj, 1)
 			
@@ -441,6 +458,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 					Exit
 				EndIf
 			Next
+			n\Health = 2500.0
 			
 			If n\obj = 0 Then 
 				n\obj = LoadAnimMesh_Strict("GFX\NPCs\scp-939.b3d")
@@ -490,7 +508,9 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			
 			n\obj = LoadAnimMesh_Strict("GFX\NPCs\scp-066.b3d")
 			temp# = GetINIFloat("DATA\NPCs.ini", "SCP-066", "scale")/2.5
-			ScaleEntity n\obj, temp, temp, temp		
+			ScaleEntity n\obj, temp, temp, temp
+
+			n\Health = 500.0	
 			
 			;If BumpEnabled Then 
 			;	diff1 = LoadTexture_Strict("GFX\npcs\scp-066_diffuse01.jpg")
@@ -514,6 +534,8 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			
 			n\Collider = CreatePivot()
 			EntityRadius n\Collider,0.2
+
+			n\Health = 1500.0
 			
 			For n2.NPCs = Each NPCs
 				If (n\NPCtype = n2\NPCtype) And (n<>n2) Then
@@ -545,6 +567,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\obj =	LoadAnimMesh_Strict("GFX\npcs\scp-1048a.b3d")
 			ScaleEntity n\obj, 0.05,0.05,0.05
 			SetAnimTime(n\obj, 2)
+			n\Health = 500.0
 			
 			n\Sound = LoadSound_Strict("SFX\SCP\1048A\Shriek.ogg")
 			n\Sound2 = LoadSound_Strict("SFX\SCP\1048A\Growth.ogg")
@@ -561,6 +584,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 					Exit
 				EndIf
 			Next
+			n\Health = 1500.0
 			
 			If n\obj = 0 Then 
 				n\obj = LoadAnimMesh_Strict("GFX\npcs\1499-1.b3d")
@@ -583,6 +607,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			EntityType n\Collider, HIT_PLAYER
 			
 			n\obj = LoadAnimMesh_Strict("GFX\npcs\zombiesurgeon.b3d")
+			n\Health = 200.0
 			
 			temp# = 0.5 / MeshWidth(n\obj)
 			ScaleEntity n\obj, temp, temp, temp
@@ -595,7 +620,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			
 			n\Sound = LoadSound_Strict("SFX\SCP\049\0492Breath.ogg")
 			
-			n\HP = 120
+			;n\HP = 120
 			;[End Block]
 		Case NPCtypeClerk
 			;[Block]
@@ -605,6 +630,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			EntityType n\Collider, HIT_PLAYER
 			
 			n\obj = CopyEntity(ClerkOBJ)
+			n\Health = 100.0
 			
 			temp# = 0.5 / MeshWidth(n\obj)
 			ScaleEntity n\obj, temp, temp, temp
@@ -626,10 +652,12 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			n\obj = CopyEntity(MaxwellCatOBJ, n\Collider)
 			n\TeleportObjToSpawnPositionOnCreate = False
 			;EntityColor n\obj, Rand(0, 255), Rand(0, 255), Rand(0, 255)
+			n\Health = 50.0
 			
 			;n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
 			;n\Speed = 0.05
 			n\Speed = MaxwellCatDefaultSpeed
+			n\State = 0
 	End Select
 	
 	PositionEntity(n\Collider, x, y, z, True)
@@ -651,6 +679,8 @@ End Function
 Function RemoveNPC(n.NPCs)
 	
 	If n=Null Then Return
+
+	ClearAllOnNPCDecals(n)
 	
 	If n\obj2 <> 0 Then 
 		FreeEntity n\obj2
@@ -696,6 +726,79 @@ Function RemoveNPC(n.NPCs)
 	Delete n
 End Function
 
+;Function HitNPC%(n.NPCs, x#, y#, z#, damage#)
+;	If n = Null Then Return False
+;
+;	If n\Invulnerable Then Return False
+;	
+;	OnHitNPC(n, x, y, z, damage)
+;
+;	Return DamageNPC(n, damage)
+;End Function
+
+Function DamageNPC%(n.NPCs, damage#)
+	If n = Null Then Return False
+
+	If n\Invulnerable Then Return False
+
+	OnDamageNPC(n, damage)
+
+	n\Health = Max(0, n\Health - damage)
+
+	If n\Health <= 0 Then
+		OnKillNPC(n)
+		RemoveNPC(n)
+
+		Return True
+	End If
+
+	Return False
+End Function
+
+Function KillNPC%(n.NPCs)
+	If n = Null Then Return False
+
+	If n\Invulnerable Then Return False
+
+	n\Health = 0
+
+	OnKillNPC(n)
+	RemoveNPC(n)
+
+	Return True
+End Function
+
+Function IsNPCAlive%(n.NPCs)
+	If n = Null Then Return False
+
+	Return n\Health > 0 Or n\Invulnerable
+End Function
+
+Function IsLivingNPC%(n.NPCs)
+	If n = Null Then Return False
+
+	Local is_living% = False
+
+	Select n\NPCtype
+		Case NPCtype008, NPCtype049, NPCtype066, NPCtype096, NPCtype1048a, NPCtype1499, NPCtype5131, NPCtype860, NPCtype939, NPCtype966
+			is_living = True
+		Case NPCtypeClerk, NPCtypeD, NPCtypeGuard, NPCtypeMaxwellCat, NPCtypeMTF, NPCtypeOldMan, NPCtypeTentacle, NPCtypeZombie
+			is_living = True
+	End Select
+
+	Return is_living
+End Function
+
+Function ClearAllOnNPCDecals(n.NPCs)
+	If n = Null Then Return
+
+	For d.Decals = Each Decals
+        If GetParent(d\obj) <> 0 And GetParent(d\obj) = n\obj Then
+            RemoveDecal(d)
+        End If
+    Next
+End Function
+
 Global UpdatingSCP106State% = True
 Global SCP106SpawnAtCustomPos% = False, SCP106SpawnPosX#, SCP106SpawnPosY#, SCP106SpawnPosZ#
 
@@ -723,6 +826,15 @@ Function UpdateNPCs()
 		Select n\NPCtype
 			Case NPCtype173
 				;[Block]
+
+				If n\SCP173EnableObj2 Then
+					ShowEntity n\obj2
+					
+					PositionEntity(n\obj2, EntityX(n\Collider), EntityY(n\Collider) - 0.05 + Sin(MilliSecs2()*0.08)*0.02, EntityZ(n\Collider))
+					RotateEntity (n\obj2, 0, EntityYaw(n\Collider)-180, 0)
+				Else
+					HideEntity n\obj2
+				End If
 				
 				If Curr173\Idle <> 3 Then
 					dist# = EntityDistance(n\Collider, Collider)		
@@ -3271,8 +3383,10 @@ Function UpdateNPCs()
 						Case 0 ;spawn
 							
 							If n\Frame>283 Then
-								HeartBeatVolume = Max(CurveValue(1.0, HeartBeatVolume, 50),HeartBeatVolume)
-								HeartBeatRate = Max(CurveValue(130, HeartBeatRate, 100),HeartBeatRate)
+								If Not NoTarget Then
+									HeartBeatVolume = Max(CurveValue(1.0, HeartBeatVolume, 50),HeartBeatVolume)
+									HeartBeatRate = Max(CurveValue(130, HeartBeatRate, 100),HeartBeatRate)
+								End If
 								
 								PointEntity n\obj, Collider
 								RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj),EntityYaw(n\Collider),25.0), 0
@@ -3315,64 +3429,67 @@ Function UpdateNPCs()
 							AnimateNPC(n, 33, 174, 0.3, True)
 							;Animate2(n\obj, AnimTime(n\obj), 33, 174, 0.3, True)
 						Case 2
-							
-							;finish the idle animation before playing the attack animation
-							If n\Frame>33 And n\Frame<174 Then
-								AnimateNPC(n, 33, 174, 2.0, False)
-								;Animate2(n\obj, AnimTime(n\obj), 33, 174, 2.0, False)
+							If NoTarget Then
+								n\State = 1
 							Else
-								PointEntity n\obj, Collider
-								RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj),EntityYaw(n\Collider),10.0), 0							
-								
-								If n\Frame>33 Then 
-									;SetAnimTime(n\obj,2)
-									If n\Sound2<>0 Then FreeSound_Strict n\Sound2 : n\Sound2 = 0
-									n\Frame = 2
-									n\Sound = LoadSound_Strict("SFX\Room\035Chamber\TentacleAttack"+Rand(1,2)+".ogg")
-									PlaySound_Strict(n\Sound)
-								EndIf
-								AnimateNPC(n, 2, 32, 0.3, False)
-								;Animate2(n\obj, AnimTime(n\obj), 2, 32, 0.3, False)
-								
-								If n\Frame>=5 And n\Frame<6 Then
-									If dist < 1.8 Then
-										If Abs(DeltaYaw(n\Collider, Collider))<20 Then 
-											If WearingHazmat Then
-												Injuries = Injuries+Rnd(0.5)
-												PlaySound_Strict(LoadTempSound("SFX\General\BodyFall.ogg"))
-											Else
-												BlurTimer = 100
-												Injuries = Injuries+Rnd(1.0,1.5)
-												PlaySound_Strict DamageSFX(Rand(2,3))
-												
-												If Injuries > 3.0 Then
-													If PlayerRoom\RoomTemplate\Name = "room2offices" Then
-														DeathMSG = Chr(34)+"One large and highly active tentacle-like appendage seems "
-														DeathMSG = DeathMSG + "to have grown outside the dead body of a scientist within office area [REDACTED]. Its level of aggression is "
-														DeathMSG = DeathMSG + "unlike anything we've seen before - it looks like it has "
-														DeathMSG = DeathMSG + "beaten some unfortunate Class D to death at some point during the breach."+Chr(34)
-													Else
-														DeathMSG = Chr(34)+"We will need more than the regular cleaning team to take care of this. "
-														DeathMSG = DeathMSG + "Two large and highly active tentacle-like appendages seem "
-														DeathMSG = DeathMSG + "to have formed inside the chamber. Their level of aggression is "
-														DeathMSG = DeathMSG + "unlike anything we've seen before - it looks like they have "
-														DeathMSG = DeathMSG + "beaten some unfortunate Class D to death at some point during the breach."+Chr(34)
-													EndIf
-													Kill()
-												EndIf
-											EndIf
-											
-										EndIf
-									EndIf
+								;finish the idle animation before playing the attack animation
+								If n\Frame>33 And n\Frame<174 Then
+									AnimateNPC(n, 33, 174, 2.0, False)
+									;Animate2(n\obj, AnimTime(n\obj), 33, 174, 2.0, False)
+								Else
+									PointEntity n\obj, Collider
+									RotateEntity n\Collider, 0, CurveAngle(EntityYaw(n\obj),EntityYaw(n\Collider),10.0), 0							
 									
-									n\Frame = 6
-									;SetAnimTime(n\obj, 6)
-								ElseIf n\Frame=32
-									n\State = 1
-									n\Frame = 173
-									;SetAnimTime(n\obj, 173)
+									If n\Frame>33 Then 
+										;SetAnimTime(n\obj,2)
+										If n\Sound2<>0 Then FreeSound_Strict n\Sound2 : n\Sound2 = 0
+										n\Frame = 2
+										n\Sound = LoadSound_Strict("SFX\Room\035Chamber\TentacleAttack"+Rand(1,2)+".ogg")
+										PlaySound_Strict(n\Sound)
+									EndIf
+									AnimateNPC(n, 2, 32, 0.3, False)
+									;Animate2(n\obj, AnimTime(n\obj), 2, 32, 0.3, False)
+									
+									If n\Frame>=5 And n\Frame<6 Then
+										If dist < 1.8 Then
+											If Abs(DeltaYaw(n\Collider, Collider))<20 Then 
+												If WearingHazmat Then
+													Injuries = Injuries+Rnd(0.5)
+													PlaySound_Strict(LoadTempSound("SFX\General\BodyFall.ogg"))
+												Else
+													BlurTimer = 100
+													Injuries = Injuries+Rnd(1.0,1.5)
+													PlaySound_Strict DamageSFX(Rand(2,3))
+													
+													If Injuries > 3.0 Then
+														If PlayerRoom\RoomTemplate\Name = "room2offices" Then
+															DeathMSG = Chr(34)+"One large and highly active tentacle-like appendage seems "
+															DeathMSG = DeathMSG + "to have grown outside the dead body of a scientist within office area [REDACTED]. Its level of aggression is "
+															DeathMSG = DeathMSG + "unlike anything we've seen before - it looks like it has "
+															DeathMSG = DeathMSG + "beaten some unfortunate Class D to death at some point during the breach."+Chr(34)
+														Else
+															DeathMSG = Chr(34)+"We will need more than the regular cleaning team to take care of this. "
+															DeathMSG = DeathMSG + "Two large and highly active tentacle-like appendages seem "
+															DeathMSG = DeathMSG + "to have formed inside the chamber. Their level of aggression is "
+															DeathMSG = DeathMSG + "unlike anything we've seen before - it looks like they have "
+															DeathMSG = DeathMSG + "beaten some unfortunate Class D to death at some point during the breach."+Chr(34)
+														EndIf
+														Kill()
+													EndIf
+												EndIf
+												
+											EndIf
+										EndIf
+										
+										n\Frame = 6
+										;SetAnimTime(n\obj, 6)
+									ElseIf n\Frame=32
+										n\State = 1
+										n\Frame = 173
+										;SetAnimTime(n\obj, 173)
+									EndIf
 								EndIf
-							EndIf
+							End If
 							
 					End Select
 					
@@ -6875,8 +6992,9 @@ Function UpdateMTFUnit(n.NPCs)
 							p.Particles = CreateParticle(EntityX(pvt), EntityY(pvt), EntityZ(pvt), 1, Rnd(0.08,0.1), 0.0, 5)
 							TurnEntity p\obj, 0,0,Rnd(360)
 							p\Achange = -0.15
-							If n\Target\HP > 0
-								n\Target\HP = Max(n\Target\HP-Rand(5,10),0)
+							If n\Target\Health > 0
+								;n\Target\HP = Max(n\Target\HP-Rand(5,10),0)
+								DamageNPC(n\Target, Rand(5, 10))
 							Else
 								If (Not n\Target\IsDead)
 									If n\Sound <> 0 Then FreeSound_Strict n\Sound : n\Sound = 0

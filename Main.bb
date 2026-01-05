@@ -172,6 +172,7 @@ Global RMeshLightmapPixelGModifer% = GetINIInt(SandboxConfigMain, "RMesh", "ligh
 Global RMeshLightmapPixelBModifer% = GetINIInt(SandboxConfigMain, "RMesh", "lightmap pixel b modifer")
 Global RMeshFXFullBright% = GetINIBool(SandboxConfigMain, "RMesh", "fx full bright")
 Global RMeshFXUseVertexColor% = GetINIBool(SandboxConfigMain, "RMesh", "fx use vertex color")
+Global RMeshTexturesFoldersPoolFilePath$ = GetINIString(SandboxConfigMain, "RMesh", "textures folders pool file path")
 
 ; [player]
 
@@ -221,6 +222,10 @@ Global CustomIntroSoundVolume# = GetINIFloat(SandboxConfigMain, "custom intro", 
 Global CustomIntroSoundFedingStart# = GetINIFloat(SandboxConfigMain, "custom intro", "sound feding start")
 Global CustomIntroSoundFedingEnd# = GetINIFloat(SandboxConfigMain, "custom intro", "sound feding end")
 
+; events.ini: [alarm]
+
+Global UseHl1SirenSFXInAlarmEventInsteadOriginalSFX% = GetINIBool(SandboxConfigEvents, "alarm", "use Half-Life 1 siren SFX instead original")
+
 ; [screenshot]
 
 Global ScreenshotFolder$ = GetINIString(SandboxConfigScreenshot, "screenshot", "folder path to save")
@@ -229,8 +234,8 @@ Global ScreenshotNextID% = GetINIInt(SandboxConfigScreenshot, "screenshot", "nex
 ; [decals]
 
 Global EnableDecals% = GetINIBool(SandboxConfigVisual, "decals", "enable")
-Dim EnabledDecalTextures%(20)
-For i% = 0 To 20
+Dim EnabledDecalTextures%(30)
+For i% = 0 To 30
 	EnabledDecalTextures(i) = GetINIBool(SandboxConfigVisual, "decals", "display decal type " + Str(i))
 Next
 
@@ -414,7 +419,7 @@ Global MenuScale# = (GraphicHeight / 1024.0)
 SetBuffer(BackBuffer())
 
 Global CurTime%, PrevTime%, LoopDelay%, FPSfactor#, FPSfactor2#, PrevFPSFactor#
-Local CheckFPS%, ElapsedLoops%, FPS%, ElapsedTime#
+Global CheckFPS%, ElapsedLoops%, FPS%, ElapsedTime#
 
 Global Framelimit% = GetINIInt(OptionFile, "options", "framelimit")
 Global Vsync% = GetINIInt(OptionFile, "options", "vsync")
@@ -453,7 +458,7 @@ If CustomIntro Then
 	While True
 		play_time# = (MilliSecs() - timer_) / 1000
 
-		If play_time >= CustomIntroSoundFedingStart And play_time <= CustomIntroSoundFedingEnd Then
+		If (CustomIntroSoundFedingStart >= 0 And CustomIntroSoundFedingEnd >= 0) And (play_time >= CustomIntroSoundFedingStart And play_time <= CustomIntroSoundFedingEnd) Then
 			precent# = (play_time - CustomIntroSoundFedingStart) / (CustomIntroSoundFedingEnd - CustomIntroSoundFedingStart)
 
 			;CreateConsoleMsg("inv prec: " + (1 - precent), 255, 0, 255)
@@ -2403,6 +2408,7 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("scp173.speed.get - prints speed of current SCP-173.")
 			CreateConsoleMsg("scp173.speed.set <speed> - sets speed of current SCP-173.")
 			CreateConsoleMsg("scp173.speed.reset - resets speed of current SCP-173 to default value.")
+			CreateConsoleMsg("scp173.box.enable/scp173.box.disable - enables or disables display of containment box of current SCP-173 display.")
 
 			;CreateConsoleMsg(" ")
 			;CreateConsoleMsg("- Current SCP-106 control commands:", 255, 127, 0)
@@ -3091,6 +3097,107 @@ Function ExecConsole(cin$, silent% = False)
 
 			test_106_disable_gravity = True
 
+		; == CAMTEST ==
+
+		;Case "test.cam.start.1"
+		;	If Not AllowTestsCommands Then CreateConsoleMsg("Tests commands aren't available.", 255, 0, 0) : Return
+		;
+		;	;CurrCam = Camera
+		;
+		;	prevcp.CameraPoint = Null
+		;	;For i% = 0 To 2
+		;	;	cp.CameraPoint = New CameraPoint
+		;	;	If prevcp <> Null Then prevcp\NextPoint = cp
+		;	;	cp\Flags = CAM_POS
+		;	;
+		;	;	cp\X = EntityX(Collider, True) + i * 2
+		;	;	cp\Y = EntityY(Collider, True)        ; + i * 2
+		;	;	cp\Z = EntityZ(Collider, True) + i * 2
+		;	;
+		;	;	cp\Time = 2
+		;	;	cp\DelayBeforeNext = 2
+		;	;
+		;	;	If i = 0 Then SetCurrCamPoint(cp)
+		;	;	prevcp = cp
+		;	;Next
+		;
+		;	Local cp0.CameraPoint = New CameraPoint
+		;	cp0\Flags = CAM_POS
+		;	cp0\X = EntityX(Camera, True)
+		;	cp0\Y = EntityY(Camera, True)
+		;	cp0\Z = EntityZ(Camera, True)
+		;	cp0\Time = 0
+		;
+		;	Local cp1.CameraPoint = New CameraPoint
+		;	cp1\Flags = CAM_POS Or CAM_ROT
+		;	cp1\X = EntityX(Camera, True) + 2
+		;	cp1\Y = EntityY(Camera, True) + 1
+		;	cp1\Z = EntityZ(Camera, True) + 2
+		;	cp1\Pitch = 0
+		;	cp1\Yaw = EntityYaw(Camera, True) + 90
+		;	cp1\Roll = 0
+		;	cp1\Time = 2
+		;
+		;	cp0\NextPoint = cp1
+		;
+		;	SetCurrCamPoint(cp0)
+
+		Case "test.cam.start"
+			cp0.CameraPoint = New CameraPoint
+			cp0\Mode = CAM_MODE_TRANSFORM
+			cp0\Flags = CAM_TRANSFORM_POS Or CAM_TRANSFORM_ROT Or CAM_TRANSFORM_SMOOTH
+			cp0\X = EntityX(Camera, True)
+			cp0\Y = EntityY(Camera, True)
+			cp0\Z = EntityZ(Camera, True)
+			cp0\Pitch = 0
+			cp0\Yaw = 0
+			cp0\Roll = 0
+			cp0\Time = 0
+
+			cp1.CameraPoint = New CameraPoint
+			cp1\Mode = CAM_MODE_TRANSFORM
+			cp1\Flags = CAM_TRANSFORM_POS Or CAM_TRANSFORM_SMOOTH
+			cp1\X = EntityX(Camera, True)
+			cp1\Y = EntityY(Camera, True) + 2
+			cp1\Z = EntityZ(Camera, True)
+			;cp1\Pitch = 0
+			;cp1\Yaw = 45
+			;cp1\Roll = 0
+			cp1\Time = 5
+			cp1\DelayBeforeNext = 5
+
+			cp0\NextPoint = cp1
+
+			cp2.CameraPoint = New CameraPoint
+			cp2\Mode = CAM_MODE_TRANSFORM
+			cp2\Flags = CAM_TRANSFORM_ROT Or CAM_TRANSFORM_SMOOTH
+			;cp2\X = EntityX(Camera, True)
+			;cp2\Y = EntityY(Camera, True)
+			;cp2\Z = EntityZ(Camera, True) + 2
+			cp2\Pitch = 0
+			cp2\Yaw = 90
+			cp2\Roll = 0
+			cp2\Time = 5
+			cp2\DelayBeforeNext = 5
+
+			cp1\NextPoint = cp2
+
+			cp3.CameraPoint = New CameraPoint
+			cp3\Mode = CAM_MODE_LOOKAT
+			cp3\Flags = CAM_LOOKAT_SMOOTH
+			cp3\X = EntityX(Camera, True) + 2
+			cp3\Y = EntityY(Camera, True)
+			cp3\Z = EntityZ(Camera, True)
+			;cp3\Pitch = 45
+			;cp3\Yaw = 120
+			;cp3\Roll = 200
+			cp3\Time = 5
+			cp3\DelayBeforeNext = 5
+
+			cp2\NextPoint = cp3
+
+			StartCameraMoving(cp0)
+
 		; === ITEMS ===
 
 		Case "item.give"
@@ -3202,6 +3309,10 @@ Function ExecConsole(cin$, silent% = False)
 					Default 
 						CreateConsoleMsg("NPC type not found.", 255, 0, 0)
 				End Select
+
+				If ctrl_npc <> Null Then
+					ctrl_npc\CanSave = False
+				End If
 			Else
 				CreateConsoleMsg("Current controllable NPC already exists.", 255, 0, 0)
 			End If
@@ -3694,6 +3805,16 @@ Function ExecConsole(cin$, silent% = False)
 
 		Case "scp173.speed.get"
 			CreateConsoleMsg("Speed of current SCP-173 equals to " + Curr173\Speed + ".", 0, 255, 0)
+
+		Case "scp173.box.enable"
+			Curr173\SCP173EnableObj2 = True
+
+			CreateConsoleMsg("Enabled containment box display of current SCP-173 instance.", 0, 255, 0)
+
+		Case "scp173.box.disable"
+			Curr173\SCP173EnableObj2 = False
+
+			CreateConsoleMsg("Disabled containment box display of current SCP-173 instance.", 0, 255, 0)
 
 		; === SCP-106 COMMANDS ===
 
@@ -4624,7 +4745,31 @@ Function ExecConsole(cin$, silent% = False)
 				CreateConsoleMsg("No selected door.", 255, 0, 0)
 			End If
 		
-		Case "door.selected."
+		Case "door.selected.contframe.show"
+			If CurrDoor <> Null Then
+				If CurrDoor\dir = 1 Then
+					ShowEntity CurrDoor\obj3
+
+					CreateConsoleMsg("Frame of selected containment door enabled.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door type isn't containment door.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
+
+		Case "door.selected.contframe.hide"
+			If CurrDoor <> Null Then
+				If CurrDoor\dir = 1 Then
+					HideEntity CurrDoor\obj3
+
+					CreateConsoleMsg("Frame of selected containment door disabled.", 0, 255, 0)
+				Else
+					CreateConsoleMsg("Selected door type isn't containment door.", 255, 0, 0)
+				End If
+			Else
+				CreateConsoleMsg("No selected door.", 255, 0, 0)
+			End If
 
 		Default
 			;[Block]
@@ -5036,6 +5181,8 @@ Type Doors
 	Field NPCCalledElevator% = False
 	
 	Field DoorHitOBJ%
+
+	Field obj3% = 0
 End Type 
 
 Dim BigDoorOBJ(2), HeavyDoorObj(2)
@@ -5058,6 +5205,11 @@ Function CreateDoor.Doors(lvl, x#, y#, z#, angle#, room.Rooms, dopen% = False,  
 		ScaleEntity(d\frameobj, RoomScale, RoomScale, RoomScale)
 		EntityType d\frameobj, HIT_MAP
 		EntityAlpha d\frameobj, 0.0
+
+		d\obj3 = CopyEntity(ContDoorFrame)
+		HideEntity d\obj3
+		;ScaleEntity(d\obj3, 1 / RoomScale, 1 / RoomScale, 1 / RoomScale)
+		PositionEntity d\obj3, x, y, z, True
 	ElseIf big=2 Then
 		d\obj = CopyEntity(HeavyDoorObj(0))
 		ScaleEntity(d\obj, RoomScale, RoomScale, RoomScale)
@@ -5199,8 +5351,9 @@ Function CreateDoor.Doors(lvl, x#, y#, z#, angle#, room.Rooms, dopen% = False,  
 		EndIf
 	EndIf
 	
+	If d\obj3 <> 0 Then EntityParent d\obj3, d\frameobj, True
+
 	Return d
-	
 End Function
 
 Function CreateButton(x#,y#,z#, pitch#,yaw#,roll#=0)
@@ -5430,7 +5583,7 @@ End Function
 Function UseDoor(d.Doors, showmsg%=True, playsfx%=True, access_level% = -1000)
 	If d = Null Then Return
 
-	If Not DoorOpenBypass Then
+	If (Not DoorOpenBypass) Or access_level >= -999 Then
 		Local temp% = 0
 		If d\KeyCard > 0 Then
 			If SelectedItem = Null And (Not KeycardFastUsage) And access_level < -999 Then
@@ -5645,6 +5798,8 @@ Function RemoveDoor(d.Doors)
 	If d\frameobj <> 0 Then FreeEntity d\frameobj
 	If d\buttons[0] <> 0 Then FreeEntity d\buttons[0]
 	If d\buttons[1] <> 0 Then FreeEntity d\buttons[1]
+
+	If d\obj3 <> 0 Then FreeEntity d\obj3
 	
 	Delete d
 End Function
@@ -5671,6 +5826,8 @@ Type Events
 	Field EventStr$
 	
 	Field img%
+
+	Field sfx3d.SFX3D = Null
 End Type 
 
 Function CreateEvent.Events(eventname$, roomname$, id%, prob# = 0.0)
@@ -5922,6 +6079,9 @@ Function RemoveEvent(e.Events)
 	If e\Sound<>0 Then FreeSound_Strict e\Sound
 	If e\Sound2<>0 Then FreeSound_Strict e\Sound2
 	If e\img<>0 Then FreeImage e\img
+
+	If e\sfx3d <> Null Then RemoveSFX3D(e\sfx3d)
+
 	Delete e
 End Function
 
@@ -5963,7 +6123,7 @@ Global LeverOBJ%, LeverBaseOBJ%
 Global DoorColl%
 Global ButtonOBJ%, ButtonKeyOBJ%, ButtonCodeOBJ%, ButtonScannerOBJ%
 
-Dim DecalTextures%(20)
+Dim DecalTextures%(30)
 
 Global Monitor%, MonitorTexture%
 Global CamBaseOBJ%, CamOBJ%
@@ -7620,11 +7780,25 @@ Function MovePlayer()
 		If (Not UnableToMove%) Then TranslateEntity Collider, Cos(angle)*CurrSpeed * FPSfactor, 0, Sin(angle)*CurrSpeed * FPSfactor, True
 		
 		Local CollidedFloor% = False
-		For i = 1 To CountCollisions(Collider)
-			If CollisionY(Collider, i) < EntityY(Collider) - 0.25 Then CollidedFloor = True
-		Next
+		;For i = 1 To CountCollisions(Collider)
+		;	If CollisionY(Collider, i) < EntityY(Collider) - 0.25 Then CollidedFloor = True
+		;Next
+		If CountCollisions(Collider) > 0 Then
+			For ci% = 1 To CountCollisions(Collider)
+				If CollisionNY(Collider, ci) > Sin(20) Then
+					CollidedFloor = True
+					Exit
+				End If
+			Next
+		End If
+
+		;If onground Then
+		;	DropSpeed# = 0
+		;Else
+		;	DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
+		;End If
 		
-		If CollidedFloor = True Then
+		If CollidedFloor Or EntityY(Collider) <= -100 Then
 			If DropSpeed# < - 0.07 Then 
 				If CurrStepSFX=0 Then
 					PlaySound_Strict(StepSFX(GetStepSound(Collider), 0, Rand(0, 7)))
@@ -7639,17 +7813,19 @@ Function MovePlayer()
 			EndIf
 			DropSpeed# = 0
 		Else
-			;DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
-			If PlayerFallingPickDistance#<>0.0
-				Local pick = LinePick(EntityX(Collider),EntityY(Collider),EntityZ(Collider),0,-PlayerFallingPickDistance,0)
-				If pick
-					DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
-				Else
-					DropSpeed# = 0
-				EndIf
-			Else
-				DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
-			EndIf
+			DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
+
+			;If PlayerFallingPickDistance#<>0.0
+			;	Local pick = LinePick(EntityX(Collider),EntityY(Collider),EntityZ(Collider),0,-PlayerFallingPickDistance,0)
+			;	If pick
+			;		DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
+			;	Else
+			;		DropSpeed# = 0
+			;	EndIf
+			;Else
+			;	DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
+			;EndIf
+
 			;If Not LinePick(EntityX(Collider), EntityY(Collider), EntityZ(Collider), 0, -0.01, 0) Then
 			;	DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
 			;Else
@@ -7786,12 +7962,14 @@ Function MouseLook()
 		;	;MoveEntity Camera, side, 0.6 + CrouchState * -0.3, 0
 		;End If
 
-		PositionEntity Camera, EntityX(Collider), EntityY(Collider), EntityZ(Collider)
-		RotateEntity Camera, 0, EntityYaw(Collider), roll*0.5
-		
-		MoveEntity Camera, side, up + 0.6 + CrouchState * -0.3, 0
-		;MoveEntity Camera, side, 0.6 + CrouchState * -0.3, 0
-		
+		If Not FreeCam Then
+			PositionEntity Camera, EntityX(Collider), EntityY(Collider), EntityZ(Collider)
+			RotateEntity Camera, 0, EntityYaw(Collider), roll*0.5
+			
+			MoveEntity Camera, side, up + 0.6 + CrouchState * -0.3, 0
+			;MoveEntity Camera, side, 0.6 + CrouchState * -0.3, 0
+		End If
+
 		;RotateEntity Collider, EntityPitch(Collider), EntityYaw(Collider), 0
 		;moveentity player, side, up, 0	
 		; -- Update the smoothing que To smooth the movement of the mouse.
@@ -7819,12 +7997,15 @@ Function MouseLook()
 		; -- Limit the user;s camera To within 180 degrees of pitch rotation. ;EntityPitch(); returns useless values so we need To use a variable To keep track of the camera pitch.
 		If user_camera_pitch# > 70.0 Then user_camera_pitch# = 70.0
 		If user_camera_pitch# < - 70.0 Then user_camera_pitch# = -70.0
-		
-		RotateEntity Camera, WrapAngle(user_camera_pitch + Rnd(-CameraShake, CameraShake)), WrapAngle(EntityYaw(Collider) + Rnd(-CameraShake, CameraShake)), roll ; Pitch the user;s camera up And down.
-		
-		If ((PlayerRoom\RoomTemplate\Name = "pocketdimension" And (EntityY(Collider)<2000*RoomScale Or EntityY(Collider)>2608*RoomScale)) Or PDCameraEffect) And PocketDimensionCameraEffect Then
-			RotateEntity Camera, WrapAngle(EntityPitch(Camera)),WrapAngle(EntityYaw(Camera)), roll+WrapAngle(Sin(MilliSecs2()/150.0)*30.0) ; Pitch the user;s camera up And down.
-		EndIf
+
+
+		If Not FreeCam Then
+			RotateEntity Camera, WrapAngle(user_camera_pitch + Rnd(-CameraShake, CameraShake)), WrapAngle(EntityYaw(Collider) + Rnd(-CameraShake, CameraShake)), roll ; Pitch the user;s camera up And down.
+			
+			If ((PlayerRoom\RoomTemplate\Name = "pocketdimension" And (EntityY(Collider)<2000*RoomScale Or EntityY(Collider)>2608*RoomScale)) Or PDCameraEffect) And PocketDimensionCameraEffect Then
+				RotateEntity Camera, WrapAngle(EntityPitch(Camera)),WrapAngle(EntityYaw(Camera)), roll+WrapAngle(Sin(MilliSecs2()/150.0)*30.0) ; Pitch the user;s camera up And down.
+			EndIf
+		End If
 		
 	Else
 		HideEntity Collider
@@ -8240,10 +8421,11 @@ Function DrawGUI()
 				AAText x - 50, 220, displaystr
 
 				AAText x - 50, 260, "SFX3Ds count: " + SFX3DsCount
-				AAText x - 50, 280, "NPCs Count: " + NPCsCount
+				AAText x - 50, 280, "NPCs count: " + NPCsCount
+				AAText x - 50, 300, "Decals count: " + DecalsCount
 
-				AAText x - 50, 320, "FPSFactor: " + f2s(FPSFactor, 3)
-				AAText x - 50, 340, "FPSFactor2: " + f2s(FPSFactor2, 3)
+				AAText x - 50, 340, "FPSFactor: " + f2s(FPSFactor, 3)
+				AAText x - 50, 360, "FPSFactor2: " + f2s(FPSFactor2, 3)
 				
 				AAText x - 50, 400, "DeafPlayer: " + bool2s(DeafPlayer)
 				AAText x - 50, 420, "DeafTimer: " + f2s(DeafTimer, 3)
@@ -8288,13 +8470,14 @@ Function DrawGUI()
 
 
 				AAText x + 750, 50, "RandomSeed: " + Chr(34) + RandomSeed + Chr(34)
+				AAText x + 750, 70, "Music: " + Chr(34) + Music(NowPlaying) + Chr(34)
 
-				AAText x + 750, 90, "GodMode: " + bool2s(GodMode)
-				AAText x + 750, 110, "Noclip: " + bool2s(Noclip)
-				AAText x + 750, 130, "NoTarget: " + bool2s(NoTarget)
-				AAText x + 750, 150, "NoBlinking: " + bool2s(NoBlinking)
-				AAText x + 750, 170, "InfiniteStamina: " + bool2s(InfiniteStamina)
-				AAText x + 750, 190, "DoorOpenBypass: " + bool2s(DoorOpenBypass)
+				AAText x + 750, 110, "GodMode: " + bool2s(GodMode)
+				AAText x + 750, 130, "Noclip: " + bool2s(Noclip)
+				AAText x + 750, 150, "NoTarget: " + bool2s(NoTarget)
+				AAText x + 750, 170, "NoBlinking: " + bool2s(NoBlinking)
+				AAText x + 750, 190, "InfiniteStamina: " + bool2s(InfiniteStamina)
+				AAText x + 750, 210, "DoorOpenBypass: " + bool2s(DoorOpenBypass)
 
 			Default
 				DebugHUDpage = 0
@@ -10544,23 +10727,24 @@ Function DrawGUI()
 							Local ent% = CameraPick(Camera, GraphicWidth / 2, GraphicHeight / 2)
 							Local hit% = False
 							If ent Then
-								If EntityDistanceToPoint(Camera, PickedX(), PickedY(), PickedZ()) <= PlayerCrowbarMaxInteractionDistance And ent <> Collider Then
+								;Local mesh_max_sz# = -1
+								;If Trim(Lower(EntityClass(ent))) = "mesh" Then mesh_max_sz = Max(Max(MeshWidth(ent), MeshHeight(ent)), MeshDepth(ent)) / 2
+								If EntityDistanceToPoint(Camera, PickedX(), PickedY(), PickedZ()) <= PlayerCrowbarMaxInteractionDistance And ent <> Collider Then       ;And (mesh_max_sz < 0 Or EntityDistance(Collider, ent) <= PlayerCrowbarMaxInteractionDistance + mesh_max_sz) Then
 									hit = True
-									Local ent_n.NPCs = Null
 
+									Local ent_n.NPCs = Null
 									For n_.NPCs = Each NPCs
 										If n_\obj = ent Then ent_n = n_ : Exit
 									Next
 
 									Local is_living% = False
+									Local is_killed%
 
 									If ent_n <> Null Then
-										Select ent_n\NPCtype
-											Case NPCtype008, NPCtype049, NPCtype066, NPCtype096, NPCtype1048a, NPCtype1499, NPCtype5131, NPCtype860, NPCtype939, NPCtype966
-												is_living = True
-											Case NPCtypeClerk, NPCtypeD, NPCtypeGuard, NPCtypeMaxwellCat, NPCtypeMTF, NPCtypeOldMan, NPCtypeTentacle, NPCtypeZombie
-												is_living = True
-										End Select
+										;hit = Not Invulnerable
+										is_living = IsLivingNPC(ent_n)
+										is_killed = DamageNPC(ent_n, 10.0)
+										;CreateConsoleMsg("is_killed: " + is_killed, 255, 0, 255)
 									End If
 
 									Local de.Decals
@@ -10574,24 +10758,36 @@ Function DrawGUI()
 										;bullet hole decal
 										de.Decals = CreateDecal(Rand(13, 14), PickedX(), PickedY(), PickedZ(), 0, 0, 0)
 
-										EntityBlend de\obj, 2
-										EntityFX de\obj, 1
+										de\blendmode = 2
+										de\fx = 1
 									End If
 									AlignToVector de\obj, -PickedNX(), -PickedNY(), -PickedNZ(), 3
 									MoveEntity de\obj, 0, 0, -0.001
-									de\lifetime = 70 * 20							
+									EntityBlend de\obj, de\blendmode
+									EntityFX de\obj, de\fx
+									de\lifetime = 70 * 20
 									de\Size = Rnd(0.028, 0.034)
 									ScaleSprite de\obj, de\Size, de\Size
+									de\AlphaFadeOutStart = 70 * 5
 
-									EntityParent de\obj, ent, True
+									If is_killed Then
+										RemoveDecal(de)
+										;
+										;If is_living And LinePick(EntityX()) Then
+										;
+										;End If
+									Else
+										EntityParent de\obj, ent, True
+									End If
 
 									PlayerCrowbarUsageCooldownTimer = 70 * PlayerCrowbarHitCooldown;0.25
 								End If
 							End If
 							If Not hit Then
-								PlaySound_Strict(CrowbarMissSFX)
 								PlayerCrowbarUsageCooldownTimer = 70 * PlayerCrowbarMissCooldown;0.4
-							End If 
+							End If
+
+							PlaySound_Strict(CrowbarMissSFX)
 						End If
 
 						PlayerCrowbarUsageCooldownTimer = Max(0, PlayerCrowbarUsageCooldownTimer - FPSFactor)
@@ -11734,6 +11930,8 @@ Function LoadEntities()
 	DecalTextures(18) = LoadTexture_Strict("GFX\decalpd6.dc", 1 + 2)	
 	DecalTextures(19) = LoadTexture_Strict("GFX\decal19.png", 1 + 2)
 	DecalTextures(20) = LoadTexture_Strict("GFX\decal427.png", 1 + 2)
+
+	DecalTextures(21) = LoadTexture_Strict("GFX\bloodsprite.png", 1 + 2)
 	
 	DrawLoading(25)
 	
@@ -12678,7 +12876,7 @@ Function UpdateMusic()
 				If EnableMusic Then MusicCHN = StreamSound_Strict("SFX\Music\"+Music(NowPlaying)+".ogg",0.0,Mode)
 				CurrMusic = 1
 			EndIf
-			If EnameMusic Then SetStreamVolume_Strict(MusicCHN,CurrMusicVolume)
+			If EnableMusic Then SetStreamVolume_Strict(MusicCHN,CurrMusicVolume)
 		EndIf
 	Else
 		If FPSfactor > 0 Or OptionsMenu = 2 Then
@@ -14551,6 +14749,8 @@ Type Decals
 	
 	Field x#, y#, z#
 	Field pitch#, yaw#, roll#
+
+	Field AlphaFadeOutStart# = -1
 End Type
 
 Function CreateDecal.Decals(id%, x#, y#, z#, pitch#, yaw#, roll#)
@@ -14594,9 +14794,22 @@ Function RemoveDecal(decal.Decals)
 	Delete decal
 End Function
 
+Global DecalsCount%
+
 Function UpdateDecals()
 	Local d.Decals
+
+	DecalsCount = 0
+
 	For d.Decals = Each Decals
+		DecalsCount = DecalsCount + 1
+
+		;If EntityVisible(d\obj, Collider) Then
+		;	ShowEntity d\obj
+		;Else
+		;	HideEntity d\obj
+		;End If
+
 		If d\SizeChange <> 0 Then
 			d\Size=d\Size + d\SizeChange * FPSfactor
 			ScaleSprite(d\obj, d\Size, d\Size)
@@ -14627,12 +14840,24 @@ Function UpdateDecals()
 		End If
 		
 		If d\lifetime > 0 Then
-			d\lifetime=Max(d\lifetime-FPSfactor,5)
+			d\lifetime=Max(d\lifetime-FPSfactor,0)
 		EndIf
+
+		If d\AlphaFadeOutStart > 0 And d\lifetime <= d\AlphaFadeOutStart Then
+			EntityAlpha(d\obj, d\lifetime / d\AlphaFadeOutStart)
+		End If
 		
-		If d\Size <= 0 Or d\Alpha <= 0 Or d\lifetime=5.0  Then
-			FreeEntity(d\obj)
-			Delete d
+		If d\Size <= 0 Or d\Alpha <= 0 Or d\lifetime <= 0 Then  ;5.0  Then
+			;FreeEntity(d\obj)
+			;Delete d
+
+			RemoveDecal(d)
+
+			;If d\lifetime <= 0 Then
+			;	RemoveDecal(d)
+			;Else
+			;	EntityAlpha d\obj, d\lifetime / 70.0
+			;End If
 		End If
 	Next
 End Function
