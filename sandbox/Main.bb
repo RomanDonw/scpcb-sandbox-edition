@@ -5,6 +5,8 @@ Include "sandbox\Lever.bb"
 Include "sandbox\DelayedCommands.bb"
 ;Include "sandbox\Skybox.bb"
 Include "sandbox\CameraTool.bb"
+;Include "sandbox\Material.bb"
+Include "sandbox\HL1Movement.bb"
 
 Const EXT_PI# = 3.14159265358979323846
 
@@ -26,6 +28,7 @@ Const KEY_ENTER% = 28
 Const KEY_SLASH% = 53
 
 Global FreeCam% = False
+Global UseHL1Movement% = False
 
 ; ===========================================================================================================================================================
 
@@ -126,6 +129,8 @@ Type ConsoleBind
     Field Command$
 
 End Type
+
+;LoadSandboxMaterials("sandbox\Data\materials.list")
 
 Function OnUpdate()
     CatchErrors("Uncaught (OnUpdate)")
@@ -749,8 +754,8 @@ Function OnLoadEntities()
 
     ContDoorFrame = LoadMesh_Strict("GFX\map\Props\ContDoorFrame.x")
     HideEntity ContDoorFrame
-
     EntityTexture ContDoorFrame, ContDoorsTexture
+    ScaleEntity ContDoorFrame, 0.21, 0.2, 0.2
     
     CatchErrors("OnLoadEntities")
 End Function

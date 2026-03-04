@@ -188,6 +188,10 @@ Global IgnoreSmokeInGodMode% = GetINIBool(SandboxConfigPlayer, "player", "ignore
 Global KeycardFastUsage% = GetINIBool(SandboxConfigPlayer, "player", "keycard fast usage")
 Global PlayerCanFastDropItems% = GetINIBool(SandboxConfigPlayer, "player", "fast dropping items")
 Global DeselectItemOnKeycardReaderInteraction% = GetINIBool(SandboxConfigPlayer, "player", "deselect item on keycard reader interaction")
+Global DefaultPlayerSpeed# = GetINIFloat(SandboxConfigPlayer, "player", "default speed")
+Global MinDamagingDropSpeed# = GetINIFloat(SandboxConfigPlayer, "player", "min damaging drop speed")
+Global MaxFallDamage# = GetINIFloat(SandboxConfigPlayer, "player", "max fall damage")
+Global MinFallY# = GetINIFloat(SandboxConfigPlayer, "player", "min fall Y")
 
 ; [crowbar]
 
@@ -574,6 +578,9 @@ Global RefinedItems%
 Include "Achievements.bb"
 
 ;player coordinates, angle, speed, movement etc ---------------------------------------------------------------------
+Global PlayerSpeed# = DefaultPlayerSpeed
+Global CollidedFloor% = False
+
 Global DropSpeed#, HeadDropSpeed#, CurrSpeed#
 Global user_camera_pitch#, side#
 Global Crouch%, CrouchState#
@@ -2335,12 +2342,13 @@ Function ExecConsole(cin$, silent% = False)
 			CreateConsoleMsg("player.position.set <x> <y> <z> - sets player position on <x>, <y> and <z>.")
 			CreateConsoleMsg("player.rotation.turn <pitch/x> <yaw/y> <roll/z> - moves player rotation on <pitch/x>, <yaw/y> and <roll/z> offset.")
 			CreateConsoleMsg("player.rotation.set <pitch/x> <yaw/y> <roll/z> - sets player rotation on <pitch/x>, <yaw/y> and <roll/z>.")
+			CreateConsoleMsg("player.speed.get - returns current speed of player.")
+			CreateConsoleMsg("player.speed.set <speed:float> - sets current speed of player to <speed> value.")
+			CreateConsoleMsg("player.speed.reset - resets current speed of player to default value from config.")
 
 			CreateConsoleMsg(" ")
 			CreateConsoleMsg("- Camera control commands:", 255, 127, 0)
 			CreateConsoleMsg(" ")
-
-			;"effect.pocketdimension.give""camera.fog.range""camera.fog.color.reset""camera.fog.color"camera.clscolor"camera.range
 
 			CreateConsoleMsg("camera.range <near:float> <far:float> - sets camera <near> and <far> render range.")
 			CreateConsoleMsg("camera.clscolor <r:0-255> <g:0-255> <b:0-255> - sets camera CLS color to <r>, <g> and <b>.")
@@ -3900,6 +3908,21 @@ Function ExecConsole(cin$, silent% = False)
 
 			CreateConsoleMsg("Player rotation set on (pitch|yaw|roll) " + Float(StrTemp) + " " + Float(StrTemp2) + " " + Float(StrTemp3) + ".", 0, 255, 0)
 
+		Case "player.speed.get"
+			CreateConsoleMsg("Player current speed equals to " + PlayerSpeed + ".", 0, 255, 0)
+
+		Case "player.speed.set"
+			If CalculateCharCountInString(cin, " ") < 1 Then CreateConsoleMsg("Too few arguments.", 255, 0, 0) : Return
+
+			PlayerSpeed = Float(Right(cin, Len(cin) - Instr(cin, " ")))
+
+			CreateConsoleMsg("Set player current speed to " + PlayerSpeed + ".", 0, 255, 0)
+
+		Case "player.speed.reset"
+			PlayerSpeed = DefaultPlayerSpeed
+
+			CreateConsoleMsg("Resetted player current speed to default value.", 0, 255, 0)
+
 		; === CAMERA CONTROL ===
 
 		Case "camera.range"
@@ -5208,8 +5231,8 @@ Function CreateDoor.Doors(lvl, x#, y#, z#, angle#, room.Rooms, dopen% = False,  
 
 		d\obj3 = CopyEntity(ContDoorFrame)
 		HideEntity d\obj3
-		;ScaleEntity(d\obj3, 1 / RoomScale, 1 / RoomScale, 1 / RoomScale)
 		PositionEntity d\obj3, x, y, z, True
+		RotateEntity d\obj3, 0, angle, 0, True
 	ElseIf big=2 Then
 		d\obj = CopyEntity(HeavyDoorObj(0))
 		ScaleEntity(d\obj, RoomScale, RoomScale, RoomScale)
@@ -6326,7 +6349,7 @@ Repeat
 				Local RN$ = PlayerRoom\RoomTemplate\Name$
 				If RN$ <> "room860" And RN$ <> "room1123" And RN$ <> "173" And RN$ <> "dimension1499" Then
 					If FPSfactor > 0 Then LightBlink = Rnd(1.0,2.0)
-					If EnableAmbientSFX PlaySound_Strict  LoadTempSound("SFX\SCP\079\Broadcast"+Rand(1,7)+".ogg")
+					If EnableAmbientSFX Then PlaySound_Strict(LoadTempSound("SFX\SCP\079\Broadcast"+Rand(1,7)+".ogg"))
 				EndIf 
 			EndIf
 		EndIf
@@ -6406,6 +6429,19 @@ Repeat
 			UpdateWorld()
 			ManipulateNPCBones()
 		EndIf
+		
+		CollidedFloor = Not (KillTimer >= 0 And FallTimer >= 0);False
+		If (Not CollidedFloor) And CountCollisions(Collider) > 0 Then
+			For ci% = 1 To CountCollisions(Collider)
+				If CollisionNY(Collider, ci) > Sin(20) Then
+					CollidedFloor = True
+					Exit
+				End If
+			Next
+		End If
+
+		Log("MAIN LOOP", "Collided floor: " + bool2s(CollidedFloor) + ", " + CountCollisions(Collider))
+
 		RenderWorld2()
 		
 		BlurVolume = Min(CurveValue(0.0, BlurVolume, 20.0),0.95)
@@ -7482,8 +7518,80 @@ End Function
 
 Function MovePlayer()
 	CatchErrors("Uncaught (MovePlayer)")
-	Local Sprint# = 1.0, Speed# = 0.018, i%, angle#
+
+	If KeyHit(KEY_TOGGLE_NOCLIP) Then
+		Noclip = Not Noclip
+	End If
+
+	If KeyHit(KEY_TOGGLE_HUD) Then
+		HUDenabled = Not HUDenabled
+	End If
+
+	If KeyHit(KEY_TOGGLE_DEBUGHUD) Then
+		If DebugHUD Then
+			If KeyDown(KEY_LEFT_SHIFT) Then
+				DebugHUDpage = DebugHUDpage - 1
+			Else
+				DebugHUDpage = DebugHUDpage + 1
+			End If
+
+			If DebugHUDpage < 0 Or DebugHUDpage >= DEBUG_HUD_PAGES_COUNT Then DebugHUD = False
+		Else
+			DebugHUD = True
+			DebugHUDpage = 0
+		End If
+	End If
+
+	If KeyHit(KEY_TOGGLE_NOBLINKING) Then
+		NoBlinking = Not NoBlinking
+	End If
+
+	If KeyHit(KEY_TOGGLE_SHOWFPS) Then
+		ShowFPS = Not ShowFPS
+	End If
+
+	If KeyHit(KEY_TOGGLE_TOGGLEINFSTAM) Then
+		InfiniteStamina = Not InfiniteStamina
+	End If
+
+	If KeyHit(KEY_TOGGLE_GODMODE) Then
+		GodMode = Not GodMode
+	End If
+
+	If KeyHit(KEY_TOGGLE_NOTARGET) Then
+		NoTarget = Not NoTarget
+	End If
 	
+	If KeyHit(KEY_TOGGLE_DOOROPENBYPASS) Then DoorOpenBypass = Not DoorOpenBypass
+
+	For keyi = 0 To 9
+		If KeyHit(KEYS_SELECT_ITEM[keyi]) Then
+			Local sel_it.Items = Inventory(keyi)
+			If sel_it <> Null Then
+				If sel_it\itemtemplate\sound <> 66 Then PlaySound_Strict(PickSFX(sel_it\itemtemplate\sound))
+			End If
+			SelectedItem = sel_it
+		End If
+	Next
+
+	If KeyHit(KEY_DROP_ITEM) And SelectedItem <> Null And PlayerCanFastDropItems Then
+		DropItem(SelectedItem)
+		SelectedItem = Null
+	End If
+	
+	If UseHL1Movement Then
+		MovePlayer_HL1()
+	Else
+		MovePlayer_CB()
+	End If
+	
+	CatchErrors("MovePlayer")
+End Function
+
+Function MovePlayer_CB()
+	Local Sprint# = 1.0, i%, angle#
+	Local Speed# = PlayerSpeed
+
 	If SuperMan Then
 		Speed = Speed * 3
 		
@@ -7572,77 +7680,6 @@ Function MovePlayer()
 	Else
 		CrouchState = CurveValue(Crouch, CrouchState, 10.0)
 	EndIf
-
-	If KeyHit(KEY_TOGGLE_NOCLIP) Then
-		Noclip = Not Noclip
-	End If
-
-	If KeyHit(KEY_TOGGLE_HUD) Then
-		HUDenabled = Not HUDenabled
-	End If
-
-	;If KeyHit(KEY_TOGGLE_DEBUGHUD) Then
-	;	DebugHUD = Not DebugHUD
-	;End If
-	;If DebugHUD Then
-	;	DebugHUDpage = DebugHUDpage + MouseZSpeed()
-	;	If DebugHUDpage < 0 Then
-	;		DebugHUDpage = DEBUG_HUD_PAGES_COUNT - 1
-	;	Else If DebugHUDpage >= DEBUG_HUD_PAGES_COUNT Then
-	;		DebugHUDpage = 0
-	;	End If
-	;End If
-	If KeyHit(KEY_TOGGLE_DEBUGHUD) Then
-		If DebugHUD Then
-			If KeyDown(KEY_LEFT_SHIFT) Then
-				DebugHUDpage = DebugHUDpage - 1
-			Else
-				DebugHUDpage = DebugHUDpage + 1
-			End If
-
-			If DebugHUDpage < 0 Or DebugHUDpage >= DEBUG_HUD_PAGES_COUNT Then DebugHUD = False
-		Else
-			DebugHUD = True
-			DebugHUDpage = 0
-		End If
-	End If
-
-	If KeyHit(KEY_TOGGLE_NOBLINKING) Then
-		NoBlinking = Not NoBlinking
-	End If
-
-	If KeyHit(KEY_TOGGLE_SHOWFPS) Then
-		ShowFPS = Not ShowFPS
-	End If
-
-	If KeyHit(KEY_TOGGLE_TOGGLEINFSTAM) Then
-		InfiniteStamina = Not InfiniteStamina
-	End If
-
-	If KeyHit(KEY_TOGGLE_GODMODE) Then
-		GodMode = Not GodMode
-	End If
-
-	If KeyHit(KEY_TOGGLE_NOTARGET) Then
-		NoTarget = Not NoTarget
-	End If
-	
-	If KeyHit(KEY_TOGGLE_DOOROPENBYPASS) Then DoorOpenBypass = Not DoorOpenBypass
-
-	For keyi = 0 To 9
-		If KeyHit(KEYS_SELECT_ITEM[keyi]) Then
-			Local sel_it.Items = Inventory(keyi)
-			If sel_it <> Null Then
-				If sel_it\itemtemplate\sound <> 66 Then PlaySound_Strict(PickSFX(sel_it\itemtemplate\sound))
-			End If
-			SelectedItem = sel_it
-		End If
-	Next
-
-	If KeyHit(KEY_DROP_ITEM) And SelectedItem <> Null And PlayerCanFastDropItems Then
-		DropItem(SelectedItem)
-		SelectedItem = Null
-	End If
 	
 	If (Not NoClip) Then 
 		If ((KeyDown(KEY_DOWN) Or KeyDown(KEY_UP)) Or (KeyDown(KEY_RIGHT) Or KeyDown(KEY_LEFT)) And Playable) Or ForceMove>0 Then
@@ -7721,6 +7758,7 @@ Function MovePlayer()
 		CurrSpeed = 0
 		CrouchState = 0
 		Crouch = 0
+		DropSpeed = 0
 		
 		RotateEntity Collider, WrapAngle(EntityPitch(Camera)), WrapAngle(EntityYaw(Camera)), 0
 		
@@ -7777,64 +7815,37 @@ Function MovePlayer()
 			CurrSpeed = Max(CurveValue(0.0, CurrSpeed-0.1, 1.0),0.0)
 		EndIf
 		
-		If (Not UnableToMove%) Then TranslateEntity Collider, Cos(angle)*CurrSpeed * FPSfactor, 0, Sin(angle)*CurrSpeed * FPSfactor, True
+		If (Not UnableToMove%) And CollidedFloor Then TranslateEntity Collider, Cos(angle)*CurrSpeed * FPSfactor, 0, Sin(angle)*CurrSpeed * FPSfactor, True
 		
-		Local CollidedFloor% = False
-		;For i = 1 To CountCollisions(Collider)
-		;	If CollisionY(Collider, i) < EntityY(Collider) - 0.25 Then CollidedFloor = True
-		;Next
-		If CountCollisions(Collider) > 0 Then
-			For ci% = 1 To CountCollisions(Collider)
-				If CollisionNY(Collider, ci) > Sin(20) Then
-					CollidedFloor = True
-					Exit
+		If CollidedFloor Or EntityY(Collider) <= MinFallY Then
+			If Abs(DropSpeed) > 0 Then
+				If Abs(DropSpeed) > MinDamagingDropSpeed And (Not GodMode) Then
+					PlaySound_Strict(DamageSFX(2))
+					Injuries = Injuries + ((Abs(DropSpeed) - MinDamagingDropSpeed) / Max(0.01, 2.0 - MinDamagingDropSpeed)) * MaxFallDamage
+
+				;Else If Abs(DropSpeed) > 0.07 Then 
+					Select CurrStepSFX
+						Case 0
+							PlaySound_Strict(StepSFX(GetStepSound(Collider), 0, Rand(0, 7)))
+						Case 1
+							PlaySound_Strict(Step2SFX(Rand(0, 2)))
+						Case 2
+							PlaySound_Strict(Step2SFX(Rand(3, 5)))
+						Case 3
+							PlaySound_Strict(StepSFX(0, 0, Rand(0, 7)))
+					End Select
+					PlayerSoundVolume = Max(3.0,PlayerSoundVolume)
 				End If
-			Next
-		End If
+			End If
 
-		;If onground Then
-		;	DropSpeed# = 0
-		;Else
-		;	DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
-		;End If
-		
-		If CollidedFloor Or EntityY(Collider) <= -100 Then
-			If DropSpeed# < - 0.07 Then 
-				If CurrStepSFX=0 Then
-					PlaySound_Strict(StepSFX(GetStepSound(Collider), 0, Rand(0, 7)))
-				ElseIf CurrStepSFX=1
-					PlaySound_Strict(Step2SFX(Rand(0, 2)))
-				ElseIf CurrStepSFX=2
-					PlaySound_Strict(Step2SFX(Rand(3, 5)))
-				ElseIf CurrStepSFX=3
-					PlaySound_Strict(StepSFX(0, 0, Rand(0, 7)))
-				EndIf
-				PlayerSoundVolume = Max(3.0,PlayerSoundVolume)
-			EndIf
-			DropSpeed# = 0
+			DropSpeed = 0
 		Else
-			DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
-
-			;If PlayerFallingPickDistance#<>0.0
-			;	Local pick = LinePick(EntityX(Collider),EntityY(Collider),EntityZ(Collider),0,-PlayerFallingPickDistance,0)
-			;	If pick
-			;		DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
-			;	Else
-			;		DropSpeed# = 0
-			;	EndIf
-			;Else
-			;	DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
-			;EndIf
-
-			;If Not LinePick(EntityX(Collider), EntityY(Collider), EntityZ(Collider), 0, -0.01, 0) Then
-			;	DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
-			;Else
-			;	DropSpeed# = 0
-			;End If
+			;DropSpeed# = Min(Max(DropSpeed - 0.006 * FPSfactor, -2.0), 0.0)
+			DropSpeed = Min(Max(DropSpeed - 9.8, -2.0), 0.0)
 		EndIf
 		PlayerFallingPickDistance# = 10.0
 		
-		If (Not UnableToMove%) And ShouldEntitiesFall Then TranslateEntity Collider, 0, DropSpeed * FPSfactor, 0
+		If (Not UnableToMove%) And ShouldEntitiesFall Then TranslateEntity Collider, 0, DropSpeed * ElapsedTime, 0
 	EndIf
 	
 	ForceMove = False
@@ -7909,11 +7920,17 @@ Function MovePlayer()
 		
 		HeartBeatVolume = Max(HeartBeatVolume - FPSfactor*0.05, 0)
 	EndIf
-	
-	CatchErrors("MovePlayer")
 End Function
 
 Function MouseLook()
+	If UseHL1Movement Then
+		MouseLook_HL1()
+	Else
+		MouseLook_CB()
+	End If
+End Function
+
+Function MouseLook_CB()
 	Local i%
 	
 	CameraShake = Max(CameraShake - (FPSfactor / 10), 0)
@@ -8011,12 +8028,12 @@ Function MouseLook()
 		HideEntity Collider
 		PositionEntity Camera, EntityX(Head), EntityY(Head), EntityZ(Head)
 		
-		Local CollidedFloor% = False
+		Local CollidedFloorHead% = False
 		For i = 1 To CountCollisions(Head)
-			If CollisionY(Head, i) < EntityY(Head) - 0.01 Then CollidedFloor = True
+			If CollisionY(Head, i) < EntityY(Head) - 0.01 Then CollidedFloorHead = True
 		Next
 		
-		If CollidedFloor = True Then
+		If CollidedFloorHead = True Then
 			HeadDropSpeed# = 0
 		Else
 			
@@ -10727,6 +10744,9 @@ Function DrawGUI()
 							Local ent% = CameraPick(Camera, GraphicWidth / 2, GraphicHeight / 2)
 							Local hit% = False
 							If ent Then
+								;Local PickedBrush% = GetSurfaceBrush(PickedSurface())
+								;Local PickedTexture% = GetBrushTexture(PickedBrush)
+
 								;Local mesh_max_sz# = -1
 								;If Trim(Lower(EntityClass(ent))) = "mesh" Then mesh_max_sz = Max(Max(MeshWidth(ent), MeshHeight(ent)), MeshDepth(ent)) / 2
 								If EntityDistanceToPoint(Camera, PickedX(), PickedY(), PickedZ()) <= PlayerCrowbarMaxInteractionDistance And ent <> Collider Then       ;And (mesh_max_sz < 0 Or EntityDistance(Collider, ent) <= PlayerCrowbarMaxInteractionDistance + mesh_max_sz) Then
@@ -10753,6 +10773,13 @@ Function DrawGUI()
 
 										de.Decals = CreateDecal(3, PickedX(), PickedY(), PickedZ(), 0, 0, 0)
 									Else
+										;Local hitsfx% = GetRandomSFXForTexture(TextureName(PickedTexture))
+										;CreateConsoleMsg(TextureName(PickedTexture), 255, 0, 255)
+										;If hitsfx <> 0 Then
+										;	chn% = PlaySound(hitsfx)
+										;	ChannelVolume chn, SFXVolume
+										;End If
+
 										PlaySound_Strict(CrowbarHitSFX[Rand(0, 1)])
 
 										;bullet hole decal
@@ -10782,6 +10809,9 @@ Function DrawGUI()
 
 									PlayerCrowbarUsageCooldownTimer = 70 * PlayerCrowbarHitCooldown;0.25
 								End If
+
+								;FreeTexture PickedTexture
+								;FreeBrush PickedBrush
 							End If
 							If Not hit Then
 								PlayerCrowbarUsageCooldownTimer = 70 * PlayerCrowbarMissCooldown;0.4
