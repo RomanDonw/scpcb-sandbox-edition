@@ -402,8 +402,6 @@ Function LoadRMesh(file$,rt.RoomTemplates)
 	For i=1 To count ;drawn mesh
 		childMesh=CreateMesh()
 		
-		surf=CreateSurface(childMesh)
-		
 		brush=CreateBrush()
 		
 		tex[0]=0 : tex[1]=0
@@ -1765,6 +1763,7 @@ Global RoomScale# = 8.0 / 2048.0
 Const ZONEAMOUNT = 3
 Global MapWidth% = GetINIInt("options.ini", "options", "map size"), MapHeight% = GetINIInt("options.ini", "options", "map size")
 Dim MapTemp%(MapWidth+1, MapHeight+1)
+Dim MapGridValues%(MapWidth+1, MapHeight+1)
 Dim MapFound%(MapWidth+1, MapHeight+1)
 
 Global RoomAmbience%[20]
@@ -7645,55 +7644,20 @@ Function CreateMap()
 		PreventRoomOverlap(r)
 	Next
 	
-	If 0 Then 
+	For y = 0 To MapHeight
+		For x = 0 To MapWidth
+			MapGridValues(x, y) = MapTemp(x, y)
+		Next
+	Next
+
+	If ShowFacilityMapOnLoad Then 
 		Repeat
 			Cls
-			For x = 0 To MapWidth - 1
-				For y = 0 To MapHeight - 1
-					If MapTemp(x, y) = 0 Then
-						
-						zone=GetZone(y)
-						
-						Color 50*zone, 50*zone, 50*zone
-						Rect(x * 32, y * 32, 30, 30)
-					Else
-						If MapTemp(x, y) = 255 Then
-							Color 0,200,0
-						Else If MapTemp(x,y)=4 Then
-							Color 50,50,255
-						Else If MapTemp(x,y)=3 Then
-							Color 50,255,255
-						Else If MapTemp(x,y)=2 Then
-							Color 255,255,50
-						Else
-							Color 255, 255, 255
-						EndIf
-						Rect(x * 32, y * 32, 30, 30)
-					End If
-				Next
-			Next	
-			
-			For x = 0 To MapWidth - 1
-				For y = 0 To MapHeight - 1
-					
-					If MouseX()>x*32 And MouseX()<x*32+32 Then
-						If MouseY()>y*32 And MouseY()<y*32+32 Then
-							Color 255, 0, 0
-						Else
-							Color 200, 200, 200
-						EndIf
-					Else
-						Color 200, 200, 200
-					EndIf
-					
-					If MapTemp(x, y) > 0 Then
-						Text x * 32 +2, (y) * 32 + 2,MapTemp(x, y) +" "+ MapName(x,y)
-					End If
-				Next
-			Next			
+
+			RenderMap()			
 			
 			Flip
-		Until KeyHit(28)		
+		Until GetKey() <> 0 Or MouseHit(1)
 	EndIf
 	
 	

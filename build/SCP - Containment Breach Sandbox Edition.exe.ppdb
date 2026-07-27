@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#Author: roman
+#SCP - Containment Breach Sandbox Edition.exe
+#Rating=1-5
+export PW_WINE_USE="PROTON_LG_10-28"
+export PW_PREFIX_NAME="DEFAULT"
+export PORTPROTON_NAME="SCP - Containment Breach Sandbox Edition"
+export FILE_DESCRIPTION=""
+export FILE_SHA256SUM="484e2deac7cb0cc8b3469b2f4b56761dbc1578b2c28b4dfdd01f9a67a75fd124"
+export PW_VULKAN_USE="0"

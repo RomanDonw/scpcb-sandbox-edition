@@ -133,6 +133,8 @@ Function SaveGame(file$)
 		For x = 0 To MapWidth
 			For y = 0 To MapHeight
 				WriteInt f, MapTemp(x, y)
+				WriteInt f, MapGridValues(x, y)
+				WriteString f, MapName(x, y)
 				WriteByte f, MapFound(x, y)
 			Next
 		Next
@@ -634,6 +636,8 @@ Function LoadGame(file$)
 	For x = 0 To MapWidth 
 		For y = 0 To MapHeight
 			MapTemp( x, y) = ReadInt(f)
+			MapGridValues(x, y) = ReadInt(f)
+			MapName(x, y) = ReadString(f)
 			MapFound(x, y) = ReadByte(f)
 		Next
 	Next
@@ -1558,6 +1562,8 @@ Function LoadGameQuick(file$)
 	For x = 0 To MapWidth
 		For y = 0 To MapHeight
 			MapTemp(x, y) = ReadInt(f)
+			MapGridValues(x, y) = ReadInt(f)
+			MapName(x, y) = ReadString(f)
 			MapFound(x, y) = ReadByte(f)
 		Next
 	Next
