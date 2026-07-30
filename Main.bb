@@ -76,6 +76,7 @@ Global EnableNostalgiaEffect% = GetINIBool(SandboxConfigMain, "gameplay", "nosta
 
 Global DebugShowWaypoints% = GetINIBool(SandboxConfigDebug, "debug", "show waypoints")
 Global AllowTestsCommands% = GetINIBool(SandboxConfigDebug, "debug", "allow tests commands")
+Global ShowFacilityMapOnLoad% = GetINIBool(SandboxConfigDebug, "debug", "show facility map on load")
 
 ; [console]
 
@@ -4844,7 +4845,7 @@ End If
 
 ;---------------------------------------------------------------------------------------------------
 
-Const DEBUG_HUD_PAGES_COUNT% = 2
+Const DEBUG_HUD_PAGES_COUNT% = 3
 Global DebugHUD%, DebugHUDpage% = 0
 
 Global BlurVolume#, BlurTimer#
@@ -8478,6 +8479,9 @@ Function DrawGUI()
 				AAText x + 750, 170, "NoBlinking: " + bool2s(NoBlinking)
 				AAText x + 750, 190, "InfiniteStamina: " + bool2s(InfiniteStamina)
 				AAText x + 750, 210, "DoorOpenBypass: " + bool2s(DoorOpenBypass)
+
+			Case 2
+				RenderMap()
 
 			Default
 				DebugHUDpage = 0
