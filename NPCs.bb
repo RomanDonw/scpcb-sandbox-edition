@@ -5193,7 +5193,7 @@ Function UpdateNPCs()
 
 				Select n\State
 					Case 0 ; idle
-						If EntityDistance(n\Collider, Camera) > 16 Then ; player is far - start moving to it.
+						If EntityDistance(n\Collider, Collider) > 16 Then ; player is far - start moving to it.
 							n\State = 1
 							n\PathTimer = 0
 
@@ -5201,7 +5201,7 @@ Function UpdateNPCs()
 						End If
 
 					Case 1, 2 ; searching & moving to player
-						If EntityDistance(n\Collider, Camera) > 64 And n\State <> 2 Then ; player too far - remove NPC.
+						If n\State <> 2 And EntityDistance(n\Collider, Collider) > 64 Then ; player too far - remove NPC.
 							RemoveNPC(n)
 
 							CreateConsoleMsg("Goodbye, Maxwell the Cat.", 255, 0, 0, False, True)
@@ -5229,8 +5229,28 @@ Function UpdateNPCs()
 							EndIf
 
 							Select n\PathStatus
+								Case 0 ; too close to target
+									;TurnEntity n\Collider, 0, DeltaYaw(n\Collider, Collider), 0
+									;TranslateEntity n\Collider, Sin(EntityPitch(n\Collider, True)) * n\Speed, 0, Cos(EntityRoll(n\Collider, True)) * n\Speed, True
+
+									TurnEntity n\Collider, 0, DeltaYaw(n\Collider, Collider), 0
+									MoveEntity n\Collider, 0, 0, n\Speed
+
+									nearestdoor.Doors = GetNearestDoorToEntityByFrame(n\obj, 1)
+									If nearestdoor <> Null Then
+										If (Not nearestdoor\locked) And (Not nearestdoor\open) And nearestdoor\Code = "" And nearestdoor\KeyCard = 0 Then
+											UseDoor(nearestdoor, False, True, 0)
+											Log("UpdateNPCs/Maxwell the Cat", "Opened door.")
+										End If
+									End If
+
+									If EntityDistance(n\Collider, Collider) < 0.3 Then
+										n\State = 0
+										Log("UpdateNPCs/Maxwell the Cat", "Reached the player. Staying idle.")
+									End If
+
 								Case 1 ; if successfully found
-									While n\Path[n\PathLocation]=Null
+									While n\Path[n\PathLocation] = Null
 										If n\PathLocation > 19 Then 
 											n\PathLocation = 0 : n\PathStatus = 0
 											Exit
@@ -5240,7 +5260,9 @@ Function UpdateNPCs()
 									Wend
 
 									If n\Path[n\PathLocation] <> Null Then 
-										TranslateEntity n\Collider, 0, EntityY(n\Path[n\PathLocation]\obj, True) - EntityY(n\Collider, True), 0
+										;TranslateEntity n\Collider, 0, EntityY(n\Path[n\PathLocation]\obj, True) - EntityY(n\Collider, True), 0
+										;TurnEntity n\Collider, 0, DeltaYaw(n\Collider, n\Path[n\PathLocation]\obj), 0
+										;TranslateEntity n\Collider, Sin(EntityPitch(n\Collider, True)) * n\Speed, 0, Cos(EntityRoll(n\Collider, True)) * n\Speed, True
 										TurnEntity n\Collider, 0, DeltaYaw(n\Collider, n\Path[n\PathLocation]\obj), 0
 										MoveEntity n\Collider, 0, 0, n\Speed
 

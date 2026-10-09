@@ -4,7 +4,7 @@ Function SafeLoadSound%(filepath$)
     Local sound% = LoadSound(filepath)
     If sound = 0 Then RuntimeError "Can't load sound from file " + Chr(34) + filepath + Chr(34) + "."
 
-    Return Sound
+    Return sound
 End Function
 
 Function LoadLoopedSound%(filepath$)
