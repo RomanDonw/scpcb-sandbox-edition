@@ -20,6 +20,9 @@ Type SFX3D
     Field Radius#, Volume#
     Field Paused% = False
 
+    ;; game is single-thread, so this fields can be safety set right after creating 'object'.
+    ;Field DeleteOnChannelStop% = True
+
     ; Read-only section
 
     Field Channel%
@@ -77,7 +80,9 @@ Function UpdateSFX3Ds()
 
     For sfx.SFX3D = Each SFX3D
         Local removed% = False
-        If (Not ChannelPlaying(sfx\Channel)) And (Not sfx\Paused) Then RemoveSFX3D(sfx) : removed = True
+        ;If sfx\DeleteOnChannelStop And (Not ChannelPlaying(sfx\Channel)) And (Not sfx\Paused) Then RemoveSFX3D(sfx) : removed = True
+        ;If (Not ChannelPlaying(sfx\Channel)) And (Not sfx\Paused) Then RemoveSFX3D(sfx) : removed = True
+        If Not (ChannelPlaying(sfx\Channel) Or sfx\Paused) Then RemoveSFX3D(sfx) : removed = True
         If Not removed Then
             If Not IsEntityExists(sfx\EmitterEntity) Then RemoveSFX3D(sfx) : removed = True
         End If

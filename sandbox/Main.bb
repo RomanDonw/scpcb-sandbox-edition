@@ -283,6 +283,11 @@ Global test_106_target = CreatePivot()
 Global test_106_movetotarget% = False
 Global test_106_disable_gravity% = False
 
+;Dim SCP049SpeechSFX%(6)
+;For i% = 0 To 6
+;    SCP049SpeechSFX(i) = SafeLoadSound("SFX\SCP\049\Searching" + (i + 1) + ".ogg")
+;Next
+
 Function OnUpdateNPCs()
     CatchErrors("Uncaught (OnUpdateNPCs)")
 
@@ -751,6 +756,8 @@ Function OnLoadEntities()
     HideEntity ContDoorFrame
 
     EntityTexture ContDoorFrame, ContDoorsTexture
+
+    ; ===================
     
     CatchErrors("OnLoadEntities")
 End Function

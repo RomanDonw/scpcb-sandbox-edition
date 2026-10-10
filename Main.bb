@@ -7576,6 +7576,12 @@ Function MovePlayer()
 
 	If KeyHit(KEY_TOGGLE_NOCLIP) Then
 		Noclip = Not Noclip
+		If NoClip Then
+			Playable = True
+		Else
+			RotateEntity Collider, 0, EntityYaw(Collider), 0
+		EndIf
+		DropSpeed = 0
 	End If
 
 	If KeyHit(KEY_TOGGLE_HUD) Then
