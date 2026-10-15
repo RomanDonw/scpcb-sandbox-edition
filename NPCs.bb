@@ -654,7 +654,7 @@ Function CreateNPC.NPCs(NPCtype%, x#, y#, z#, CanSave% = True)
 			;EntityColor n\obj, Rand(0, 255), Rand(0, 255), Rand(0, 255)
 			n\Health = 50.0
 			
-			;n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
+			n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
 			;n\Speed = 0.05
 			n\Speed = MaxwellCatDefaultSpeed
 			n\State = 0
@@ -5189,7 +5189,7 @@ Function UpdateNPCs()
 			;	3 - waiting for player (idle). Theme sound paused.
 
 			Case NPCtypeMaxwellCat
-				If n\sound3d = Null Then n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
+				;If n\sound3d = Null Then n\sound3d = CreateSFX3D(MaxwellCatLoopedThemeSound, n\obj, 16, 2)
 
 				Select n\State
 					Case 0 ; idle
@@ -5259,12 +5259,13 @@ Function UpdateNPCs()
 										EndIf
 									Wend
 
-									If n\Path[n\PathLocation] <> Null Then 
-										;TranslateEntity n\Collider, 0, EntityY(n\Path[n\PathLocation]\obj, True) - EntityY(n\Collider, True), 0
+									If n\Path[n\PathLocation] <> Null Then
+										;CreateConsoleMsg("pathloc: " + n\PathLocation + ", dist: " + EntityDistance(n\Collider, n\Path[n\PathLocation]\obj), 255, 0, 255)
+										TranslateEntity n\Collider, 0, EntityY(n\Path[n\PathLocation]\obj, True) - EntityY(n\Collider, True), 0
 										;TurnEntity n\Collider, 0, DeltaYaw(n\Collider, n\Path[n\PathLocation]\obj), 0
 										;TranslateEntity n\Collider, Sin(EntityPitch(n\Collider, True)) * n\Speed, 0, Cos(EntityRoll(n\Collider, True)) * n\Speed, True
 										TurnEntity n\Collider, 0, DeltaYaw(n\Collider, n\Path[n\PathLocation]\obj), 0
-										MoveEntity n\Collider, 0, 0, n\Speed
+										MoveEntity n\Collider, 0, 0, ElapsedTime * 0.1
 
 										nearestdoor.Doors = GetNearestDoorToEntityByFrame(n\obj, 1)
 										If nearestdoor <> Null Then

@@ -71,6 +71,7 @@ Global StopHidingEvent% = GetINIBool(SandboxConfigMain, "gameplay", "stop hiding
 Global WaitKeyOrMouseInDrawLoading% = GetINIBool(SandboxConfigMain, "gameplay", "wait key or mouse in DrawLoading")
 Global CanSpawnSCP5131% = GetINIBool(SandboxConfigMain, "gameplay", "can spawn SCP-513-1")
 Global EnableNostalgiaEffect% = GetINIBool(SandboxConfigMain, "gameplay", "nostalgia effect")
+Global AllowOnlyElevatorsUpdateInEvents% = GetINIBool(SandboxConfigMain, "gameplay", "allow only elevators update in events")
 
 ; [debug]
 

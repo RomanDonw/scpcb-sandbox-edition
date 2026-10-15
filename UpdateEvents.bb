@@ -2820,8 +2820,10 @@ Function UpdateEvents()
 				If PlayerRoom = e\room Then
 					e\EventState2 = UpdateElevators(e\EventState2, e\room\RoomDoors[0], e\room\RoomDoors[1], e\room\Objects[4], e\room\Objects[5], e)
 					
-					e\EventState = UpdateLever(e\room\Objects[1])
-					UpdateLever(e\room\Objects[3])
+					If Not AllowOnlyElevatorsUpdateInEvents Then
+						e\EventState = UpdateLever(e\room\Objects[1])
+						UpdateLever(e\room\Objects[3])
+					End If
 				EndIf
 				
 				If e\EventState3 = 0 Then
@@ -4937,90 +4939,91 @@ Function UpdateEvents()
 				;[Block]
 				If PlayerRoom = e\room Then
 					e\EventState2 = UpdateElevators(e\EventState2, e\room\RoomDoors[0], e\room\RoomDoors[1],e\room\Objects[0],e\room\Objects[1], e)
-					
 					e\EventState3 = UpdateElevators(e\EventState3, e\room\RoomDoors[2], e\room\RoomDoors[3],e\room\Objects[2],e\room\Objects[3], e)
+					If Not AllowOnlyElevatorsUpdateInEvents Then
 					
-					If EntityY(Collider)<-4600*RoomScale Then
-						
-						GiveAchievement(Achv939)
-						
-						ShouldPlay = 7
-						
-						If e\room\NPC[0]=Null Or e\room\NPC[1]=Null Or e\room\NPC[2]=Null Then
-							If QuickLoadPercent = -1 Then
-								QuickLoadPercent = 0
-								QuickLoad_CurrEvent = e
+						If EntityY(Collider)<-4600*RoomScale Then
+							
+							GiveAchievement(Achv939)
+							
+							ShouldPlay = 7
+							
+							If e\room\NPC[0]=Null Or e\room\NPC[1]=Null Or e\room\NPC[2]=Null Then
+								If QuickLoadPercent = -1 Then
+									QuickLoadPercent = 0
+									QuickLoad_CurrEvent = e
+								EndIf
+							Else
+								If e\EventState = 0 Then
+									;Instance 1
+									PositionEntity(e\room\NPC[0]\Collider, EntityX(e\room\Objects[4],True),EntityY(e\room\Objects[4],True)+0.2,EntityZ(e\room\Objects[4],True))
+									ResetEntity e\room\NPC[0]\Collider
+									e\room\NPC[0]\State = 2
+									e\room\NPC[0]\State2 = 5
+									e\room\NPC[0]\PrevState = 7
+									;Instance 2
+									PositionEntity(e\room\NPC[1]\Collider, EntityX(e\room\Objects[9],True),EntityY(e\room\Objects[9],True)+0.2,EntityZ(e\room\Objects[9],True))
+									ResetEntity e\room\NPC[1]\Collider
+									e\room\NPC[1]\State = 2
+									e\room\NPC[1]\State2 = 10
+									e\room\NPC[1]\PrevState = 12
+									;Instance 3
+									PositionEntity(e\room\NPC[2]\Collider, EntityX(e\room\Objects[13],True),EntityY(e\room\Objects[13],True)+0.2,EntityZ(e\room\Objects[13],True))
+									ResetEntity e\room\NPC[2]\Collider
+									e\room\NPC[2]\State = 2
+									e\room\NPC[2]\State2 = 14
+									e\room\NPC[2]\PrevState = 16
+									;Other
+									e\EventState = 1
+								EndIf
+								
+								If e\room\RoomDoors[4]\open = False
+									If UpdateLever(e\room\Levers[0])
+										e\room\RoomDoors[4]\open = True
+										If e\Sound2 <> 0 Then FreeSound_Strict e\Sound2 : e\Sound2=0
+										e\Sound2 = LoadSound_Strict("SFX\Door\Door2Open1_dist.ogg")
+										e\SoundCHN2 = PlaySound2(e\Sound2,Camera,e\room\RoomDoors[4]\obj,400)
+									EndIf
+									If UpdateLever(e\room\Levers[1])
+										e\room\RoomDoors[4]\open = True
+										If e\Sound2 <> 0 Then FreeSound_Strict e\Sound2 : e\Sound2=0
+										e\Sound2 = LoadSound_Strict("SFX\Door\Door2Open1_dist.ogg")
+										e\SoundCHN2 = PlaySound2(e\Sound2,Camera,e\room\RoomDoors[4]\obj,400)
+									EndIf
+								EndIf
+								
+								UpdateLever(e\room\Levers[0],e\room\RoomDoors[4]\open)
+								UpdateLever(e\room\Levers[1],e\room\RoomDoors[4]\open)
+								
+								e\room\NPC[0]\IgnorePlayer = False
+								e\room\NPC[2]\IgnorePlayer = False
+								
+								CurrTrigger$ = CheckTriggers()
+								
+								Select CurrTrigger$
+									Case "939-1_fix"
+										e\room\NPC[0]\IgnorePlayer = True
+									Case "939-3_fix"
+										e\room\NPC[2]\IgnorePlayer = True
+								End Select
+								
+								UpdateSoundOrigin(e\SoundCHN2,Camera,e\room\RoomDoors[4]\obj,400)
+								
+								PlayerFallingPickDistance = 0.0
+								
+								If EntityY(Collider)<-6400*RoomScale And KillTimer >= 0 And FallTimer >= 0 Then
+									DeathMSG=""
+									PlaySound_Strict LoadTempSound("SFX\Room\PocketDimension\Impact.ogg")
+									KillTimer=-1.0
+								EndIf
 							EndIf
 						Else
-							If e\EventState = 0 Then
-								;Instance 1
-								PositionEntity(e\room\NPC[0]\Collider, EntityX(e\room\Objects[4],True),EntityY(e\room\Objects[4],True)+0.2,EntityZ(e\room\Objects[4],True))
-								ResetEntity e\room\NPC[0]\Collider
-								e\room\NPC[0]\State = 2
-								e\room\NPC[0]\State2 = 5
-								e\room\NPC[0]\PrevState = 7
-								;Instance 2
-								PositionEntity(e\room\NPC[1]\Collider, EntityX(e\room\Objects[9],True),EntityY(e\room\Objects[9],True)+0.2,EntityZ(e\room\Objects[9],True))
-								ResetEntity e\room\NPC[1]\Collider
-								e\room\NPC[1]\State = 2
-								e\room\NPC[1]\State2 = 10
-								e\room\NPC[1]\PrevState = 12
-								;Instance 3
-								PositionEntity(e\room\NPC[2]\Collider, EntityX(e\room\Objects[13],True),EntityY(e\room\Objects[13],True)+0.2,EntityZ(e\room\Objects[13],True))
-								ResetEntity e\room\NPC[2]\Collider
-								e\room\NPC[2]\State = 2
-								e\room\NPC[2]\State2 = 14
-								e\room\NPC[2]\PrevState = 16
-								;Other
-								e\EventState = 1
-							EndIf
-							
-							If e\room\RoomDoors[4]\open = False
-								If UpdateLever(e\room\Levers[0])
-									e\room\RoomDoors[4]\open = True
-									If e\Sound2 <> 0 Then FreeSound_Strict e\Sound2 : e\Sound2=0
-									e\Sound2 = LoadSound_Strict("SFX\Door\Door2Open1_dist.ogg")
-									e\SoundCHN2 = PlaySound2(e\Sound2,Camera,e\room\RoomDoors[4]\obj,400)
-								EndIf
-								If UpdateLever(e\room\Levers[1])
-									e\room\RoomDoors[4]\open = True
-									If e\Sound2 <> 0 Then FreeSound_Strict e\Sound2 : e\Sound2=0
-									e\Sound2 = LoadSound_Strict("SFX\Door\Door2Open1_dist.ogg")
-									e\SoundCHN2 = PlaySound2(e\Sound2,Camera,e\room\RoomDoors[4]\obj,400)
-								EndIf
-							EndIf
-							
-							UpdateLever(e\room\Levers[0],e\room\RoomDoors[4]\open)
-							UpdateLever(e\room\Levers[1],e\room\RoomDoors[4]\open)
-							
-							e\room\NPC[0]\IgnorePlayer = False
-							e\room\NPC[2]\IgnorePlayer = False
-							
-							CurrTrigger$ = CheckTriggers()
-							
-							Select CurrTrigger$
-								Case "939-1_fix"
-									e\room\NPC[0]\IgnorePlayer = True
-								Case "939-3_fix"
-									e\room\NPC[2]\IgnorePlayer = True
-							End Select
-							
-							UpdateSoundOrigin(e\SoundCHN2,Camera,e\room\RoomDoors[4]\obj,400)
-							
-							PlayerFallingPickDistance = 0.0
-							
-							If EntityY(Collider)<-6400*RoomScale And KillTimer >= 0 And FallTimer >= 0 Then
-								DeathMSG=""
-								PlaySound_Strict LoadTempSound("SFX\Room\PocketDimension\Impact.ogg")
-								KillTimer=-1.0
-							EndIf
+							e\EventState = 0
+							If e\room\NPC[0]<>Null Then e\room\NPC[0]\State = 66
+							If e\room\NPC[1]<>Null Then e\room\NPC[1]\State = 66
+							If e\room\NPC[2]<>Null Then e\room\NPC[2]\State = 66
 						EndIf
-					Else
-						e\EventState = 0
-						If e\room\NPC[0]<>Null Then e\room\NPC[0]\State = 66
-						If e\room\NPC[1]<>Null Then e\room\NPC[1]\State = 66
-						If e\room\NPC[2]<>Null Then e\room\NPC[2]\State = 66
-					EndIf
+					End If
 				Else
 					If e\room\NPC[0]<>Null Then e\room\NPC[0]\State = 66
 					If e\room\NPC[1]<>Null Then e\room\NPC[1]\State = 66
@@ -5664,7 +5667,7 @@ Function UpdateEvents()
 				;[End Block]
 			Case "room049"
 				;[Block]
-				If PlayerRoom = e\room Then
+				If PlayerRoom = e\room And (Not AllowOnlyElevatorsUpdateInEvents) Then
 					If EntityY(Collider) > -2848*RoomScale Then
 						e\EventState2 = UpdateElevators(e\EventState2, e\room\RoomDoors[0], e\room\RoomDoors[1],e\room\Objects[0],e\room\Objects[1], e)
 						e\EventState3 = UpdateElevators(e\EventState3, e\room\RoomDoors[2], e\room\RoomDoors[3],e\room\Objects[2],e\room\Objects[3], e)
