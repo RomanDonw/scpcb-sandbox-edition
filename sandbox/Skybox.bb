@@ -1,7 +1,7 @@
 Type Skybox
     Field Name%
-
-    ; Brushes
+    
+    ; Textures
     Field upside% = 0
     Field downside% = 0
     Field leftside% = 0
@@ -10,11 +10,12 @@ Type Skybox
     Field backside% = 0
 End Type
 
-Global SkyboxMesh%
+Local SkyboxMesh%
+Local BlackTexture%
 
 Const SKYBOX_SURFACE_UP% = 1, SKYBOX_SURFACE_DOWN% = 2, SKYBOX_SURFACE_LEFT% = 3, SKYBOX_SURFACE_RIGHT% = 4, SKYBOX_SURFACE_FRONT% = 5, SKYBOX_SURFACE_BACK% = 6
 
-Function InitSkyboxMesh()
+Function InitSkyboxSystem()
     SkyboxMesh = CreateMesh()
     HideEntity SkyboxMesh
     Local s%
@@ -88,6 +89,16 @@ Function InitSkyboxMesh()
     FlipMesh SkyboxMesh
 	EntityFX SkyboxMesh, 1 Or 8
 	EntityOrder SkyboxMesh, 1000
+
+    ; ===============================
+
+    BlackTexture = CreateTexture(1, 1)
+    SetBuffer TextureBuffer(BlackTexture)
+    
+    ClsColor 0, 0, 0
+    Cls
+
+    SetBuffer BackBuffer()
 End Function
 
 Function CreateSkybox.Skybox(declfilename$, skyboxname$)
@@ -160,14 +171,11 @@ Function RemoveSkybox(skybox.Skybox)
 End Function
 
 Function SetSkybox(skybox.Skybox)
-    If skybox = Null Then Return
+    If skybox = Null Then HideEntity SkyboxMesh : Return
 
-    If skybox\upside <> 0 Then PaintSurface GetSurface(SkyboxMesh, SKYBOX_SURFACE_UP), skybox\upside
-    If skybox\downside <> 0 Then PaintSurface GetSurface(SkyboxMesh, SKYBOX_SURFACE_DOWN), skybox\downside
-    If skybox\leftside <> 0 Then PaintSurface GetSurface(SkyboxMesh, SKYBOX_SURFACE_LEFT), skybox\leftside
-    If skybox\rightside <> 0 Then PaintSurface GetSurface(SkyboxMesh, SKYBOX_SURFACE_RIGHT), skybox\rightside
-    If skybox\frontside <> 0 Then PaintSurface GetSurface(SkyboxMesh, SKYBOX_SURFACE_FRONT), skybox\frontside
-    If skybox\backside <> 0 Then PaintSurface GetSurface(SkyboxMesh, SKYBOX_SURFACE_BACK), skybox\backside
+    BrushTexture GetSurfaceBrush(GetSurface(SkyboxMesh, SKYBOX_SURFACE_UP)), skybox\upside
+
+    ShowEntity SkyboxMesh
 End Function
 
 Function FindSkybox.Skybox(name$)
