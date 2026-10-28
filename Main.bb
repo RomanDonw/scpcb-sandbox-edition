@@ -5862,6 +5862,9 @@ Function CreateEvent.Events(eventname$, roomname$, id%, prob# = 0.0)
 					e.Events = New Events
 					e\EventName = eventname					
 					e\room = r
+					
+					;If AllowOnlyElevatorsUpdateInEvents Then PatchElevatorsInEvent(e)
+
 					Return e
 				End If
 			EndIf
@@ -5876,14 +5879,46 @@ Function CreateEvent.Events(eventname$, roomname$, id%, prob# = 0.0)
 				
 				If Rnd(0.0, 1.0) < prob And temp = False Then
 					e.Events = New Events
-					e\EventName = eventname					
+					e\EventName = eventname
 					e\room = r
+					
+					;If AllowOnlyElevatorsUpdateInEvents Then PatchElevatorsInEvent(e)
 				End If
 			EndIf
-		Next		
+		Next
 	EndIf
 	
+	
 	Return Null
+
+	;.pathelevators
+	;
+	;Return
+End Function
+
+Function PatchElevatorsInEvent(e.Events)
+	Select e\room\RoomTemplate\Name
+		Case "room3storage", "room049"
+			If Rand(0, 1) Then
+				e\EventState2 = -1
+			Else
+				e\EventState2 = 1
+			End If
+
+			If Rand(0, 1) Then
+				e\EventState3 = -1
+			Else
+				e\EventState3 = 1
+			End If
+
+		Case "room2nuke"
+			If Rand(0, 1) Then
+				e\EventState2 = -1
+			Else
+				e\EventState2 = 1
+			End If
+			
+	End Select
 End Function
 
 Function InitEvents()

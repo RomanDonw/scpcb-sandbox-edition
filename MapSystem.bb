@@ -5671,6 +5671,7 @@ Function UpdateRooms()
 		Local renderroom% = False
 
 		If RoomRenderIfItInPlayerView Then
+			;renderroom = (EntityInView(r\obj, Camera) And EntityDistance(r\obj, Collider) <= 30) Or (Not hide)
 			renderroom = (EntityInView(r\obj, Camera)) Or (Not hide)
 		Else
 			renderroom = Not hide
